@@ -155,3 +155,24 @@ void test('a key change aborts an in-flight old account and late responses canno
   assert.deepEqual((await catalog.get('openai', 'new-key', fallback)).models, next.models);
   assert.ok(!next.models.some(model => model.model === 'gpt-6.1-sol'));
 });
+
+void test('recommendations collapse versions, prefer aliases and retain only account-listed general families', async () => {
+  const { recommendedOpenAiModels } = await import('../lib/ai-model-selection.ts');
+  const models = ['gpt-6.1-sol-2026-10-01', 'gpt-6-sol', 'gpt-6.1-sol', 'gpt-6-astra', 'gpt-6.1-terra', 'gpt-6-luna', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-6-pro', 'gpt-6-preview', 'gpt-6-chat-latest'];
+  const result = recommendedOpenAiModels([...models.map(model => ({ model, listed: true })), { model: 'gpt-9-sol', listed: false }]);
+  assert.deepEqual(result, ['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra', 'gpt-6-luna']);
+  assert.deepEqual(recommendedOpenAiModels([{ model: 'gpt-6.2-sol' }, ...models.map(model => ({ model }))]), ['gpt-6.2-sol', 'gpt-6.1-terra', 'gpt-6-astra', 'gpt-6-luna']);
+  assert.deepEqual(recommendedOpenAiModels(['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4.1', 'o3'].map(model => ({ model }))), ['gpt-4.1', 'gpt-4.1-mini', 'o3']);
+  assert.deepEqual(recommendedOpenAiModels(['gpt-6-sol-2026-08-01', 'gpt-6-sol-2026-09-01'].map(model => ({ model }))), ['gpt-6-sol-2026-09-01']);
+});
+
+void test('announced shutdown models are no longer offered as live choices', async () => {
+  const now = Date.parse('2026-10-30T12:00:00Z');
+  const catalog = createAiModelCatalog(async () => Response.json({data:[
+    {id:'gpt-6-sol',shutdown_date:'2026-10-29'},
+    {id:'gpt-6.1-sol',shutdown_date:null},
+    {id:'gpt-6-luna',shutdown_date:'2026-12-01'},
+  ]}), {now:()=>now});
+  const result = await catalog.get('openai', key, 'gpt-6-sol');
+  assert.deepEqual(result.models.map(item=>[item.model,item.listed]), [['gpt-6-sol',false],['gpt-6.1-sol',true],['gpt-6-luna',true]]);
+});

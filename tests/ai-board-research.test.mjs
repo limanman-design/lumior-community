@@ -274,3 +274,21 @@ void test('only explicitly planned pure operations use the lightweight result; m
     assert.deepEqual(received[0],published);
   }
 });
+
+void test('public progress stays in the existing round and drafts remain uncommitted when review cancels them', async () => {
+ let step=0;
+ const execution=run(async (messages)=>{
+  if (++step===1) return plan('create_notes');
+  if (step===2) { assert.match(messages[0].content,/简短进展摘要/); return result('接下来把学习顺序整理成卡片。',[tool('create_note',{title:'第一课：基本概念',body:'合成测试内容'})]); }
+  if (step===3) return result('草稿已准备。');
+  if (step===4) return result('',[tool('replace_board_actions',{notes:[],connections:[]})]);
+  return result('本次没有保存卡片。');
+ });
+ await execution.completed;
+ assert.equal(step,5,'no additional model call for progress');
+ const progress=execution.events.filter(event=>event.type==='progress').map(event=>event.message);
+ assert.ok(progress.includes('进展摘要：接下来把学习顺序整理成卡片。'));
+ assert.ok(progress.includes('已准备第 1 张卡片草稿：《第一课：基本概念》；核对后才会保存。'));
+ assert.ok(!execution.events.some(event=>event.type==='board_actions'));
+ assert.doesNotMatch(JSON.stringify(execution.events),/Private model reasoning/);
+});

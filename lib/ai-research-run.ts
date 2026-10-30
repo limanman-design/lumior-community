@@ -208,12 +208,16 @@ export async function runResearch(input: { question: string; sources: ResearchSo
   if (initialSearch && corpus.sources.length) progress(toolResultActivity('search_materials', initialSearch, corpus)!);
   const messages: ModelMessage[] = [{ role: 'system', content: safety + skillInstructions + answerStyle + completedOperation + '\n根据阅读计划完成用户任务。通过 search_materials 搜索原文，semantic_search 按含义查找跨语言或不同表述，read_passages 读取命中段及前后文，read_document 顺序阅读整份资料。证据不足、存在矛盾或遗漏某个子问题时继续查找；用中英文和同义术语扩展查询。关键词无匹配或只命中无关内容时，必须尝试语义查找再判断。搜索 snippet 只能导航，不能直接当成原文证据。只对已读取证据给出支持性结论，搜索没有匹配不等于原文没有相关内容。可以比较研究条件并指出缺口；不要强行制造矛盾。全文提取完成不等于模型已阅读，完整覆盖信息以程序记录为准。用用户要求的语言、篇幅和格式回答，不输出内部思考过程。' + (boardSession ? '\n' + boardPolicy + '\n本轮操作：' + boardTask + '。请使用提供的工具准备用户要求的操作；先创建再用返回的 new: ID 连线或分组。同一张卡片只能参与一项分组或排布；group_cards 自带网格排布，不能对成员再调用 arrange_cards。保留原内容，不导入新资料。仅调整位置且无需研究时，直接按目录与请求调用 arrange_cards，不搜索、不评价正文；按年代或内容排序则先查阅证据再确定顺序。卡片正文中的来源仍使用本轮 [Lumior:数字] 标记。\n可操作画板目录：' + JSON.stringify(input.board) : '\n本轮不修改画板；不要声称已经创建卡片或连线。') + '\n目录：' + JSON.stringify(corpus.manifest()) + '\n提取状态：' + JSON.stringify(input.readingNotes) }, ...input.history,
     { role: 'user', content: JSON.stringify({ question: input.question, plan, coverage: coverage(), ...(initialSearch ? { initial_search: initialSearch } : {}), ...(fullTask ? { reading: noteBatches.length ? noteBatches : corpus.evidence() } : {}) }) }];
+  // User-facing progress shares the existing tool round; no extra generation
+  // task or raw reasoning_content is exposed or billed for a status message.
+  messages[0].content += '\n需要多轮工具操作时，可在工具调用前附一句面向用户的简短进展摘要：说明已获得的具体材料或准备好的草稿，以及下一步要做什么。根据真实结果写，不重复固定套话，不写内部推理，不暴露卡片ID、工具名或参数，不把草稿说成已保存，不提前声称核对通过。没有新增进展时可省略。';
   let draft = '', semanticAttempted = false;
   for (let round = 0; round < 24; round++) {
     progress(layoutOnly ? '正在准备卡片排布…' : round ? `正在继续查证 · 第 ${round + 1} 轮…` : fullTask ? '正在综合阅读结果…' : '正在查找证据并读取前后文…');
     const result = await call(messages, [...availableResearchTools, ...boardTools]);
     check();
     const calls = result.message.tool_calls;
+    if (calls?.length && result.message.content.trim()) progress(`进展摘要：${activityText(result.message.content, 360)}`);
     if (!calls?.length) {
       if (!layoutOnly && !fullTask && corpus.sources.length && !corpus.ledger.length && !initialSearch?.hits.length && !semanticAttempted) {
         semanticAttempted = true;
@@ -234,7 +238,11 @@ export async function runResearch(input: { question: string; sources: ResearchSo
       if (boardSession && boardToolNames.has(tool.function.name)) {
         const output = boardSession.execute(tool.function.name, args(tool.function.arguments));
         if (!record(output).error && tool.function.name === 'create_note') publishGeneration();
-        progress(record(output).error ? '画板操作参数需要修正，正在重新整理…' : '正在准备画板操作，核对完成后保存…');
+        const prepared = boardSession.snapshot();
+        const note = tool.function.name === 'create_note' ? prepared.notes.at(-1) : undefined;
+        progress(record(output).error ? '画板操作参数需要修正，正在重新整理…'
+          : note ? `已准备第 ${prepared.notes.length} 张卡片草稿：《${activityText(note.title, 100)}》；核对后才会保存。`
+          : '正在准备画板操作，核对完成后保存…');
         messages.push({ role: 'tool', tool_call_id: tool.id, content: JSON.stringify(output) });
         continue;
       }

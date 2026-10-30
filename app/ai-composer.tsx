@@ -35,6 +35,7 @@ import {
 import { AiFileAttachment } from './ai-file-attachment';
 import { aiSkills, getAiSkill } from '@/lib/ai-skills';
 import type { AiCatalogError, AiCatalogStatus } from '@/lib/ai-model-catalog';
+import { recommendedOpenAiModels } from '@/lib/ai-model-selection';
 import './ai-composer.css';
 const visibleAiProviders = aiProviders.filter((item) => item.id !== 'glm');
 const catalogErrorLabels: Record<AiCatalogError, [string, string]> = {
@@ -165,6 +166,7 @@ export function AiComposer({
     [query, setQuery] = useState(''),
     [models, setModels] = useState<ModelOption[]>([]);
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
+  const [moreOpenAi, setMoreOpenAi] = useState(false);
   const [usageMode, setUsageMode] = useState<DesktopAiUsageMode>('personal');
   const [trialStatus, setTrialStatus] = useState('');
   const selectedModelRef = useRef({ model, onModel });
@@ -516,6 +518,7 @@ export function AiComposer({
           <DropdownMenu
             onOpenChange={(open) => {
               if (open) {
+                setMoreOpenAi(false);
                 loadModels();
               }
             }}
@@ -608,9 +611,19 @@ export function AiComposer({
                     listed: false,
                   });
                 }
+                const compactOpenAi = provider.id === 'openai' && usageMode === 'personal' && modelScope !== 'thesis';
+                const recommended = compactOpenAi ? recommendedOpenAiModels(providerModels.map(item => ({
+                  model: item.model || parseModelSelection(item.id, defaultProvider)?.model || item.id,
+                  listed: item.listed,
+                }))) : [];
+                const recommendedRank = (item: ModelOption) => recommended.indexOf(item.model || parseModelSelection(item.id, defaultProvider)?.model || item.id);
+                const shortModels = compactOpenAi ? providerModels.filter(item => recommendedRank(item) >= 0 || item.id === model
+                  || (model === 'auto' && (item.id === defaultModel || item.model === defaultModel)))
+                  .sort((a, b) => (recommendedRank(a) < 0 ? 99 : recommendedRank(a)) - (recommendedRank(b) < 0 ? 99 : recommendedRank(b))) : providerModels;
+                const shownModels = compactOpenAi && !moreOpenAi && shortModels.length ? shortModels : providerModels;
                 return (
                   <Fragment key={provider.id}>
-                    <div className="ai-model-label">{provider.name}</div>
+                    <div className="ai-model-label">{provider.name}{compactOpenAi && !moreOpenAi && shortModels.length > 0 ? t(' · Recommended', ' · 推荐') : ''}</div>
                     {usageMode === 'personal' && status?.catalog?.error && (
                       <output className="ai-model-label block">
                         {t(...(catalogErrorLabels[status.catalog.error] || catalogErrorLabels.upstream))}{' '}
@@ -634,7 +647,7 @@ export function AiComposer({
                       </DropdownMenuItem>
                     )}
                     {status?.configured && providerModels.length > 0 ? (
-                      providerModels.map((item) => (
+                      shownModels.map((item) => (
                         <DropdownMenuItem
                           key={item.id}
                           className="ai-model-option"
@@ -682,6 +695,11 @@ export function AiComposer({
                         </span>
                       </DropdownMenuItem>
                     )}
+                    {compactOpenAi && shortModels.length > 0 && providerModels.length > shortModels.length && <DropdownMenuItem
+                      className="ai-model-option" closeOnClick={false} onClick={() => setMoreOpenAi(value => !value)}>
+                      <span className="ai-model-name">{moreOpenAi ? t('Show recommended models', '只显示推荐模型')
+                        : t('More models ({count})', '更多模型（{count}）', { count: providerModels.length - shortModels.length })}</span>
+                    </DropdownMenuItem>}
                   </Fragment>
                 );
               })}
