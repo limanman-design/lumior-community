@@ -41,7 +41,7 @@ export function thesisStageStatus(board: Board, chats: readonly AiChat[], skill:
   const review = paths.filter(path => thesis.artifacts[path]?.needsReview);
   if (review.length) return { kind: 'attention', label: '需复核', reason: review.map(path => `${thesisArtifactLabels[path]}：${thesis.artifacts[path].needsReview}`).join('；') };
   const proposals = paths.filter(path => thesis.proposals[path]);
-  if (proposals.length) return { kind: 'attention', label: '待采纳', reason: `${proposals.map(path => thesisArtifactLabels[path]).join('、')}有修改建议等待决定，请在“论文项目”中对照；原内容保留。` };
+  if (proposals.length) return { kind: 'attention', label: '待采纳', reason: `${proposals.map(path => thesisArtifactLabels[path]).join('、')}有修改建议等待决定，请点击对应卡片右上侧的 AI 建议气泡查看；原内容保留。` };
   const results = paths.filter(hasContent);
   if (results.length) return { kind: 'result', label: '已有成果', reason: `已有${results.map(path => thesisArtifactLabels[path]).join('、')}，可以继续编辑或讨论；不代表整个阶段已结束。` };
   // Merely opening an introduction is navigation, not progress.

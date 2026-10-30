@@ -47,7 +47,7 @@ import { aiSkillLabel, defaultAiSkillId, getAiSkill, skillForChat } from '../lib
 import './ai-chat.css';
 import './ai-panel-motion.css';
 import './ai-canvas.css';
-import { appendAiReferences, canvasRunningActivity, completedAiRounds, readAiCanvasView, type AiCanvasView } from './ai-canvas-presentation';
+import { appendAiReferences, canvasRunningActivity, readAiCanvasView, type AiCanvasView } from './ai-canvas-presentation';
 
 type Props = {
   thesisToolbarTarget?: HTMLElement | null; onThesisToolbarChange?: (boardId: string | null) => void;
@@ -456,7 +456,6 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
   const updateCanvasView = (patch: Partial<AiCanvasView>) => {
     if (chat) patchChat(chat.id, current => ({ ...current, canvasView: { ...readAiCanvasView(current.canvasView), ...patch } }), true);
   };
-  const rounds = completedAiRounds(messages);
   const thesisQuestions = thesisMessageQuestions(messages, chat ? thesisBoard?.thesis?.sessions[chat.id] : undefined);
   const latestAnswer = messages.filter(message => message.role === 'assistant').at(-1);
   const thesisPending = chat && thesisBoard?.thesis && thesisBoard.thesis.sessionContexts[chat.id] === thesisInputSignature(thesisBoard) ? thesisBoard?.thesis?.sessions[chat.id]?.pending : undefined;
@@ -485,7 +484,7 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
   }, [canvas, presentedChatId, saved.state.chats, updateHistory]);
   // Only canvas interactions collapse the response; composer, history, menus and readers stay interactive.
   useEffect(() => {
-    if (!canvas || !visible || !canvasResponseOpen) return;
+    if (!canvas || !visible || !canvasResponseOpen || canvasView.pinned) return;
     const collapse = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element) || !target.closest('.workspace') || target.closest('.ai-panel,.canvas-right-controls,.canvas-bottom-controls,.board-header,.canvas-toolbar,.canvas-tools,.canvas-top-toolbar-dock,.canvas-side-panel,[role=menu],[role=dialog]')) return;
@@ -495,7 +494,7 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
     // Canvas gestures stop bubbling; observe the press before their handlers.
     document.addEventListener('pointerdown', collapse, true);
     return () => document.removeEventListener('pointerdown', collapse, true);
-  }, [canvas, visible, canvasResponseOpen]);
+  }, [canvas, visible, canvasResponseOpen, canvasView.pinned]);
   const toggleConversation = () => {
     const opening = collapsed || historyOpen;
     if (running.current) running.current.viewTouched = true;
@@ -517,8 +516,8 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
   const responsePanel = <div className={canvas ? 'ai-canvas-response' : 'ai-reader-response'} ref={response} hidden={canvas && collapsed}>
     {canvas ? <header className="ai-header ai-canvas-header">
       <span className="ai-current-title" title={chat ? aiChatDisplayTitle(chat, t('New conversation', '新对话')) : ''}>{chat ? aiChatDisplayTitle(chat, t('New conversation', '新对话')) : t('New conversation', '新对话')}</span>
-      <small>{busy ? t('Thinking…', '思考中…') : t('{count} rounds', '{count} 轮', { count: rounds })}</small>
       <div className="ai-header-actions">
+        <button title={canvasView.pinned ? t('Unpin conversation', '取消固定对话') : t('Pin conversation', '固定对话，点击画板不收起')} aria-label={canvasView.pinned ? t('Unpin conversation', '取消固定对话') : t('Pin conversation', '固定对话')} aria-pressed={!!canvasView.pinned} disabled={!saved.ready || !chat} onClick={() => { if (running.current) running.current.viewTouched = true; updateCanvasView({ pinned: !canvasView.pinned }); }}><MaterialIcon name="pinboard" size={16}/></button>
         <button title={t('New conversation', '新对话')} aria-label={t('New conversation', '新对话')} disabled={!saved.ready || busy} onClick={() => fresh([], skill, model)}><MaterialIcon name="add" size={16}/></button>
         <button title={t('Close conversation', '关闭对话')} aria-label={t('Close conversation', '关闭对话')} disabled={!saved.ready} onClick={() => fresh([], availableSkill ? skill : defaultAiSkillId, model)}><MaterialIcon name="close" size={16}/></button>
       </div>

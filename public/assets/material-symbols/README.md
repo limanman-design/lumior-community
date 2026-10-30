@@ -106,3 +106,7 @@ License: Apache-2.0. Unchanged upstream SVG, bundled locally.
 Full license text bundled in `LICENSE` (retrieved 2026-10-30).
 Source: https://raw.githubusercontent.com/google/material-design-icons/master/LICENSE
 SHA-256: `58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd`.
+
+Card AI change bubble: Google Material Symbols Outlined `comment`, 20px, weight 400.
+Source: https://github.com/google/material-design-icons/blob/master/symbols/web/comment/materialsymbolsoutlined/comment_20px.svg
+License: Apache-2.0 (see LICENSE). Unchanged upstream SVG, bundled locally.

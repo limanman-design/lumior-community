@@ -36,6 +36,7 @@ export type MaterialIconName =
   | 'attach_file'
   | 'search_outlined'
   | 'add'
+  | 'comment'
   | 'pinboard'
   | 'library_add'
   | 'atlas'
@@ -72,6 +73,7 @@ const outlinedSymbols = new Set<MaterialIconName>([
   'attach_file',
   'add',
   'library_add',
+  'comment',
   'pinboard',
   'progress_activity',
   'history',
