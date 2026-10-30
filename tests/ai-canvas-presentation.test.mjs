@@ -34,7 +34,7 @@ void test('the third-round hint counts completed question/answer pairs rather th
 });
 void test('legacy history opens at bottom; new presentation survives history restore without changing reader data', () => {
  assert.deepEqual(readAiCanvasView(undefined),{docked:false,collapsed:false,dockHintDismissed:false});
- const chat={...newAiChat('board'),draft:'Saved draft',refs:['note'],canvasView:{docked:true,collapsed:false,dockHintDismissed:true}};
+ const chat={...newAiChat('board'),draft:'Saved draft',refs:['note'],canvasView:{pinned:true,docked:true,collapsed:false,dockHintDismissed:true}};
  const result=restoredAiHistory({version:1,boardId:'board',activeId:chat.id,chats:[chat]},'board');
  assert.deepEqual(result.chats[0].canvasView,chat.canvasView);assert.equal(result.chats[0].draft,'Saved draft');assert.deepEqual(result.chats[0].refs,['note']);
  assert.deepEqual(readAiCanvasView({docked:'yes',collapsed:true,unknown:1}),{docked:false,collapsed:true,dockHintDismissed:false});
@@ -58,3 +58,9 @@ test('operation answers remain in an existing conversation for persistent undo, 
  assert.deepEqual(canvasPanelMessages([q,op],true),[q,op]);
  assert.deepEqual(canvasConversationMessages([answer,q,op]),[answer], 'the two history categories remain separate');
 });
+
+ test('conversation pin survives storage; legacy and invalid pin values remain unpinned',()=>{
+  assert.equal(readAiCanvasView({pinned:true}).pinned,true);
+  assert.equal(readAiCanvasView({pinned:false}).pinned,undefined);
+  assert.equal(readAiCanvasView({pinned:'true'}).pinned,undefined);
+ });

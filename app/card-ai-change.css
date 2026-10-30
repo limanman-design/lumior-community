@@ -1,0 +1,13 @@
+.card-ai-change-anchor{position:absolute;left:calc(100% + 10px * var(--inverse-zoom,1));top:0;z-index:8;pointer-events:auto;transform:scale(var(--inverse-zoom,1));transform-origin:top left}
+.card-ai-change-trigger{display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:6px;border:0;border-radius:var(--lumior-control-radius,12px);background:var(--ui-glass);color:var(--ui-text-muted);backdrop-filter:blur(16px);cursor:pointer}
+.card-ai-change-trigger:is(:hover,:focus-visible,[data-popup-open]){background:var(--ui-control-raised);color:var(--ui-text)}
+.card-ai-change-trigger:focus-visible{outline:2px solid var(--ui-brand);outline-offset:3px}
+.card-ai-change-panel{width:min(420px,calc(100vw - 32px));max-height:min(600px,calc(100dvh - 32px));padding:16px;border-radius:16px;background:var(--ui-panel);color:var(--ui-text);border:1px solid var(--ui-line)}
+.card-ai-change-panel p{margin:0;color:var(--ui-text-muted);font-size:12px;line-height:1.6}
+.card-ai-change-text{overflow:auto;min-height:0;overscroll-behavior:contain}
+.card-ai-change-text pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.7;margin:8px 0 16px;user-select:text}
+.card-ai-change-text summary{cursor:pointer;color:var(--ui-text-muted)}
+.card-ai-change-actions{display:flex;justify-content:flex-end;gap:8px;flex:none}
+.card-ai-change-actions button{border:1px solid var(--ui-line);border-radius:12px;padding:8px 12px;color:var(--ui-text);background:var(--ui-control-raised);cursor:pointer}
+.card-ai-change-actions button:disabled{opacity:.5;cursor:default}
+.card-ai-change-actions .card-ai-change-accept{background:var(--action-primary);color:var(--action-primary-foreground)}

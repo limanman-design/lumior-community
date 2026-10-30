@@ -175,3 +175,5 @@
 .ai-detached .ai-history-spinner .workspace-symbol{animation:ai-history-spin 900ms linear infinite;opacity:.8}
 @keyframes ai-history-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.ai-detached .ai-history-spinner .workspace-symbol{animation:none}}
+
+.ai-detached .ai-conversation-rail .ai-header-actions button[aria-pressed=true]{color:var(--ui-brand);background:var(--ui-fill-selected);box-shadow:inset 0 0 0 1px var(--ui-brand)}

@@ -13,12 +13,12 @@ export function canvasRunningActivity(message: AiMessage | undefined, t: AiTrans
   };
 }
 
-export type AiCanvasView = { docked: boolean; collapsed: boolean; dockHintDismissed: boolean };
+export type AiCanvasView = { pinned?: boolean; docked: boolean; collapsed: boolean; dockHintDismissed: boolean };
 export const defaultAiCanvasView: AiCanvasView = { docked: false, collapsed: false, dockHintDismissed: false };
 
 export function readAiCanvasView(value: unknown): AiCanvasView {
   const view = value && typeof value === 'object' ? value as Partial<AiCanvasView> : {};
-  return { docked: view.docked === true, collapsed: view.collapsed === true, dockHintDismissed: view.dockHintDismissed === true };
+  return { ...(view.pinned === true ? { pinned: true } : {}), docked: view.docked === true, collapsed: view.collapsed === true, dockHintDismissed: view.dockHintDismissed === true };
 }
 
 /** Regeneration, failed attempts and restored preset messages aren't new rounds. */

@@ -156,7 +156,10 @@ void test('real panel rendering hides preset content and retains request errors 
     assert.match(canvasHtml, /aria-label="Conversation history"/);
     assert.equal((canvasHtml.match(/<textarea/g) || []).length, 1, "Only the bottom composer provides text input");
     assert.match(canvasHtml, /Next question draft/);
-    assert.match(canvasHtml, /3 rounds/);
+    assert.doesNotMatch(canvasHtml, /3 rounds/);
+    assert.match(canvasHtml, /aria-label="Pin conversation" aria-pressed="false"/);
+    canvasChat.canvasView = { pinned: true };
+    assert.match(renderCanvas(), /aria-label="Unpin conversation" aria-pressed="true"/);
     assert.doesNotMatch(canvasHtml, /Switch to floating window|ai-panel ai-sidebar/);
     assert.doesNotMatch(canvasHtml, /Keep this conversation beside your canvas|Pin to right/);
     assert.match(canvasHtml, /wake-orb/);
