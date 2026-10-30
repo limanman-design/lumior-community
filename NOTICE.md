@@ -2,7 +2,7 @@
 
 Lumior — Copyright 2026 Lumior contributors.
 
-Except where a separate license is identified, original application code, documentation, product skills/templates and artwork in this repository are licensed under the **Apache License, Version 2.0**; see [LICENSE](LICENSE). The project owner confirmed that the Memory Atlas code, Lumior pet artwork and MBA skill/template sources may be publicly modified and redistributed.
+Except where a separate license is identified, original application code, documentation, product skills/templates and artwork in this repository are licensed under the **Apache License, Version 2.0**; see [LICENSE](LICENSE). The project owner confirmed that the Memory Atlas code, Lumior pet artwork may be publicly modified and redistributed. MBA skills include adaptations from gstack, as described below.
 
 Third-party code and assets retain their own licenses. The project license does not replace those notices, grant third-party trademark rights, grant model API access or license media referenced by URL.
 
@@ -31,3 +31,7 @@ Native image tooling may bring LGPL-covered libvips components; actual distribut
 Unverified legacy icon exports are replaced in this repository with attributed Material Symbols. Downloaded rain recordings, their covers, demo papers, lecture transcripts, game screenshots and private report screenshots are excluded. Original onboarding practice content remains available.
 
 The Lumior name and logo identify the project. Trademark permissions are governed by Section 6 of Apache-2.0; the source license does not authorize misleading claims of official endorsement. Modified distributions should clearly identify their origin and changes; community builds use a separate identity by default. No additional restriction on use of the licensed code is imposed by this statement.
+
+### MBA Skills / gstack
+
+The MBA research skills were adapted from [garrytan/gstack](https://github.com/garrytan/gstack). Upstream copyright (c) 2026 Garry Tan. The full MIT copyright, permission and warranty notice is retained in [licenses/MIT-gstack.txt](licenses/MIT-gstack.txt). Lumior additions and modifications are licensed under Apache-2.0; this does not remove the upstream MIT notice. The original adaptation revision and exact source Skill were not recorded. The current upstream was checked on 2026-10-30, not asserted as the original baseline. No endorsement by Garry Tan or gstack is implied.
