@@ -1,0 +1,8 @@
+The loading wordmark is rendered using SVG outlines, not runtime fonts.
+Source fonts: GFS Didot, Doto, Codystar, Pinyon Script, Bungee Outline,
+Bungee, Monoton, Silkscreen, Major Mono Display, IBM Plex Mono.
+Sources: Google Fonts (fonts.googleapis.com and fonts.gstatic.com).
+Their original SIL Open Font License notices are retained in font-licenses/.
+Logo geometry and timeline: user-supplied lumior-loading.html.
+Regeneration: scripts/build-loading-artwork.py with downloaded TTF files.
+Zen Tokyo Zoo was linked by the reference but never used, so it is omitted.

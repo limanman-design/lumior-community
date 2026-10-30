@@ -1,0 +1,88 @@
+.workspace-symbol {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background: currentColor;
+  mask-position: center;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  vertical-align: middle;
+  pointer-events: none;
+}
+.workspace-rail .workspace-menu-trigger {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 6px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ui-canvas);
+}
+.workspace-rail
+  .workspace-menu-trigger:is(:hover, :focus-visible, [data-popup-open]) {
+  background: var(--ui-fill-hover);
+}
+.workspace-menu-logo {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  pointer-events: none;
+}
+[data-sidebar='sidebar'] .profile .workspace-menu-trigger {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 8px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ui-text-muted);
+}
+[data-sidebar='sidebar']
+  .profile
+  .workspace-menu-trigger:is(:hover, :focus-visible, [data-popup-open]) {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}
+.profile > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.workspace-menu {
+  width: 240px !important;
+  max-width: calc(100vw - 24px);
+  padding: var(--lumior-menu-padding) !important;
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: var(--lumior-menu-radius) !important;
+  background: var(--ui-panel) !important;
+  color: var(--ui-text-muted) !important;
+  box-shadow: 0 16px 48px var(--ui-shadow);
+}
+.workspace-menu
+  :is(
+    [data-slot='dropdown-menu-item'],
+    [data-slot='dropdown-menu-checkbox-item']
+  ) {
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--lumior-menu-item-radius);
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+}
+.workspace-menu
+  :is(
+    [data-slot='dropdown-menu-item'],
+    [data-slot='dropdown-menu-checkbox-item']
+  ):is(:hover, :focus-visible, [data-highlighted], [aria-current='page']) {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}

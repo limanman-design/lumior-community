@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First Calibration</title>
+
+<style>
+body{margin:0;background:#050506;color-scheme:dark;--calibration-accent:#B3DE3E}
+.calibration-layout button:focus-visible,.calibration-layout canvas:focus-visible{outline:2px solid var(--calibration-accent);outline-offset:3px}
+.calibration-layout button:disabled{opacity:.35;cursor:default!important}
+.calibration-primary:hover:not(:disabled){background:#e8e8e8!important;border-color:#e8e8e8!important}
+.calibration-toast-check{color:var(--calibration-accent)}
+.rowbtn{transition:background .25s ease,border-color .25s ease}
+.rowbtn:hover{border-color:rgba(236,236,232,0.3)}
+.toast{animation:toastIn .35s ease both}
+@keyframes toastIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+<style>
+html,body{margin:0;height:100%;background:#050506;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1440px;height:900px;transform-origin:0 0}
+</style>
+<style>
+#stage{position:relative;left:0;top:0;width:100%;height:100%;transform:none}
+.calibration-layout{width:100%!important;height:100%!important}
+.calibration-layout>canvas{transform:scale(var(--visual-scale));transform-origin:0 0;left:var(--visual-left)!important;top:var(--visual-top)!important}
+.calibration-panel{left:auto!important;right:12px;top:12px!important;width:calc(var(--panel-width) - 12px)!important;height:calc(100% - 24px)!important;overflow:auto;scrollbar-width:thin;scrollbar-color:#414143 transparent;scrollbar-gutter:stable}
+.calibration-panel,.calibration-panel *{box-sizing:border-box}
+.calibration-panel>div{flex-shrink:0}
+.calibration-panel>div:last-child{flex:1 0 auto!important}
+.calibration-panel button{flex-shrink:0}
+.calibration-panel .research-label{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.calibration-layout>span{left:64px!important;top:18px!important;font-size:13px!important}
+.calibration-layout>button{left:24px!important;top:auto!important;bottom:16px}
+.calibration-layout>[role=dialog]{left:20px!important;top:70px!important;width:min(560px,calc(100% - 40px))!important;max-height:calc(100% - 90px);overflow:auto;z-index:5}
+@media(max-width:759px){
+.calibration-layout{overflow:auto!important}
+.calibration-panel{top:var(--visual-height)!important;right:12px;width:calc(100% - 24px)!important;height:auto!important;overflow:visible;padding-bottom:24px}
+.calibration-layout>button{top:12px!important;bottom:auto;left:auto!important;right:20px}
+}
+</style>
+<style>
+.calibration-panel>div:first-child>div:first-child{flex-wrap:wrap}
+.calibration-panel>div:first-child>div:first-child>span{white-space:nowrap}
+.calibration-panel>div:first-child>div:first-child>.research-label{flex:1;max-width:none}
+.calibration-panel>div:first-child>div:last-child>button{padding:0 6px!important;gap:4px!important}
+.calibration-panel>div:last-child>div[style*="gap: 16px"]{flex-wrap:wrap;gap:8px 16px!important}
+.calibration-panel>div:last-child>div[style*="gap: 16px"]>span{white-space:nowrap}
+</style></head>
+<body>
+<div id="stage"></div>
+
+<!-- ============================================================
+  UI 模板（原 Claude Design 画板的标记）
+  {{expr}} 取 renderVals() 返回的值；<sc-if value> 条件渲染；<sc-for list as> 循环渲染
+============================================================ -->
+<template id="tuner-template">
+<div class="calibration-layout" style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #050506; color: #ecece8; font-family: 'Geist', 'Noto Sans SC', sans-serif;">
+<canvas ref="{{cvRef}}" width="{{cw}}" height="{{ch}}" tabIndex="0" aria-label="{{canvasLabel}}" onPointerDown="{{pDown}}" onPointerMove="{{pMove}}" onPointerUp="{{pUp}}" onPointerCancel="{{pUp}}" onWheel="{{wheel}}" onKeyDown="{{keyDown}}" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; touch-action: none;"></canvas>
+
+<span style="position: absolute; left: 48px; top: 40px; font-family: 'Noto Sans SC', 'Geist', sans-serif; font-weight: 400; font-size: 17px; letter-spacing: 0.2em;">{{tx.brand}}</span>
+
+
+<sc-if value="{{hasDetail}}" hint-placeholder-val="{{ false }}">
+<div onClick="{{closeDetail}}" style="position: absolute; left: 0; top: 0; width: 890px; height: 900px; background: rgba(5,5,6,0.6);"></div>
+<div role="dialog" aria-label="{{det.title}}" style="position: absolute; left: 160px; top: 220px; width: 560px; box-sizing: border-box; padding: 24px 26px; background: #0e0e0f; border: 1px solid #3a3a3c; border-radius: 14px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 24px 80px rgba(0,0,0,0.7);">
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<span style="font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 11px; letter-spacing: 0.08em; color: #B3DE3E;">{{det.no}} · {{det.kind}}</span>
+<button onClick="{{closeDetail}}" aria-label="{{closeLabel}}" style="width: 28px; height: 28px; border-radius: 14px; background: transparent; border: 1px solid #3a3a3c; color: #cfcfcb; font-size: 14px; cursor: pointer;">×</button>
+</div>
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 22px; line-height: 1.4; color: #ecece8;">{{det.title}}</span>
+<div style="display: flex; gap: 8px; align-items: center; font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 11px; color: #9a9c9e;">
+<span>{{fromLabel}}</span><span style="padding: 3px 10px; border-radius: 10px; background: #1a1a1c; color: #cfcfcb;">{{det.from}}</span>
+</div>
+<p style="margin: 0; font-family: 'Noto Sans SC', sans-serif; font-size: 14px; line-height: 1.85; color: #cfcfcb;">{{det.desc}}</p>
+<div style="display: flex; gap: 8px; padding-top: 4px;">
+<button class="calibration-primary" onClick="{{det.take}}" style="height: 36px; padding: 0 18px; border-radius: 18px; background: #ffffff; border: 1px solid #ffffff; color: #161616; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer;">{{det.btn}}</button>
+<button onClick="{{closeDetail}}" style="height: 36px; padding: 0 18px; border-radius: 18px; background: transparent; border: 1px solid rgba(236,236,232,0.3); color: #ecece8; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; cursor: pointer;">{{closeLabel}}</button>
+</div>
+</div>
+</sc-if>
+
+<div class="calibration-panel" style="position: absolute; left: 904px; top: 24px; width: 512px; height: 852px; display: flex; flex-direction: column; gap: 12px;">
+<div style="padding: 14px 16px; background: #0a0a0b; border: 1px solid #1c1c1e; border-radius: 14px; display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<span style="font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6d6f72;">{{tx.manual}}</span>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 10px; color: #6d6f72;">{{tx.yourDir}}</span>
+<span class="research-label" style="font-family: 'Noto Sans SC', sans-serif; font-size: 12px; color: #9a9c9e;">{{primaryLabel}} ★</span>
+<button onClick="{{toggleDir}}" aria-expanded="{{editDir}}" style="height: 22px; padding: 0 9px; border-radius: 11px; background: transparent; border: 1px solid #2e2e31; color: #9a9c9e; font-family: 'Noto Sans SC', sans-serif; font-size: 11px; cursor: pointer;">{{dirBtn}}</button>
+</div>
+<sc-if value="{{editDir}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+<sc-for list="{{dirs}}" as="d" hint-placeholder-count="4">
+<button onClick="{{d.pick}}" aria-pressed="{{d.on}}" style="height: 26px; padding: 0 11px; border-radius: 13px; background: {{d.bg}}; border: 1px solid {{d.bd}}; color: {{d.fg}}; font-family: 'Noto Sans SC', sans-serif; font-size: 12px; cursor: pointer;">{{d.label}}</button>
+</sc-for>
+</div>
+</sc-if>
+<div style="display: flex; gap: 6px;">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+<button onClick="{{s.go}}" aria-current="{{s.cur}}" style="flex: 1 1 0; min-width: 0; height: 34px; padding: 0 10px; display: flex; align-items: center; gap: 7px; background: {{s.bg}}; border: 1px solid {{s.bd}}; border-radius: 8px; font-family: inherit; cursor: pointer;">
+<span style="font-family: 'Geist Mono', monospace; font-size: 10px; color: {{s.nc}};">{{s.no}}</span>
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 12px; color: {{s.tc}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{s.title}}</span>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 10px; color: {{s.stc}};">{{s.mark}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="flex: 1 1 0; min-height: 0; padding: 22px 24px; background: #111113; border: 1px solid #2c2c2f; border-radius: 16px; display: flex; flex-direction: column; gap: 16px; box-shadow: inset 0 1px 0 rgba(236,236,232,0.12);">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<span style="font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 11px; letter-spacing: 0.12em; color: #B3DE3E;">{{stepNo}} / 03 · {{tx.now}}</span>
+<span style="font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 11px; color: #9a9c9e;">{{resMeta}}</span>
+</div>
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 26px; font-weight: 400; line-height: 1.3; color: #ecece8;">{{tx.act}}</span>
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 13px; line-height: 1.6; color: #9a9c9e;">{{tx.actHint}}</span>
+</div>
+
+<sc-if value="{{rA}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; border: 1px solid #232325; border-radius: 10px;">
+<sc-for list="{{selRows}}" as="d" hint-placeholder-count="3">
+<div style="height: 50px; box-sizing: border-box; padding: 0 12px 0 16px; display: flex; align-items: center; gap: 10px; border-top: 1px solid {{d.line}};">
+<sc-if value="{{d.filled}}" hint-placeholder-val="{{ true }}">
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 14px;">{{d.name}}</span>
+<sc-if value="{{d.rec}}" hint-placeholder-val="{{ false }}"><span style="padding: 2px 8px; border-radius: 10px; border: 1px solid #B3DE3E; color: #B3DE3E; font-size: 10px;">{{tx.rec}}</span></sc-if>
+<span style="flex-grow: 1;"></span>
+<span style="padding: 3px 9px; border-radius: 10px; background: #1a1a1c; font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 10px; color: #9a9c9e;">{{d.dist}}</span>
+<button onClick="{{d.remove}}" aria-label="{{removeScopeLabel}}" disabled="{{d.rec}}" style="width: 26px; height: 26px; border-radius: 13px; background: transparent; border: 1px solid {{d.xbd}}; color: {{d.xc}}; font-size: 12px; cursor: pointer;">×</button>
+</sc-if>
+<sc-if value="{{d.empty}}" hint-placeholder-val="{{ false }}">
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 12.5px; color: #5d5f62;">{{tx.addHint}}</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 16px; font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 10px; color: #7d7f82;">
+<span>{{tx.near}}</span><span>{{tx.mid}}</span><span>{{tx.far}}</span><span style="color: #9a9c9e;">{{tx.farNote}}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{rC}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; border: 1px solid #232325; border-radius: 10px; overflow: hidden;">
+<sc-for list="{{results}}" as="d" hint-placeholder-count="5">
+<div style="padding: 12px 12px 12px 16px; display: flex; align-items: center; gap: 12px; border-top: 1px solid {{d.line}}; background: {{d.bg}};">
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: {{d.nc}};">{{d.no}}</span>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;">
+<span onClick="{{d.open}}" style="font-family: 'Noto Sans SC', sans-serif; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(236,236,232,0.25); text-underline-offset: 4px;">{{d.title}}</span>
+<span style="display: flex; gap: 6px;"><span style="padding: 2px 8px; border-radius: 10px; background: #1a1a1c; font-size: 10px; color: #9a9c9e;">{{d.domain}}</span><span style="padding: 2px 8px; border-radius: 10px; background: #1a1a1c; font-size: 10px; color: #9a9c9e;">{{d.kind}}</span></span>
+</div>
+<button onClick="{{d.take}}" style="height: 30px; padding: 0 12px; border-radius: 15px; background: {{d.btnBg}}; border: 1px solid {{d.btnBd}}; color: {{d.btnC}}; font-family: 'Noto Sans SC', sans-serif; font-size: 12px; cursor: pointer; white-space: nowrap;">{{d.btn}}</button>
+</div>
+</sc-for>
+</div>
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 12px; line-height: 1.7; color: #7d7f82;">{{tx.resNote}}</span>
+<sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+<div class="toast" style="padding: 12px 16px; border-radius: 10px; background: #1b1d1f; border: 1px solid #ffffff18; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; color: #cfcfcb;"><span class="calibration-toast-check" aria-hidden="true">✓</span> {{toast}}</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{rB}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+<sc-for list="{{freqs}}" as="f" hint-placeholder-count="4">
+<button onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="padding: 14px 16px; text-align: left; background: {{f.bg}}; border: 1px solid {{f.bd}}; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; color: {{f.fg}}; font-family: inherit; cursor: pointer;">
+<span style="font-family: 'Noto Sans SC', sans-serif; font-size: 16px; font-weight: 500;">{{f.label}}</span>
+<span style="font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 11px; opacity: 0.75;">{{f.sub}}</span>
+</button>
+</sc-for>
+</div>
+<div style="padding: 14px 16px; border: 1px solid #232325; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; line-height: 1.7; color: #cfcfcb;">
+<span style="font-family: 'Geist Mono', 'Noto Sans SC', monospace; font-size: 10px; letter-spacing: 0.12em; color: #7d7f82;">{{tx.summary}}</span>
+<span>{{tx.sumDir}}</span>
+<span>{{tx.sumScope}}</span>
+<span>{{tx.sumFreq}}</span>
+</div>
+<sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+<div class="toast" style="padding: 12px 16px; border-radius: 10px; background: #1b1d1f; border: 1px solid #ffffff18; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; color: #cfcfcb;"><span class="calibration-toast-check" aria-hidden="true">✓</span> {{toast}}</div>
+</sc-if>
+</sc-if>
+<div style="margin-top: auto; display: flex; gap: 8px; padding-top: 16px; border-top: 1px solid #232325;">
+<sc-if value="{{hasPrev}}" hint-placeholder-val="{{ true }}">
+<button onClick="{{prev}}" style="height: 44px; padding: 0 18px; border-radius: 22px; background: transparent; border: 1px solid rgba(236,236,232,0.3); color: #ecece8; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; cursor: pointer;">{{tx.back}}</button>
+</sc-if>
+<button class="calibration-primary" onClick="{{next}}" disabled="{{ctaDisabled}}" style="flex-grow: 1; height: 44px; padding: 0 20px; border-radius: 22px; background: {{ctaBg}}; border: 1px solid {{ctaBg}}; color: #161616; font-family: 'Noto Sans SC', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer;">{{cta}}</button>
+</div>
+</div>
+</div>
+</div>
+</template>
+
+<script>
+/* ============================================================
+  1. 极简运行时：替代原画布里的 DCLogic / 模板引擎
+     - setState 合并状态并整体重渲 DOM（画布 canvas 节点保持不变，动画不中断）
+============================================================ */
+class DCLogic {
+  constructor(props) { this.props = props || {}; }
+  setState(patch) { Object.assign(this.state, patch); if (this.__render) this.__render(); }
+}
+
+/* ============================================================
+  2. 灵感调频组件：画布引擎 + 交互 + 文案数据
+     - build()/initTuner()/setFusion(): 星系、星球、地形等场景数据
+     - drawScene()/drawOverlay()/drawLoupes()/drawMarkLoupe()/drawHud(): 每帧绘制
+     - resDB(): 各领域的信号内容（标题 / 英文 / 类型 / 说明）
+     - renderVals(): 右侧面板与按钮用到的全部数据
+============================================================ */
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+var self = this;
+this.dpr = 1;
+try { this.dpr = Math.min(2, window.devicePixelRatio || 1); } catch (e) {}
+this.cvRef = function (el) { self.cv = el; };
+this.state = { stage: 0, sel: ['生物学', '城市规划'], freq: 'daily', got: {}, toast: '', primary: '核心循环', editDir: false, lang: 'en', detail: -1 };
+this.hover = null;
+this.build();
+this.initTuner();
+this.setFusion();
+this.initRot();
+this.bind();
+}
+componentDidMount() { this.start(); }
+componentWillUnmount() { if (this.raf) cancelAnimationFrame(this.raf); this.raf = null; }
+pal() { return { bg: '#050506', ink: [236, 236, 232], acc: [179, 222, 62], acc2: [179, 222, 62] }; }
+initTuner() {
+var P1 = this.P1, Pp = this.Pp, Rp = this.Rp;
+var F0 = [70, 30], F1 = [P1[0] + 1.2, P1[1] + 0.4], F2 = [Pp[0] + 0.45 * Rp, Pp[1] + 0.3 * Rp], F3 = [Pp[0], Pp[1] + (-1 + 0.05) * Rp], F4 = [Pp[0], Pp[1] + 0.12 * Rp];
+var POS = { '心理学': [-150, 150], '神经科学': [230, -120], '行为经济学': [-330, -210], '社会学': [120, 420], '城市规划': [650, -150], '建筑学': [-640, 260], '生态学': [-560, -330], '音乐理论': [380, 560], '人类学': [820, 250], '物理学': [-120, -760] };
+var nodes = this.nodes, have = {};
+nodes.forEach(function (n) { if (n.name && POS[n.name]) { n.x = POS[n.name][0]; n.y = POS[n.name][1]; n.big = true; have[n.name] = true; } else if (n.name) { n.name = ''; n.big = false; } });
+Object.keys(POS).forEach(function (nm) { if (!have[nm]) nodes.push({ x: POS[nm][0], y: POS[nm][1], name: nm, big: true, teal: false }); });
+nodes.forEach(function (n) { if (!n.name && Math.hypot(n.x - P1[0], n.y - P1[1]) < 90) { n.x += 140; } });
+var doms = [{ name: '生物学', x: P1[0], y: P1[1] }];
+this.nodes.forEach(function (n) { if (n.big && n.name) doms.push({ name: n.name, x: n.x, y: n.y }); });
+doms.forEach(function (d) { var r = Math.hypot(d.x, d.y); d.hops = r < 330 ? 1 : (r < 620 ? 2 : 3); d.dist = ['', '近 · 1 跳', '中 · 2 跳', '远 · 3 跳'][d.hops]; });
+doms[0].hops = 3; doms[0].dist = '远 · 3 跳';
+this.domains = doms;
+this.dirs = [{ name: '核心循环', cards: 9, src: '白板 ×2', star: true, r: 15, a: -0.7 }, { name: '游戏化设计', cards: 7, src: '白板 ×1', r: 23, a: 1.9 }, { name: '玩家动机', cards: 5, src: '卡片', r: 30, a: 3.5 }, { name: 'Death Stranding', cards: 4, src: '白板 ×1', r: 37, a: 5.3 }];
+}
+setFusion(sel) {
+sel = sel || this.state.sel;
+var doms = this.domains, sx = 0, sy = 0, n = 1;
+sel.forEach(function (nm) { var d = doms.filter(function (q) { return q.name === nm; })[0]; if (d) { sx += d.x; sy += d.y; n++; } });
+var px = sx / n, py = sy / n;
+for (var it = 0; it < 3; it++) doms.forEach(function (d) { var dd = Math.hypot(px - d.x, py - d.y); if (dd < 80) { var k = (80 - dd) / Math.max(1, dd); px += (px - d.x) * k; py += (py - d.y) * k; } });
+if (Math.hypot(px, py) < 110) { var a0 = Math.atan2(py, px) || 0.6; px = Math.cos(a0) * 110; py = Math.sin(a0) * 110; }
+this.Pp = [px, py];
+var Rp = this.Rp, L2 = 8.8, F0 = [70, 30], F3 = [px, py - 0.95 * Rp], F4 = [px, py - 625 / Math.exp(L2)];
+this.UK = [{ w: 0, l: -0.85, F: F0 }, { w: 1, l: L2, F: F4 }, { w: 2, l: 10.9, F: F3 }];
+this._loupeKey = null;
+}
+initRot() {
+this.polar = this.stars.map(function (arr) { var p = new Float32Array(arr.length); for (var i = 0; i < arr.length; i += 2) { p[i] = Math.hypot(arr[i], arr[i + 1]); p[i + 1] = Math.atan2(arr[i + 1], arr[i]); } return p; });
+var hh = this.hair, hp = new Float32Array(hh.length);
+for (var j = 0; j < hh.length; j += 2) { hp[j] = Math.hypot(hh[j], hh[j + 1]); hp[j + 1] = Math.atan2(hh[j + 1], hh[j]); }
+this.hairPolar = hp; this.rotT = 0; this.lastT = null;
+}
+applyRot(T) {
+var P = this.polar, St = this.stars;
+for (var b = 0; b < P.length; b++) {
+var p = P[b], a = St[b];
+for (var i = 0; i < p.length; i += 2) { var r = p[i], w = 0.003 + 0.009 * Math.sqrt(80 / (r + 80)), an = p[i + 1] - w * T; a[i] = r * Math.cos(an); a[i + 1] = r * Math.sin(an); }
+}
+var hp = this.hairPolar, h = this.hair;
+for (var j = 0; j < hp.length; j += 2) { var an2 = hp[j + 1] - 0.004 * T; h[j] = hp[j] * Math.cos(an2); h[j + 1] = hp[j] * Math.sin(an2); }
+}
+freqDef(id) {
+var en = this.state && this.state.lang === 'en';
+var Z = {
+daily: { label: '每天', sub: '08:00 出发', speed: 1.3, next: '明早 08:00' },
+weekly: { label: '每周', sub: '周一 08:00', speed: 0.5, next: '下周一 08:00' },
+monthly: { label: '每月', sub: '每月 1 日', speed: 0.2, next: '10 月 1 日' },
+manual: { label: '手动', sub: '需要时出发', speed: 0, next: '你按下出发时' }
+}, E = {
+daily: { label: 'Daily', sub: 'departs 08:00', speed: 1.3, next: 'tomorrow 08:00' },
+weekly: { label: 'Weekly', sub: 'Mon 08:00', speed: 0.5, next: 'next Monday 08:00' },
+monthly: { label: 'Monthly', sub: '1st of month', speed: 0.2, next: 'Oct 1' },
+manual: { label: 'Manual', sub: 'on demand', speed: 0, next: 'when you launch it' }
+};
+return (en ? E : Z)[id];
+}
+tr(str) {
+if (!this.state || this.state.lang !== 'en' || typeof str !== 'string' || !/[\u3400-\u9fff\uff08-\uff5e…·]/.test(str)) return str;
+if (this.dirs.some(function(d){return d.user && d.name===str;})) return str;
+if (!this._trc) this._trc = {};
+if (this._trc[str] != null) return this._trc[str];
+var D = this.dict(), out = D[str];
+if (out == null) { out = str; this.pairs().forEach(function (pp) { out = out.split(pp[0]).join(pp[1]); }); }
+this._trc[str] = out; return out;
+}
+dict() {
+return { '你的研究': 'Your Research', '近 NEAR': 'NEAR', '中 MID': 'MID', '远 FAR': 'FAR', '信息素': 'Pheromone', '正反馈': 'Positive feedback', '挥发': 'Evaporation', '你的 Core Loop': 'Your Core Loop', '调频中…': 'TUNING…', '调频 · MHz': 'TUNING · MHz', '交汇度 · %': 'CONVERGENCE · %', '步骤': 'STEP', '交汇点': 'CONVERGENCE', '交汇星球': 'Convergence planet' };
+}
+pairs() {
+return [['核心循环', 'Core Loop'], ['游戏化设计', 'Gamification'], ['玩家动机', 'Player Motivation'], ['行为经济学', 'Behavioral Econ.'], ['神经科学', 'Neuroscience'], ['城市规划', 'Urban Planning'], ['音乐理论', 'Music Theory'], ['生物学', 'Biology'], ['心理学', 'Psychology'], ['社会学', 'Sociology'], ['建筑学', 'Architecture'], ['生态学', 'Ecology'], ['人类学', 'Anthropology'], ['物理学', 'Physics'], ['生态位', 'Niche'], ['共生', 'Symbiosis'], ['演化', 'Evolution'], ['免疫', 'Immunity'], ['蚁群', 'Ant Colony'], ['神经', 'Neural'],
+['近 · 1 跳', 'Near · 1 hop'], ['中 · 2 跳', 'Mid · 2 hops'], ['远 · 3 跳', 'Far · 3 hops'], ['已对准 · ', 'LOCKED · '], ['探测器 · ', 'Probe · '], ['下次观测 · ', 'Next scan · '], ['探索范围', 'Scope'], ['探测频率', 'Frequency'], ['观测结果', 'Signals'], ['第 ', 'STEP '], [' 步 · ', ' · ']];
+}
+camAt(u) {
+u = Math.max(0, Math.min(2, u));
+var si = Math.min(1, Math.floor(u)), fr = u - si, e = fr < 0.5 ? 4 * fr * fr * fr : 1 - Math.pow(-2 * fr + 2, 3) / 2, w = si + e;
+var K = this.UK, i = 0;
+while (i < K.length - 2 && w >= K[i + 1].w) i++;
+var a = K[i], b = K[i + 1], p = Math.max(0, Math.min(1, (w - a.w) / (b.w - a.w)));
+var l = a.l + (b.l - a.l) * p, S = Math.exp(l), k = Math.exp(a.l) * (1 - p) / S;
+return { S: S, l: l, x: b.F[0] - (b.F[0] - a.F[0]) * k, y: b.F[1] - (b.F[1] - a.F[1]) * k };
+}
+start() {
+var self = this, reduce = false;
+try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+this.L = { u: 0, uT: 0, vel: 0, cross: -9, st: 0, input: -9, snap: false, drag: null, tw: null, now: 0, reduce: reduce };
+var last = performance.now(), T0 = last;
+var tick = function (now) {
+self.raf = requestAnimationFrame(tick);
+var dt = Math.min(0.05, (now - last) / 1000); last = now;
+var t = (now - T0) / 1000; self.L.now = t;
+self.stepLoop(dt, t); self.draw(t);
+};
+this.raf = requestAnimationFrame(tick);
+}
+tweenTo(b) {
+var L = this.L; if (!L) return;
+b = Math.max(0, Math.min(2, b));
+var span = Math.abs(b - L.uT), dive = (Math.min(b, L.uT) < 1 && Math.max(b, L.uT) > 0) ? 0 : 0.7;
+L.tw = { a: L.uT, b: b, t0: L.now, d: L.reduce ? 0.01 : 0.6 + 0.9 * span + dive };
+L.snap = false; L.input = L.now;
+}
+go(i) { this.tweenTo(i); }
+stepLoop(dt, t) {
+var L = this.L;
+if (L.tw) { var p = Math.min(1, (t - L.tw.t0) / L.tw.d); L.uT = L.tw.a + (L.tw.b - L.tw.a) * p; if (p >= 1) L.tw = null; }
+if (!L.drag && L.snap && t - L.input > 0.28) { L.snap = false; this.tweenTo(Math.round(L.uT)); }
+var prev = L.u;
+L.u += (L.uT - L.u) * Math.min(1, dt * (L.tw ? 18 : 10));
+if (Math.abs(L.uT - L.u) < 1e-4) L.u = L.uT;
+var v = (L.u - prev) / Math.max(1e-3, dt); L.vel += (v - L.vel) * 0.25;
+if (!L.reduce) [0.5, 1.5].forEach(function (x) { if ((prev < x && L.u >= x) || (prev > x && L.u <= x)) L.cross = t; });
+var s = Math.max(0, Math.min(2, Math.round(L.u)));
+if (s !== L.st) { L.st = s; this.hoverMark = null; this.setState({ stage: s, toast: '', detail: -1 }); }
+}
+toggleDom(name) {
+
+var sel = this.state.sel.slice(), i = sel.indexOf(name);
+if (i >= 0) { if(sel.length===1)return; sel.splice(i, 1); } else { if (sel.length >= 3) return; sel.push(name); }
+this.setFusion(sel);
+this.setState({ sel: sel });
+}
+launch() { window.parent.postMessage({type:'lumior-calibration-complete',primary:this.state.primary,domains:this.state.sel,frequency:this.state.freq,kept:Object.keys(this.state.got).filter(k=>this.state.got[k])},location.origin); }
+bind() {
+var self = this;
+function pt(e) { var r = self.cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * 1440 / r.width, y: (e.clientY - r.top) * 900 / r.height }; }
+function hitDomain(p) {
+var c = self.camAt(self.L.u), best = -1, bd = 22;
+self.domains.forEach(function (d, i) { var dd = Math.hypot(p.x - ((d.x - c.x) * c.S + 440), p.y - ((d.y - c.y) * c.S + 450)); if (dd < bd) { bd = dd; best = i; } });
+return best;
+}
+function atStage1() { return self.L && self.L.st === 0 && Math.abs(self.L.u) < 0.15; }
+function atStage3() { return self.L && self.L.st === 2 && Math.abs(self.L.u - 2) < 0.12; }
+function hitMark(p) { var mk = self._mk || [], best = -1, bd = 26; mk.forEach(function (q, i) { if (!q || q[2] < 0.5) return; var dd = Math.hypot(p.x - q[0], p.y - q[1]); if (dd < bd) { bd = dd; best = i; } }); return best; }
+this.h = {
+wheel: function (e) { var L = self.L; if (!L) return; L.tw = null; L.uT = Math.max(0, Math.min(2, L.uT + e.deltaY * 0.0015)); L.snap = true; L.input = L.now; },
+pDown: function (e) {
+var L = self.L; if (!L) return;
+var p = pt(e); if (p.x > 890) return;
+try { e.currentTarget.setPointerCapture(e.pointerId); } catch (er) {}
+L.drag = { ruler: false, x0: p.x, y0: p.y, u0: L.uT, moved: false };
+if (L.drag.ruler) L.tw = null;
+},
+pMove: function (e) {
+var L = self.L; if (!L || !self.cv) return;
+var p = pt(e), d = L.drag;
+if (d) {
+if (Math.abs(p.x - d.x0) > 4 || Math.abs(p.y - d.y0) > 4) d.moved = true;
+if (d.moved && d.ruler) { L.uT = Math.max(0, Math.min(2, d.u0 - (p.x - d.x0) / 600)); L.input = L.now; }
+return;
+}
+var hv = atStage1() && p.x < 890 ? hitDomain(p) : -1;
+self.hover = hv >= 0 ? hv : null;
+var hm = atStage3() && p.x < 890 ? hitMark(p) : -1;
+self.hoverMark = hm >= 0 ? hm : null;
+self.cv.style.cursor = hv >= 0 || hm >= 0 ? 'pointer' : 'default';
+},
+pUp: function (e) {
+var L = self.L; if (!L || !L.drag) return;
+var d = L.drag, p = pt(e); L.drag = null;
+if (d.ruler) {
+if (d.moved) { L.snap = true; L.input = L.now; }
+else { var fq = 88 + L.u * 10 + (p.x - 440) / 60; self.go(Math.round((fq - 88) / 10)); }
+return;
+}
+if (!d.moved && atStage1()) { var i = hitDomain(p); if (i >= 0) self.toggleDom(self.domains[i].name); }
+if (!d.moved && atStage3()) { var mi = hitMark(p); if (mi >= 0) self.setState({ detail: mi }); }
+},
+keyDown: function (e) {
+if (!self.L) return;
+var k = e.key;
+if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown') { e.preventDefault(); self.go(Math.round(self.L.uT) + 1); }
+else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); self.go(Math.round(self.L.uT) - 1); }
+},
+prev: function () { self.go(self.state.stage - 1); },
+next: function () { var s = self.state.stage; if (s < 2) self.go(s + 1); else self.launch(); },
+toggleDir: function () { self.setState({ editDir: !self.state.editDir }); },
+toggleLang: function () { self._trc = {}; self.setState({ lang: self.state.lang === 'en' ? 'zh' : 'en' }); }
+};
+}
+draw(t) {
+var cv = this.cv; if (!cv || !this.L) return;
+var ctx = cv.getContext('2d'), dpr = this.dpr, W = 1440, H = 900, L = this.L, self = this;
+if (!ctx._ft) { ctx._ft = ctx.fillText; ctx._mt = ctx.measureText; ctx.fillText = function (s, x, y) { return ctx._ft.call(ctx, self.tr(s), x, y); }; ctx.measureText = function (s) { return ctx._mt.call(ctx, self.tr(s)); }; }
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+ctx.fillStyle = '#050506'; ctx.fillRect(0, 0, W, H);
+var dtr = this.lastT == null ? 0 : Math.min(0.05, t - this.lastT); this.lastT = t;
+var rotK = L.reduce ? 0 : Math.max(0, 1 - L.u / 0.4);
+if (rotK > 0) { this.rotT += dtr * rotK; this.applyRot(this.rotT); }
+var c = this.camAt(L.u);
+if (false && this._pl != null && !L.reduce) { var pl = this._pl; [2.4, 6.2, 9.6].forEach(function (x) { if ((pl < x && c.l >= x) || (pl > x && c.l <= x)) L.cross = t; }); }
+this._pl = c.l;
+this.syncMarks();
+this.drawScene(ctx, t, c, { labels: true, live: true, min: true, leaders: false, cx0: 440, ringFlow: t * 2.5, noSystem: true });
+this.drawOverlay(ctx, t, c);
+if (L.st === 2 && Math.abs(L.u - 2) < 0.12 && this.hoverMark != null) this.drawMarkLoupe(ctx, t, this.hoverMark);
+this.drawHud(ctx, t, c);
+}
+drawOverlay(ctx, t, c) {
+var L = this.L, H = 900, CX = 440, PI = Math.PI, self = this, S = c.S;
+function X(x) { return (x - c.x) * S + CX; }
+function Y(y) { return (y - c.y) * S + H / 2; }
+function I(a) { return 'rgba(236,236,232,' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+function A(a) { return 'rgba(179,222,62,' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+var MONO = '"Geist Mono", "Noto Sans SC", monospace', SANS = '"Noto Sans SC", "Geist", sans-serif';
+var u = L.u;
+var ca = 0;
+if (ca > 0.01) {
+var ox = X(0), oy = Y(0);
+ctx.lineWidth = 0.8; ctx.setLineDash([2, 5]);
+this.dirs.forEach(function (d) { ctx.strokeStyle = I(0.2 * ca); ctx.beginPath(); ctx.arc(ox, oy, d.r * S, 0, PI * 2); ctx.stroke(); });
+ctx.setLineDash([]);
+var cr = 7 * S, gg = ctx.createRadialGradient(ox, oy, 0, ox, oy, cr * 2);
+gg.addColorStop(0, A(0.5 * ca)); gg.addColorStop(1, A(0));
+ctx.fillStyle = gg; ctx.fillRect(ox - cr * 2, oy - cr * 2, cr * 4, cr * 4);
+ctx.fillStyle = A(ca); ctx.beginPath(); ctx.arc(ox, oy, 7, 0, PI * 2); ctx.fill();
+ctx.strokeStyle = A(0.6 * ca); ctx.beginPath(); ctx.arc(ox, oy, 14 + 3 * Math.sin(t * 2), 0, PI * 2); ctx.stroke();
+ctx.font = '500 22px ' + SANS; ctx.fillStyle = I(ca); var tw = ctx.measureText('你的研究').width; ctx.fillText('你的研究', ox - tw / 2, oy + 44);
+ctx.font = '10px ' + MONO; ctx.fillStyle = I(0.5 * ca); var t2 = '23 张卡片 · 3 块白板'; ctx.fillText(t2, ox - ctx.measureText(t2).width / 2, oy + 62);
+this.dirs.forEach(function (d, i) {
+var a = d.a + t * 0.025 * (i % 2 ? -1 : 1), nx = ox + Math.cos(a) * d.r * S, ny = oy + Math.sin(a) * d.r * S, orb = 3 * S;
+ctx.fillStyle = I(0.55 * ca);
+for (var k = 0; k < d.cards; k++) { var ak = k / d.cards * PI * 2 + t * 0.35; ctx.fillRect(nx + Math.cos(ak) * orb, ny + Math.sin(ak) * orb, 1.8, 1.8); }
+ctx.fillStyle = d.star ? A(ca) : I(0.9 * ca); ctx.beginPath(); ctx.arc(nx, ny, d.star ? 6 : 4.5, 0, PI * 2); ctx.fill();
+ctx.strokeStyle = d.star ? A(0.55 * ca) : I(0.25 * ca); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(nx, ny, orb + 7, 0, PI * 2); ctx.stroke();
+ctx.font = (d.star ? '500 15px ' : '14px ') + SANS; ctx.fillStyle = d.star ? A(ca) : I(0.9 * ca); ctx.fillText(d.name + (d.star ? ' ★' : ''), nx + orb + 14, ny - 2);
+ctx.font = '10px ' + MONO; ctx.fillStyle = I(0.5 * ca); ctx.fillText(d.cards + ' 张卡片', nx + orb + 14, ny + 13);
+});
+}
+var sa = Math.max(0, 1 - Math.abs(u) * 1.6);
+if (sa > 0.01) {
+var sel = this.state.sel, ox2 = X(0), oy2 = Y(0), fx = X(this.Pp[0]), fy = Y(this.Pp[1]);
+ctx.fillStyle = A(sa); ctx.beginPath(); ctx.arc(ox2, oy2, 5, 0, PI * 2); ctx.fill();
+ctx.strokeStyle = A(0.85 * sa); ctx.lineWidth = 1.2; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -t * 16; ctx.beginPath(); ctx.moveTo(ox2, oy2); ctx.lineTo(fx, fy); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
+var spo = (t * 0.35) % 1; ctx.fillStyle = A(sa); ctx.beginPath(); ctx.arc(ox2 + (fx - ox2) * spo, oy2 + (fy - oy2) * spo, 2.4, 0, PI * 2); ctx.fill();
+this.domains.forEach(function (d, i) {
+var dx = X(d.x), dy = Y(d.y), on = sel.indexOf(d.name) >= 0, hov = self.hover === i;
+if (on) {
+ctx.setLineDash([3, 5]); ctx.lineDashOffset = -t * 16; ctx.strokeStyle = A(0.6 * sa); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(fx, fy); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
+var sp2 = (t * 0.35 + i * 0.17) % 1; ctx.fillStyle = A(0.9 * sa); ctx.beginPath(); ctx.arc(dx + (fx - dx) * sp2, dy + (fy - dy) * sp2, 2.2, 0, PI * 2); ctx.fill();
+ctx.strokeStyle = A(0.95 * sa); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(dx, dy, 11 + 2.5 * Math.sin(t * 3 + i), 0, PI * 2); ctx.stroke();
+ctx.fillStyle = A(sa); ctx.font = '9px ' + MONO; ctx.fillText(d.dist, dx + 10, dy + 17);
+if (d.name === '生物学') { ctx.fillStyle = I(0.8 * sa); ctx.font = '10px ' + SANS; ctx.fillText(d.name, dx + 14, dy + 3); }
+} else {
+ctx.strokeStyle = I((hov ? 0.9 : 0.3) * sa); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(dx, dy, hov ? 12 : 9, 0, PI * 2); ctx.stroke();
+ctx.fillStyle = I((hov ? 0.95 : 0.55) * sa); ctx.font = '11px ' + MONO; ctx.fillText('+', dx - 3, dy - 13);
+}
+});
+this.drawLoupes(ctx, t, c, sa * sa);
+}
+var pa = Math.max(0, 1 - Math.abs(u - 1) * 1.6);
+if (pa > 0.01) {
+var PX = X(this.Pp[0]), PY = Y(this.Pp[1]), R = this.Rp * S, fq = this.freqDef(this.state.freq);
+var rx = 1.17 * R, ry = 1.17 * R, hv = Math.asin(Math.min(0.99, 390 / rx));
+var op = function (a) { return [PX + Math.cos(a) * rx, PY + Math.sin(a) * ry, 1]; };
+var hid = function (q) { return q[1] > H + 4 || q[0] > 840 || q[0] < 20; };
+var pang = function (p) { p = ((p % 1) + 1) % 1; return p < 0.86 ? -PI / 2 - hv + 2 * hv * p / 0.86 : -PI / 2 + hv + (2 * PI - 2 * hv) * (p - 0.86) / 0.14; };
+ctx.setLineDash([3, 4]); ctx.lineDashOffset = -t * 10; ctx.strokeStyle = A(0.85 * pa); ctx.lineWidth = 1.2;
+ctx.beginPath(); for (var s = 0; s <= 120; s++) { var q0 = op(-PI / 2 - 1.3 + 2.6 * s / 120); if (s === 0) ctx.moveTo(q0[0], q0[1]); else ctx.lineTo(q0[0], q0[1]); } ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
+ctx.strokeStyle = I(0.12 * pa); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(PX, PY, R * 1.42, PI + 0.3, 2 * PI - 0.3); ctx.stroke();
+var ph = fq.speed > 0 ? 0.1 + t * fq.speed * 0.1 : 0.3;
+var ang = pang(ph);
+for (var tr = 16; tr >= 0; tr--) {
+var qa = op(pang(ph - tr * 0.006));
+if (hid(qa) || (tr > 0 && fq.speed === 0)) continue;
+ctx.fillStyle = A((tr === 0 ? 1 : 0.55 * (1 - tr / 16)) * pa);
+var sz = tr === 0 ? 5 : 2;
+ctx.beginPath(); ctx.moveTo(qa[0], qa[1] - sz); ctx.lineTo(qa[0] + sz, qa[1]); ctx.lineTo(qa[0], qa[1] + sz); ctx.lineTo(qa[0] - sz, qa[1]); ctx.fill();
+}
+var qp = op(ang);
+var plA = '交汇星球', plB = this.state.primary + ' × ' + this.state.sel.join(' × ');
+ctx.font = '500 13px ' + SANS; ctx.fillStyle = A(pa); var plw = ctx.measureText(plA).width; ctx.fillText(plA, PX - plw / 2, PY - R - 34);
+ctx.font = '10px ' + MONO; ctx.fillStyle = I(0.6 * pa); var plw2 = ctx.measureText(plB).width; ctx.fillText(plB, PX - plw2 / 2, PY - R - 18);
+if (!hid(qp)) { ctx.font = '11px ' + SANS; ctx.fillStyle = I(0.9 * pa); ctx.fillText('探测器 · ' + fq.label, qp[0] + 12, qp[1] - 8); ctx.font = '9px ' + MONO; ctx.fillStyle = A(pa); ctx.fillText(fq.sub, qp[0] + 12, qp[1] + 6); }
+
+}
+}
+resDB() {
+return {
+'生物学': [['像蚂蚁一样留下路径', 'Leave trails like ants', 0, '蚂蚁不看地图，而是边走边留下信息素，后来者沿着气味最浓的路走。放进核心循环里：让玩家的每次行动都留下别人看得见的痕迹，路线由群体慢慢“走”出来。', 'Ants do not use maps; they drop pheromone as they walk, and others follow the strongest scent. In your core loop: let every action leave a trace others can see, so routes are walked into existence by the crowd.'],
+['正反馈：常走的路越走越宽', 'Positive feedback: busy paths get wider', 1, '信息素越浓，走的蚂蚁越多，路径被不断加强。循环里可以让高频行为获得递增回报，但要留意“强者恒强”带来的固化。', 'The stronger the scent, the more ants follow, reinforcing the path. Your loop can give growing returns to frequent actions — but watch for the rich-get-richer lock-in.'],
+['挥发：让冷门路径自然淡去', 'Evaporation: let unused paths fade', 2, '信息素会挥发，没人走的路会消失，蚁群因此能适应变化。如果给循环加入“遗忘”，让旧策略自然衰减，玩家会不会更愿意探索新路线？', 'Pheromone evaporates, so abandoned paths disappear and the colony adapts. What if your loop could forget — letting old strategies decay so players keep exploring?']],
+'城市规划': [['把玩家“走歪”的地方当成设计输入', 'Treat player detours as design input', 0, '规划师会观察草坪上被踩出来的“欲望路径”，再把它铺成正式道路。把玩家偏离预设的行为记录下来，作为下一轮设计的依据。', 'Planners watch the desire paths worn into lawns, then pave them. Log where players leave your intended route and feed it into the next design pass.']],
+'音乐理论': [['奖励的节奏，像和弦一样编排', 'Pace rewards like chord progressions', 0, '和弦进行靠“紧张—解决”推动情绪。把奖励排成铺垫、紧张、释放的节奏，而不是平均发放。', 'Chord progressions move us through tension and release. Sequence rewards as build-up, tension and payoff instead of handing them out evenly.']],
+'人类学': [['如果循环里只有“人情”', 'What if the loop ran on favors?', 2, '在礼物经济里，交换不靠货币，而靠欠与还的关系。设想一个没有货币的循环：玩家之间只能互相赠予，关系本身就是资源。', 'In gift economies, exchange runs on owing and repaying, not money. Imagine a loop with no currency where players can only give to each other — the relationship itself becomes the resource.']],
+'行为经济学': [['离终点越近，人越卖力', 'The closer the goal, the harder we try', 1, '目标梯度效应：越接近完成，人越愿意投入。在循环里给出“已完成 80%”这样的进度提示，可以提升坚持下去的意愿。', 'The goal-gradient effect: effort rises as the finish line nears. Showing progress like “80% done” in your loop can keep players going.']],
+'建筑学': [['253 个可以组合的模式', '253 composable patterns', 1, '亚历山大在《模式语言》里把好空间拆成 253 个可以组合的模式。循环设计也可以拆成小模式，让团队像搭积木一样组合。', 'Christopher Alexander broke good places into 253 composable patterns. Loop design can be split into small patterns too, so a team can combine them like building blocks.']],
+'心理学': [['心流通道：难度像锯齿一样起伏', 'Flow channel: difficulty as a sawtooth', 1, '难度和能力匹配时，人会进入心流。好的难度曲线不是一路上升，而是上升、回落、再上升的锯齿。', 'Flow happens when challenge matches skill. A good difficulty curve is not a straight climb but a sawtooth: rise, relax, rise again.']],
+'社会学': [['陌生人之间的弱关系', 'Weak ties between strangers', 2, '格兰诺维特发现，新机会大多来自弱关系。循环里能不能设计与陌生玩家的轻量接触，而不只是强社交？', 'Granovetter found that new opportunities mostly come through weak ties. Could your loop include light contact with strangers, not just close friends?']],
+'生态学': [['荒地如何一步步长成森林', 'How bare land becomes a forest', 1, '生态演替中，先锋物种先改造环境，后来者才能进入。新手期可以像演替一样，分阶段开放系统。', 'In ecological succession, pioneer species reshape the ground before others can move in. Onboarding can open systems in stages the same way.']],
+'物理学': [['社区什么时候会发生“相变”', 'When does a community change phase?', 2, '系统到了临界点会突然改变状态。玩家社区会不会在某个人数或活跃度之后突然“活”起来？这个临界点值得找出来。', 'Systems change state suddenly at a critical point. Does a player community suddenly come alive past some size or activity level? That threshold is worth finding.']],
+'神经科学': [['惊喜来自预测误差', 'Surprise comes from prediction error', 1, '多巴胺对“比预期更好”的结果反应最强。奖励里要保留一部分不可预测，才能持续带来惊喜。', 'Dopamine responds most to outcomes better than expected. Keep part of every reward unpredictable to keep surprise alive.']]
+};
+}
+resList() {
+var D = this.resDB(), out = [];
+this.state.sel.forEach(function (n) { (D[n] || []).forEach(function (r) { out.push({ key: r[0], zh: r[0], en: r[1], kind: r[2], domain: n, dzh: r[3], den: r[4] }); }); });
+return out.slice(0, 6);
+}
+syncMarks() {
+var key = this.state.sel.join('|') + this.state.lang; if (this._mkKey === key) return; this._mkKey = key;
+var en = this.state.lang === 'en', HF = this.HF, P = [[-0.05, -0.93], [0.03, -0.905], [0.068, -0.945], [-0.012, -0.962], [-0.034, -0.9], [0.05, -0.975]];
+var list = this.resList(); this._res = list;
+this.marks = list.map(function (r, i) { var tt = en ? r.en : r.zh, mx = en ? 18 : 8; if (tt.length > mx) tt = tt.slice(0, mx) + '…'; return { x: P[i][0], y: P[i][1], h: Math.max(0, HF(P[i][0], P[i][1])), zh: '0' + (i + 1) + ' ' + tt, acc: false }; });
+}
+drawMarkLoupe(ctx, t, i) {
+var q = this._mk && this._mk[i], m = this.marks[i], r = this._res && this._res[i];
+if (!q || !m || !r || q[2] < 0.5) return;
+var en = this.state.lang === 'en', PI = Math.PI, BW = 250, BH = 164, mx = q[0], my = q[1];
+function I(a) { return 'rgba(236,236,232,' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+function A(a) { return 'rgba(179,222,62,' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+var MONO = '"Geist Mono", "Noto Sans SC", monospace', SANS = '"Noto Sans SC", "Geist", sans-serif';
+var others = [], MKL = this._mk; others.push([mx + 26, my - 52, mx + 190, my - 26]); MKL.forEach(function (o2, j) { if (j === i || !o2) return; others.push([o2[0] - 12, o2[1] - 12, o2[0] + 12, o2[1] + 12]); others.push([o2[0] + 26, o2[1] - 52, o2[0] + 190, o2[1] - 26]); });
+var bx = 0, by = 0, bsc = 1e9;
+[[mx - BW / 2, my + 56], [mx + 40, my + 40], [mx - 40 - BW, my + 40], [mx + 40, my - BH - 40], [mx - 40 - BW, my - BH - 40], [mx - BW / 2, my - BH - 70]].forEach(function (cd) {
+var cx0 = Math.max(16, Math.min(864 - BW, cd[0])), cy0 = Math.max(60, Math.min(780 - BH, cd[1])), sc0 = Math.abs(cx0 - cd[0]) + Math.abs(cy0 - cd[1]);
+if (mx > cx0 - 10 && mx < cx0 + BW + 10 && my > cy0 - 20 && my < cy0 + BH + 10) sc0 += 1e5;
+others.forEach(function (rc) { var ox = Math.max(0, Math.min(cx0 + BW, rc[2]) - Math.max(cx0, rc[0])), oy = Math.max(0, Math.min(cy0 + BH, rc[3]) - Math.max(cy0 - 16, rc[1])); sc0 += ox * oy; });
+if (sc0 < bsc) { bsc = sc0; bx = cx0; by = cy0; }
+});
+var cxn = bx + (mx < bx ? 0 : BW), cyn = by + (my < by ? 0 : BH);
+ctx.strokeStyle = I(0.55); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(cxn, cyn); ctx.stroke();
+ctx.save(); ctx.beginPath(); ctx.rect(bx, by, BW, BH); ctx.clip();
+ctx.fillStyle = '#050506'; ctx.fillRect(bx, by, BW, BH);
+ctx.strokeStyle = I(0.06); ctx.beginPath(); for (var hx = -BH; hx < BW; hx += 9) { ctx.moveTo(bx + hx, by + BH); ctx.lineTo(bx + hx + BH, by); } ctx.stroke();
+var hw = 0.016, sc = BW / (2 * hw), cx = bx + BW / 2, cy = by + BH / 2 - 14;
+var MX = function (x) { return cx + (x - m.x) * sc; }, MY = function (y) { return cy + (y - m.y) * sc; };
+[[this.segA, 0.3, 0.7], [this.segB, 0.7, 1]].forEach(function (g) {
+var sg = g[0]; ctx.strokeStyle = I(g[1]); ctx.lineWidth = g[2]; ctx.beginPath();
+for (var k = 0; k < sg.length; k += 5) { if (Math.abs(sg[k] - m.x) > hw * 1.1 || Math.abs(sg[k + 1] - m.y) > hw) continue; ctx.moveTo(MX(sg[k]), MY(sg[k + 1])); ctx.lineTo(MX(sg[k + 2]), MY(sg[k + 3])); }
+ctx.stroke();
+});
+var SS = this.sst; ctx.fillStyle = I(0.55);
+for (var u = 0; u < SS.length; u += 3) { if (Math.abs(SS[u] - m.x) > hw * 1.1 || Math.abs(SS[u + 1] - m.y) > hw) continue; ctx.fillRect(MX(SS[u]), MY(SS[u + 1]), 1.3, 1.3); }
+var bk = 14 + 1.5 * Math.sin(t * 3);
+ctx.strokeStyle = A(1); ctx.lineWidth = 2; ctx.beginPath();
+[[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (d) { ctx.moveTo(cx + d[0] * bk, cy + d[1] * (bk - 6)); ctx.lineTo(cx + d[0] * bk, cy + d[1] * bk); ctx.lineTo(cx + d[0] * (bk - 6), cy + d[1] * bk); });
+ctx.stroke(); ctx.lineWidth = 1; ctx.fillStyle = A(1); ctx.beginPath(); ctx.arc(cx, cy, 4, 0, PI * 2); ctx.fill();
+var gr = ctx.createLinearGradient(0, by + BH - 64, 0, by + BH); gr.addColorStop(0, 'rgba(5,5,6,0)'); gr.addColorStop(0.35, 'rgba(5,5,6,0.92)'); gr.addColorStop(1, 'rgba(5,5,6,0.96)'); ctx.fillStyle = gr; ctx.fillRect(bx, by + BH - 64, BW, 64);
+var title = en ? r.en : r.zh; ctx.font = '500 13px ' + SANS; ctx.fillStyle = I(0.95);
+var lines = [], cur = '', units = en ? title.split(' ') : title.split('');
+units.forEach(function (w) { var nx = cur ? cur + (en ? ' ' : '') + w : w; if (ctx.measureText(nx).width > BW - 20 && cur) { lines.push(cur); cur = w; } else cur = nx; }); if (cur) lines.push(cur);
+lines = lines.slice(0, 2);
+lines.forEach(function (ln, li) { ctx.fillText(ln, bx + 10, by + BH - 30 - (lines.length - 1 - li) * 17); });
+var KZ = en ? ['Collision', 'Knowledge', 'Question'] : ['碰撞', '知识', '追问'];
+ctx.font = '10px ' + MONO; ctx.fillStyle = I(0.55); ctx.fillText(r.domain + ' · ' + KZ[r.kind], bx + 10, by + BH - 11);
+var ck = en ? 'Click to open →' : '点击查看 →'; ctx.fillStyle = A(0.95); ctx.fillText(ck, bx + BW - 10 - ctx.measureText(ck).width, by + BH - 11);
+ctx.restore();
+ctx.strokeStyle = I(0.65); ctx.strokeRect(bx + 0.5, by + 0.5, BW, BH);
+ctx.font = '9px ' + MONO; ctx.fillStyle = I(0.8); ctx.fillText('0' + (i + 1) + ' · X:' + Math.round(mx) + ' Y:' + Math.round(my), bx, by - 6);
+var zl = en ? '×40 · SURFACE' : '×40 · 地表'; ctx.fillStyle = A(1); ctx.fillText(zl, bx + BW - ctx.measureText(zl).width, by - 6);
+}
+drawLoupes(ctx, t, c, al) {
+if (al < 0.02) return;
+var self = this, S = c.S, CX = 440, H = 900, PI = Math.PI, K = 3.2, Sk = S * K, BW = 176, BH = 108;
+function X(x) { return (x - c.x) * S + CX; }
+function Y(y) { return (y - c.y) * S + H / 2; }
+function I(a) { return 'rgba(236,236,232,' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+function A(a) { return 'rgba(179,222,62,' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+var MONO = '"Geist Mono", "Noto Sans SC", monospace', SANS = '"Noto Sans SC", "Geist", sans-serif';
+var sel = this.state.sel, key = sel.join('|');
+if (this._loupeKey !== key) {
+var c0 = this.camAt(0), X0 = function (x) { return (x - c0.x) * c0.S + CX; }, Y0 = function (y) { return (y - c0.y) * c0.S + H / 2; };
+var pts = this.domains.map(function (d) { return [X0(d.x), Y0(d.y)]; }); pts.push([X0(0), Y0(0)]); pts.push([X0(this.Pp[0]), Y0(this.Pp[1])]);
+var placed = [];
+sel.forEach(function (nm) {
+var d = self.domains.filter(function (q) { return q.name === nm; })[0]; if (!d) return;
+var px = X0(d.x), py = Y0(d.y), best = null;
+for (var cx = 16; cx <= 864 - BW; cx += 12) for (var cy = 214; cy <= 776 - BH; cy += 12) {
+var nx = Math.max(cx, Math.min(cx + BW, px)), ny = Math.max(cy - 16, Math.min(cy + BH, py)), dd = Math.hypot(nx - px, ny - py);
+var sc = dd < 28 ? 4000 : dd;
+pts.forEach(function (p) { if (p[0] + 92 > cx - 8 && p[0] - 16 < cx + BW + 8 && p[1] + 24 > cy - 22 && p[1] - 22 < cy + BH + 8) sc += 5000; });
+placed.forEach(function (q) { if (q.x < cx + BW + 16 && q.x + BW + 16 > cx && q.y - 22 < cy + BH + 12 && q.y + BH + 12 > cy - 22) sc += 9000; var qx = q.d ? X0(q.d.x) : 0, qy = q.d ? Y0(q.d.y) : 0; });
+if (!best || sc < best.sc) best = { sc: sc, x: cx, y: cy, name: nm, d: d };
+}
+placed.push(best);
+});
+this._loupes = placed; this._loupeKey = key;
+}
+if (!this.micro) this.micro = {};
+this._loupes.forEach(function (b, bi) {
+var d = b.d, px = X(d.x), py = Y(d.y), bx = b.x, by = b.y;
+if (!self.micro[d.name]) { var sd = 0; for (var ci = 0; ci < d.name.length; ci++) sd = (sd * 31 + d.name.charCodeAt(ci)) | 0; var rr = function () { sd = (sd * 1664525 + 1013904223) | 0; return ((sd >>> 0) % 100000) / 100000; }; var mc = []; for (var mi = 0; mi < 150; mi++) { var ma = rr() * PI * 2, md = Math.pow(rr(), 0.7) * 42; mc.push(Math.cos(ma) * md, Math.sin(ma) * md * 0.8, rr()); } self.micro[d.name] = mc; }
+var ix = function (x) { return bx + BW / 2 + (x - d.x) * Sk; }, iy = function (y) { return by + BH / 2 + (y - d.y) * Sk; };
+var cxn = bx + (px < bx ? 0 : BW), cyn = by + (py < by ? 0 : BH);
+ctx.strokeStyle = I(0.45 * al); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(cxn, cyn); ctx.stroke();
+ctx.save();
+ctx.beginPath(); ctx.rect(bx, by, BW, BH); ctx.clip();
+ctx.globalAlpha = al; ctx.fillStyle = '#050506'; ctx.fillRect(bx, by, BW, BH);
+var gr = ctx.createRadialGradient(bx + BW / 2, by + BH / 2, 0, bx + BW / 2, by + BH / 2, BW * 0.6); gr.addColorStop(0, 'rgba(179,222,62,0.04)'); gr.addColorStop(1, 'rgba(179,222,62,0)'); ctx.fillStyle = gr; ctx.fillRect(bx, by, BW, BH);
+ctx.strokeStyle = I(0.07); ctx.beginPath(); for (var hx = -BH; hx < BW; hx += 9) { ctx.moveTo(bx + hx, by + BH); ctx.lineTo(bx + hx + BH, by); } ctx.stroke();
+var BA = [0.3, 0.5, 0.75, 1], BS = [1.3, 1.5, 1.9, 2.6];
+for (var sb = 0; sb < 4; sb++) { var arr = self.stars[sb]; ctx.fillStyle = I(BA[sb] * (0.85 + 0.15 * Math.sin(t * 1.3 + sb))); for (var k = 0; k < arr.length; k += 2) { var qx = ix(arr[k]), qy = iy(arr[k + 1]); if (qx < bx - 2 || qx > bx + BW + 2 || qy < by - 2 || qy > by + BH + 2) continue; ctx.fillRect(qx, qy, BS[sb], BS[sb]); } }
+var mc2 = self.micro[d.name];
+for (var m = 0; m < mc2.length; m += 3) { var br = mc2[m + 2], tw = 0.6 + 0.4 * Math.sin(t * (1 + br * 2) + m); ctx.fillStyle = br > 0.9 ? A(0.9 * tw) : I((0.25 + 0.6 * br) * tw); var sz = br > 0.9 ? 2.2 : (br > 0.6 ? 1.6 : 1.1); ctx.fillRect(ix(d.x + mc2[m]), iy(d.y + mc2[m + 1]), sz, sz); }
+ctx.strokeStyle = I(0.18); ctx.setLineDash([1.5, 3]); ctx.beginPath(); ctx.arc(bx + BW / 2, by + BH / 2, 34, 0, PI * 2); ctx.stroke(); ctx.setLineDash([]);
+var tx = bx + BW * 0.34, ty = by + BH / 2, bk = 15 + 1.5 * Math.sin(t * 3 + bi);
+tx = bx + BW / 2; 
+ctx.strokeStyle = A(1); ctx.lineWidth = 2; ctx.beginPath();
+[[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (q) { ctx.moveTo(tx + q[0] * bk, ty + q[1] * (bk - 6)); ctx.lineTo(tx + q[0] * bk, ty + q[1] * bk); ctx.lineTo(tx + q[0] * (bk - 6), ty + q[1] * bk); });
+ctx.stroke(); ctx.lineWidth = 1;
+ctx.fillStyle = A(1); ctx.beginPath(); ctx.arc(tx, ty, 4.5, 0, PI * 2); ctx.fill();
+ctx.font = '500 13px ' + SANS; ctx.fillStyle = A(1); ctx.fillText(d.name, bx + 10, by + 22);
+ctx.font = '9px ' + MONO; ctx.fillStyle = I(0.7); ctx.fillText(d.dist, bx + 10, by + BH - 12);
+var lat = (Math.abs(d.y) / 60 + 3.1415).toFixed(4) + '° ' + (d.y < 0 ? 'N' : 'S'); ctx.fillText(lat, bx + BW - 10 - ctx.measureText(lat).width, by + BH - 12);
+ctx.restore();
+ctx.strokeStyle = I(0.6 * al); ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, by + 0.5, BW, BH);
+ctx.font = '9px ' + MONO; ctx.fillStyle = I(0.8 * al); ctx.fillText('X:' + Math.round(px) + ' Y:' + Math.round(py), bx, by - 6);
+var zl = '×' + K.toFixed(1) + ' · 0' + (bi + 1); ctx.fillStyle = A(al); ctx.fillText(zl, bx + BW - ctx.measureText(zl).width, by - 6);
+});
+}
+drawHud(ctx, t, c) {
+var L = this.L, W = 1440, H = 900, CX = 440, u = L.u, dpr = this.dpr, PI = Math.PI;
+function I(a) { return 'rgba(236,236,232,' + a + ')'; }
+function A(a) { return 'rgba(179,222,62,' + a + ')'; }
+function ss(x, a, b) { var q = Math.max(0, Math.min(1, (x - a) / (b - a))); return q * q * (3 - 2 * q); }
+var g = t >= L.cross ? Math.exp(-Math.pow((t - L.cross) / 0.22, 2)) : 0;
+var NAMES = ['探索范围', '探测频率', '观测结果'];
+var self = this, en = this.state.lang === 'en', sel = this.state.sel, HW = [0, 12, 18, 24], v1 = 0;
+sel.forEach(function (nm) { var d = self.domains.filter(function (q) { return q.name === nm; })[0]; if (d) v1 += HW[d.hops] || 12; });
+var tgt = u <= 1 ? v1 + (86 - v1) * ss(u, 0.1, 0.95) : 86 + 14 * ss(u, 1.15, 1.95);
+var hdt = this._hudT == null ? 1 : Math.min(0.1, t - this._hudT); this._hudT = t;
+if (this._cv == null) this._cv = tgt;
+this._cv += (tgt - this._cv) * Math.min(1, hdt * 7); if (Math.abs(tgt - this._cv) < 0.3) this._cv = tgt;
+var cvI = Math.round(this._cv), str = String(cvI);
+while (str.length < 3) str = '0' + str;
+if (g > 0.15) str = str.split('').map(function (ch) { return ch !== '.' && Math.random() < g * 0.7 ? String(Math.floor(Math.random() * 10)) : ch; }).join('');
+var lead = 0; while (lead < 2 && str.charAt(lead) === '0') lead++;
+if (cvI === 0) lead = 2;
+var vg = ctx.createLinearGradient(0, 740, 0, 900); vg.addColorStop(0, 'rgba(5,5,6,0)'); vg.addColorStop(1, 'rgba(5,5,6,0.88)'); ctx.fillStyle = vg; ctx.fillRect(0, 740, 900, 160);
+ctx.textBaseline = 'alphabetic';
+ctx.font = '11px "Geist Mono", "Noto Sans SC", monospace'; ctx.fillStyle = I(0.55); ctx.fillText('交汇度 · %', 52, 104);
+ctx.font = '500 64px "Geist", sans-serif';
+if ('letterSpacing' in ctx) ctx.letterSpacing = '-2px';
+var dx = 48 + (g > 0.1 ? (Math.random() - 0.5) * 20 * g : 0);
+ctx.fillStyle = I(0.16); ctx.fillText(str.slice(0, lead), dx, 166);
+var wl = ctx.measureText(str.slice(0, lead)).width;
+ctx.fillStyle = cvI >= 100 ? A(1) : I(0.95); ctx.fillText(str.slice(lead), dx + wl, 166);
+var wn = ctx.measureText(str).width;
+if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+ctx.font = '400 26px "Geist", sans-serif'; ctx.fillStyle = I(0.45); ctx.fillText('%', dx + wn + 6, 164);
+var nres = (this._res || []).length, sub;
+if (u < 0.5) sub = en ? sel.length + (sel.length > 1 ? ' fields' : ' field') + ' + your research, drifting together' : sel.length + ' 个范围和你的研究正在靠拢';
+else if (u < 1.5) sub = en ? 'A new planet has formed · waiting to land' : '已凝成交汇星球 · 等待着陆';
+else if (cvI < 100) sub = en ? 'Landing…' : '正在着陆…';
+else sub = en ? 'Setup complete · ' + nres + ' signals brought back' : '设置完成 · 带回 ' + nres + ' 条信号';
+ctx.font = '11px "Geist Mono", "Noto Sans SC", monospace'; ctx.fillStyle = I(0.5); ctx.fillText(sub, 52, 190);
+if (cvI >= 100) { if (this._doneT == null) this._doneT = t; } else this._doneT = null;
+var fl = this._doneT != null ? Math.exp(-Math.max(0, t - this._doneT) * 2.2) : 0;
+if (fl > 0.02) { var fw = 200 + (1 - fl) * 260; var fg = ctx.createRadialGradient(120, 140, 0, 120, 140, fw); fg.addColorStop(0, 'rgba(179,222,62,' + (0.08 * fl).toFixed(3) + ')'); fg.addColorStop(1, 'rgba(179,222,62,0)'); ctx.fillStyle = fg; ctx.fillRect(0, 0, 600, 420); ctx.strokeStyle = A((0.8 * fl).toFixed(3)); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(120, 140, 60 + (1 - fl) * 200, 0, PI * 2); ctx.stroke(); }
+ctx.font = '11px "Geist Mono", monospace';
+var dra = (((c.x / 1000) * 12 + 14) % 24 + 24) % 24 + Math.sin(t * 0.21) * 0.0004, ddec = -62 + c.y * 0.02 + Math.cos(t * 0.17) * 0.0004, dj = g > 0.1 ? (Math.random() - 0.5) * 16 * g : 0;
+var deco = [[660, 58, 'ISSUE 001.', 0.8], [770, 86, 'DIVE 0' + (L.st + 1) + ' / 03', 0.8], [660, 122, dra.toFixed(4) + '° N', 0.8], [772, 150, ddec.toFixed(4) + '° E', 0.8], [704, 178, '· · ·', 0.5]];
+deco.forEach(function (d) { ctx.fillStyle = I(d[3]); ctx.fillText(d[2], d[0] + dj, d[1]); });
+var bw0 = 200, bf = Math.max(0, Math.min(1, this._cv / 100));
+ctx.fillStyle = I(0.14); ctx.fillRect(52, 204, bw0, 2); ctx.fillStyle = A(0.95); ctx.fillRect(52, 204, bw0 * bf, 2);
+for (var tk = 0; tk <= 10; tk++) { ctx.fillStyle = tk / 10 <= bf + 0.001 ? A(0.9) : I(0.25); ctx.fillRect(52 + bw0 * tk / 10, tk % 5 === 0 ? 200 : 202, 1, tk % 5 === 0 ? 10 : 6); }
+var dimV = Math.max(0, Math.min(1, u / 2));
+var mx0 = 108, tx0 = 176, mw = 300, my0 = 828;
+ctx.font = '11px "Geist Mono", "Noto Sans SC", monospace';
+ctx.fillStyle = I(0.18); ctx.fillRect(tx0, my0, mw, 1);
+ctx.fillStyle = A(0.95); ctx.fillRect(tx0, my0 - 1, mw * dimV, 3);
+ctx.font = '9px "Geist Mono", "Noto Sans SC", monospace';
+NAMES.forEach(function (nm3, k3) {
+var d3 = k3 / 2, xx = tx0 + mw * d3, on = dimV >= d3 - 0.02, cur = k3 === L.st;
+ctx.fillStyle = on ? A(1) : I(0.3); ctx.fillRect(xx - 1, my0 - 4, 2, 9);
+var lb = '0' + (k3 + 1) + ' ' + nm3, tw3 = ctx.measureText(lb).width;
+ctx.fillStyle = cur ? I(0.95) : (on ? I(0.6) : I(0.35)); ctx.fillText(lb, xx - tw3 / 2, my0 + 20);
+});
+
+var RW = 880;
+var noise = Math.max(g, Math.min(0.4, Math.abs(L.vel) * 0.25));
+if (noise > 0.03) {
+var n = Math.floor(3 + noise * 12);
+for (var i = 0; i < n; i++) { var yy = Math.random() * H, h2 = 2 + Math.random() * 40 * noise, off = (Math.random() - 0.5) * 140 * noise; ctx.drawImage(this.cv, 0, yy * dpr, RW * dpr, h2 * dpr, off, yy, RW, h2); }
+var nr = Math.floor(noise * 360);
+for (var j = 0; j < nr; j++) { ctx.fillStyle = I((Math.random() * 0.5 * noise).toFixed(3)); ctx.fillRect(Math.random() * RW, Math.random() * H, 1 + Math.random() * 80 * noise, 1 + Math.random() * 3); }
+}
+}
+build() {
+var seed = 20260928;
+function rng() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+this.rng = rng;
+var PI = Math.PI;
+function gT(x, y) { return [x, y]; }
+this.gT = gT;
+var P1 = gT(540 * Math.cos(0.62), 540 * Math.sin(0.62));
+this.P1 = P1;
+function sys3(x, y, phi) { var D = 26, f = D / (D - y * Math.sin(phi)), X2 = x * f, Y2 = y * Math.cos(phi) * f, a = 0.22; return [P1[0] + X2 * Math.cos(a) - Y2 * Math.sin(a), P1[1] + X2 * Math.sin(a) + Y2 * Math.cos(a), f]; }
+this.sys3 = sys3; this.phiF = 0.99;
+function sysT(x, y) { return sys3(x, y, 0.99); }
+this.sysT = sysT;
+var thp = 1.15, Pp = sysT(3.8 * Math.cos(thp), 3.8 * Math.sin(thp));
+this.Pp = Pp; this.Rp = 0.09;
+function bucketize(list, nb) { var bs = []; for (var b = 0; b < nb; b++) bs.push([]); list.forEach(function (p) { bs[p[2]].push(p[0], p[1]); }); return bs.map(function (a) { return new Float32Array(a); }); }
+var stars = [];
+for (var i = 0; i < 7600; i++) {
+var r, a, br;
+if (i < 600) { r = Math.pow(rng(), 1.5) * 150; a = rng() * 2 * PI; br = 0.45 + rng() * 0.55; }
+else { r = 30 + 990 * Math.pow(rng(), 0.62); a = rng() * 2 * PI; br = Math.pow(rng(), 1.3) * (1 - 0.45 * r / 1020); }
+var p = gT(r * Math.cos(a), r * Math.sin(a));
+stars.push([p[0], p[1], Math.min(3, Math.floor(br * 4))]);
+}
+this.stars = bucketize(stars, 4);
+var names = ['心理学', '行为经济学', '社会学', '城市规划', '建筑学', '生态学', '音乐理论', '人类学', '物理学', '神经科学'];
+var nodes = [];
+for (var k = 0; k < 40; k++) {
+var rr = 140 + 760 * Math.pow(rng(), 0.8), aa = rng() * 2 * PI, q = gT(rr * Math.cos(aa), rr * Math.sin(aa));
+if (Math.hypot(q[0] - P1[0], q[1] - P1[1]) < 70) continue;
+nodes.push({ x: q[0], y: q[1], name: k < names.length ? names[k] : '', big: k < 10, teal: rng() < 0.3 });
+}
+this.nodes = nodes;
+var hair = [];
+for (var h = 0; h < 260; h++) { var ha = rng() * 2 * PI, r0 = 90 + rng() * 300, r1 = r0 + 120 + rng() * 520; var h0 = gT(r0 * Math.cos(ha), r0 * Math.sin(ha)), h1 = gT(r1 * Math.cos(ha), r1 * Math.sin(ha)); hair.push(h0[0], h0[1], h1[0], h1[1]); }
+this.hair = new Float32Array(hair);
+var dust = [];
+for (var d = 0; d < 2800; d++) { var dr = 0.4 + 7.8 * Math.pow(rng(), 0.8), da = rng() * 2 * PI, dp = [dr * Math.cos(da), dr * Math.sin(da)]; dust.push([dp[0], dp[1], Math.min(2, Math.floor(rng() * 3))]); }
+this.dust = bucketize(dust, 3);
+this.orbits = [1.1, 1.9, 2.8, 3.8, 5.0, 6.4];
+this.planets = [{ o: 0, a: 4.1, n: '共生' }, { o: 1, a: 2.3, n: '演化' }, { o: 2, a: 5.5, n: '免疫' }, { o: 3, a: thp, n: '蚁群', target: true }, { o: 4, a: 3.4, n: '神经' }, { o: 5, a: 0.3, n: '生态位' }];
+this.leaders = ['Stigmergy · 信息素共识', 'Pheromone Trail · 信息素路径', 'Division of Labour · 分工', 'Swarm Intelligence · 群体智能', 'Quorum Sensing · 群体感应', 'Superorganism · 超个体', 'Waggle Dance · 摇摆舞', 'Kin Selection · 亲缘选择', 'Symbiosis · 共生', 'Evolutionary Game · 演化博弈'];
+var sph = [];
+while (sph.length < 3000 * 2) { var u = rng() * 2 - 1, v = rng() * 2 - 1, rq = u * u + v * v; if (rq > 1) continue; var z = Math.sqrt(1 - rq), lum = Math.max(0, -0.5 * u - 0.6 * v + 0.62 * z); if (rng() < 0.12 + 0.88 * lum * lum) sph.push(u, v); }
+this.sph = new Float32Array(sph);
+var atm = [];
+for (var m = 0; m < 1700; m++) { var ma = rng() * 2 * PI, mr = 1 + 0.1 * Math.pow(rng(), 2.4); atm.push(Math.cos(ma) * mr, Math.sin(ma) * mr); }
+this.atm = new Float32Array(atm);
+var latm = [];
+for (var la = 0; la < 2600; la++) { var th = (rng() - 0.5) * 0.4, lr = 1 + 0.03 * Math.pow(rng(), 2); latm.push(Math.sin(th) * lr, -Math.cos(th) * lr); }
+this.latm = new Float32Array(latm);
+var peaks = [[-0.05, -0.93, 0.95, 0.024], [0.03, -0.905, 0.8, 0.021], [0.068, -0.945, 0.65, 0.018], [-0.012, -0.962, 0.55, 0.016], [0.105, -0.88, 0.75, 0.03], [-0.1, -0.9, 0.85, 0.034], [-0.14, -0.95, 0.5, 0.02], [0.14, -0.94, 0.55, 0.022]];
+this.HF = function (x, y) { return HF(x, y); };
+function HF(x, y) { var s = 0; for (var i2 = 0; i2 < peaks.length; i2++) { var P = peaks[i2], dx = x - P[0], dy = y - P[1]; s += P[2] * Math.exp(-(dx * dx + dy * dy) / (2 * P[3] * P[3])); } return s + 0.07 * Math.sin(x * 140 + y * 60) + 0.05 * Math.sin(-x * 90 + y * 170) + 0.04 * Math.sin((x + y) * 260); }
+var X0 = -0.18, X1 = 0.18, Y0 = -1.01, Y1 = -0.84, NX = 170, NY = 84, dx0 = (X1 - X0) / (NX - 1), dy0 = (Y1 - Y0) / (NY - 1), G = [];
+for (var j = 0; j < NY; j++) for (var ii = 0; ii < NX; ii++) G.push(HF(X0 + ii * dx0, Y0 + j * dy0));
+var LV = []; for (var l = 0; l < 16; l++) LV.push(0.02 + l * 0.065);
+var CASES = { 1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 5: [[3, 0], [1, 2]], 6: [[0, 2]], 7: [[3, 2]], 8: [[2, 3]], 9: [[0, 2]], 10: [[0, 1], [2, 3]], 11: [[1, 2]], 12: [[1, 3]], 13: [[0, 1]], 14: [[0, 3]] };
+var segA = [], segB = [];
+for (var jj = 0; jj < NY - 1; jj++) for (var i3 = 0; i3 < NX - 1; i3++) {
+var v0 = G[jj * NX + i3], v1 = G[jj * NX + i3 + 1], v2 = G[(jj + 1) * NX + i3 + 1], v3 = G[(jj + 1) * NX + i3], xa = X0 + i3 * dx0, ya = Y0 + jj * dy0;
+for (var li = 0; li < LV.length; li++) {
+var L = LV[li], idx = (v0 > L ? 1 : 0) | (v1 > L ? 2 : 0) | (v2 > L ? 4 : 0) | (v3 > L ? 8 : 0), cs = CASES[idx];
+if (!cs) continue;
+var ep = function (e) { if (e === 0) return [xa + dx0 * (L - v0) / (v1 - v0), ya]; if (e === 1) return [xa + dx0, ya + dy0 * (L - v1) / (v2 - v1)]; if (e === 2) return [xa + dx0 * (L - v3) / (v2 - v3), ya + dy0]; return [xa, ya + dy0 * (L - v0) / (v3 - v0)]; };
+for (var ci = 0; ci < cs.length; ci++) { var pA = ep(cs[ci][0]), pB = ep(cs[ci][1]); (li % 4 === 3 ? segB : segA).push(pA[0], pA[1], pB[0], pB[1], L); }
+}
+}
+this.segA = new Float32Array(segA); this.segB = new Float32Array(segB);
+var sst = [];
+for (var sp = 0; sp < 9000; sp++) { var sx = X0 + rng() * (X1 - X0), sy = Y0 + rng() * (Y1 - Y0), hv = Math.max(0, Math.min(1, HF(sx, sy))); if (rng() < 0.08 + 0.7 * Math.pow(hv, 1.4)) sst.push(sx, sy, hv); }
+this.sst = new Float32Array(sst);
+var cp = [[-0.03, -0.975], [-0.012, -0.962], [-0.035, -0.948], [-0.05, -0.93], [-0.02, -0.915], [0.03, -0.905], [0.055, -0.925], [0.068, -0.945], [0.11, -0.957], [0.15, -0.95]];
+var trail = [];
+for (var s2 = 0; s2 < cp.length - 1; s2++) {
+var p0 = cp[Math.max(0, s2 - 1)], p1 = cp[s2], p2 = cp[s2 + 1], p3 = cp[Math.min(cp.length - 1, s2 + 2)];
+for (var st = 0; st < 16; st++) { var tt = st / 16, t2 = tt * tt, t3 = t2 * tt; trail.push(0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * tt + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3), 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * tt + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)); }
+}
+trail.push(cp[cp.length - 1][0], cp[cp.length - 1][1]);
+var cum = [0];
+for (var tq = 2; tq < trail.length; tq += 2) cum.push(cum[cum.length - 1] + Math.hypot(trail[tq] - trail[tq - 2], trail[tq + 1] - trail[tq - 1]));
+this.trail = trail; this.cum = cum;
+this.trailH = []; for (var th2 = 0; th2 < trail.length; th2 += 2) this.trailH.push(Math.max(0, HF(trail[th2], trail[th2 + 1])) + 0.04);
+this.mesh = { G: G, NX: NX, NY: NY, X0: X0, Y0: Y0, dx: dx0, dy: dy0 };
+var sky = []; for (var sk = 0; sk < 320; sk++) sky.push(rng() * 1440, Math.pow(rng(), 1.4) * 400, rng()); this.sky = new Float32Array(sky);
+this.marks = [{ x: -0.05, y: -0.93, zh: '信息素', en: 'PHEROMONE' }, { x: 0.03, y: -0.905, zh: '正反馈', en: 'POSITIVE FEEDBACK' }, { x: 0.068, y: -0.945, zh: '挥发', en: 'EVAPORATION' }, { x: -0.012, y: -0.962, zh: '你的 Core Loop', en: 'BASE CAMP', acc: true }];
+this.marks.forEach(function (m) { m.h = Math.max(0, HF(m.x, m.y)); });
+var F0 = [70, 30], F1 = [P1[0] + 2.4, P1[1] + 0.4], F2 = [Pp[0] + 0.45 * 0.09, Pp[1] + 0.3 * 0.09], F3 = [Pp[0], Pp[1] + (-1 + 0.05) * 0.09];
+this.K = [{ t: 0, l: -0.85, F: F0 }, { t: 2.5, l: -0.75, F: F0 }, { t: 7, l: 4.1, F: F1 }, { t: 8.5, l: 4.22, F: F1 }, { t: 12.5, l: 7.8, F: F2 }, { t: 14, l: 7.9, F: F2 }, { t: 18, l: 10.9, F: F3 }, { t: 22.5, l: 11.0, F: F3 }];
+this.ST = [{ l: -0.85, F: F0, zh: '星系' }, { l: 4.1, F: F1, zh: '生物学' }, { l: 7.8, F: F2, zh: '蚁群' }, { l: 10.9, F: F3, zh: '地表' }];
+var ring = [];
+for (var rs = 0; rs < 3200; rs++) { var ra = rng() * 2 * PI, rr2 = 452 + Math.pow(rng(), 1.6) * 70 * (rng() < 0.5 ? 1 : -0.4); ring.push(ra, rr2); }
+this.ringDots = new Float32Array(ring);
+}
+drawScene(ctx, t, c, o) {
+var CXS = o.cx0 || 720;
+var th = this.pal(), ink = th.ink, acc = th.acc, acc2 = th.acc2, W = 1440, H = 900, PI = Math.PI;
+var pt = o.pt || 1, lw = o.lw || 1, LAB = o.labels !== false;
+function I(a) { return 'rgba(' + ink[0] + ',' + ink[1] + ',' + ink[2] + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+function A(a) { return 'rgba(' + acc[0] + ',' + acc[1] + ',' + acc[2] + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+function A2(a) { return 'rgba(' + acc2[0] + ',' + acc2[1] + ',' + acc2[2] + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+function ss(x, a, b) { var q = Math.max(0, Math.min(1, (x - a) / (b - a))); return q * q * (3 - 2 * q); }
+var S = c.S, l = c.l, cx = c.x, cy = c.y;
+function X(x) { return (x - cx) * S + CXS; }
+function Y(y) { return (y - cy) * S + H / 2; }
+var MONO = '"Geist Mono", "Noto Sans SC", monospace', SANS = '"Noto Sans SC", "Geist", sans-serif';
+var streak = o.streak || 0, sf = Math.exp(-streak);
+function pts(arr, alpha, size) {
+if (streak > 0.02) {
+ctx.strokeStyle = I(alpha); ctx.lineWidth = size * 0.9; ctx.beginPath();
+for (var i = 0; i < arr.length; i += 2) { var sx = X(arr[i]), sy = Y(arr[i + 1]); if (sx < -2 || sx > W + 2 || sy < -2 || sy > H + 2) continue; ctx.moveTo(sx, sy); ctx.lineTo(CXS + (sx - CXS) * sf, H / 2 + (sy - H / 2) * sf); }
+ctx.stroke();
+} else {
+ctx.fillStyle = I(alpha);
+for (var j = 0; j < arr.length; j += 2) { var qx = X(arr[j]), qy = Y(arr[j + 1]); if (qx < -2 || qx > W + 2 || qy < -2 || qy > H + 2) continue; ctx.fillRect(qx, qy, size, size); }
+}
+}
+var BA = [0.2, 0.36, 0.56, 0.85], BS = [1.1, 1.1, 1.3, 1.8];
+for (var b = 0; b < 4; b++) pts(this.stars[b], BA[b] * (0.9 + 0.1 * Math.sin(t * 1.3 + b)), BS[b] * pt);
+
+var gA = 1 - ss(l, o.noSystem ? 2.6 : 2.0, o.noSystem ? 4.2 : 3.4), gT = this.gT;
+if (gA > 0.01) {
+ctx.lineWidth = 0.6 * lw; ctx.strokeStyle = I(0.06 * gA); ctx.beginPath();
+for (var gx = -1050; gx <= 1050; gx += 150) { ctx.moveTo(X(gx), Y(-1050)); ctx.lineTo(X(gx), Y(1050)); ctx.moveTo(X(-1050), Y(gx)); ctx.lineTo(X(1050), Y(gx)); }
+ctx.stroke();
+ctx.strokeStyle = I(0.08 * gA); ctx.beginPath();
+for (var hh = 0; hh < this.hair.length; hh += 4) { ctx.moveTo(X(this.hair[hh]), Y(this.hair[hh + 1])); ctx.lineTo(X(this.hair[hh + 2]), Y(this.hair[hh + 3])); }
+ctx.stroke();
+[250, 500, 800].forEach(function (R, ri) {
+ctx.setLineDash([1.5, 4]); ctx.lineDashOffset = (o.ringFlow || 0) * (ri % 2 ? 1 : -1); ctx.strokeStyle = I(0.4 * gA); ctx.lineWidth = 0.7 * lw; ctx.beginPath();
+for (var s = 0; s <= 180; s++) { var an = s / 180 * PI * 2, p = gT(R * Math.cos(an), R * Math.sin(an)); if (s === 0) ctx.moveTo(X(p[0]), Y(p[1])); else ctx.lineTo(X(p[0]), Y(p[1])); }
+ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
+if (LAB) { var lp = gT(R * Math.cos(-1.9), R * Math.sin(-1.9)); ctx.fillStyle = I(0.6 * gA); ctx.font = '10px ' + MONO; ctx.fillText(['近 NEAR', '中 MID', '远 FAR'][ri], X(lp[0]) + 6, Y(lp[1]) - 4); }
+});
+var og = gT(0, 0), ox = X(og[0]), oy = Y(og[1]);
+ctx.strokeStyle = A(0.95 * gA); ctx.lineWidth = 1 * lw; ctx.beginPath(); ctx.moveTo(ox - 14, oy); ctx.lineTo(ox + 14, oy); ctx.moveTo(ox, oy - 14); ctx.lineTo(ox, oy + 14); ctx.stroke();
+ctx.beginPath(); ctx.arc(ox, oy, 6, 0, PI * 2); ctx.stroke();
+if (LAB && !o.noOrigin) { ctx.fillStyle = I(0.9 * gA); ctx.font = '11px ' + SANS; ctx.fillText('你的研究', ox + 12, oy - 10); ctx.font = '9px ' + MONO; ctx.fillStyle = I(0.55 * gA); if (!o.min) ctx.fillText('ORIGIN · 0 HOPS', ox + 12, oy + 16); }
+this.nodes.forEach(function (n) {
+var nx = X(n.x), ny = Y(n.y); if (nx < -40 || nx > W + 40 || ny < -40 || ny > H + 40) return;
+ctx.fillStyle = n.teal ? A2(0.9 * gA) : I(0.65 * gA); ctx.beginPath(); ctx.arc(nx, ny, (n.big ? 2.6 : 1.8) * pt, 0, PI * 2); ctx.fill();
+if (n.big) { ctx.strokeStyle = n.teal ? A2(0.5 * gA) : I(0.3 * gA); ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(nx, ny, 6, 0, PI * 2); ctx.stroke(); }
+if (LAB && n.name && n.big) { ctx.fillStyle = I(0.7 * gA); ctx.font = '10px ' + SANS; ctx.fillText(n.name, nx + 9, ny + 3); }
+});
+}
+var NS = !!o.noSystem, pA0 = NS ? ss(l, 4.7, 6.2) : ss(l, 5.4, 6.9);
+var tA = NS ? 1 - ss(l, 4.4, 5.6) : 1 - ss(l, 3.0, 4.0);
+if (NS && pA0 < 0.99) {
+var TPp = this.Pp, spx = X(TPp[0]), spy = Y(TPp[1]), srr = Math.max(3 * pt, this.Rp * S), sal = 1 - pA0;
+if (srr > 4) { var sg0 = ctx.createRadialGradient(spx, spy, 0, spx, spy, srr * 3); sg0.addColorStop(0, I(0.08 * sal)); sg0.addColorStop(1, A(0)); ctx.fillStyle = sg0; ctx.fillRect(spx - srr * 3, spy - srr * 3, srr * 6, srr * 6); }
+var sg1 = ctx.createRadialGradient(spx - srr * 0.35, spy - srr * 0.4, srr * 0.1, spx, spy, srr);
+sg1.addColorStop(0, I(0.35 * sal)); sg1.addColorStop(1, 'rgba(17,19,20,' + sal.toFixed(3) + ')');
+ctx.fillStyle = sg1; ctx.beginPath(); ctx.arc(spx, spy, srr, 0, PI * 2); ctx.fill();
+}
+if (tA > 0.01) {
+var TP0 = NS ? this.Pp : this.P1, tx = X(TP0[0]), ty = Y(TP0[1]), br = (NS ? Math.max(16, this.Rp * S + 12) : 16) + 3 * Math.sin(t * 3);
+ctx.strokeStyle = A(tA); ctx.fillStyle = A(tA); ctx.lineWidth = lw;
+if (!NS) { ctx.beginPath(); ctx.arc(tx, ty, 3 * pt, 0, PI * 2); ctx.fill(); }
+ctx.beginPath(); [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (q) { ctx.moveTo(tx + q[0] * br, ty + q[1] * (br - 6)); ctx.lineTo(tx + q[0] * br, ty + q[1] * br); ctx.lineTo(tx + q[0] * (br - 6), ty + q[1] * br); }); ctx.stroke();
+if (LAB) { ctx.font = '12px ' + SANS; ctx.fillText(NS ? '交汇点' : '生物学', tx + br + 8, ty - 2); if (!o.min) { ctx.font = '9px ' + MONO; ctx.fillText('TARGET · 3 HOPS · FAR', tx + br + 8, ty + 12); } }
+}
+var sA = ss(l, 1.6, 3.0) * (1 - ss(l, 8.4, 9.6)), pA = pA0;
+var phiN = ss(l, 1.4, 4.1), phi = this.phiF * phiN, sys3 = this.sys3;
+var sysT = function (x, y) { return sys3(x, y, phi); };
+if (sA > 0.01 && !NS) {
+var DA = [0.22, 0.38, 0.58];
+for (var db = 0; db < 3; db++) {
+var da = this.dust[db];
+if (streak > 0.02) { ctx.strokeStyle = I(DA[db] * sA); ctx.lineWidth = pt; ctx.beginPath(); }
+else ctx.fillStyle = I(DA[db] * sA);
+for (var di = 0; di < da.length; di += 2) {
+var dq = sysT(da[di], da[di + 1]), dx = X(dq[0]), dy = Y(dq[1]);
+if (dx < -2 || dx > W + 2 || dy < -2 || dy > H + 2) continue;
+if (streak > 0.02) { ctx.moveTo(dx, dy); ctx.lineTo(CXS + (dx - CXS) * sf, H / 2 + (dy - H / 2) * sf); }
+else { var dsz = 1.1 * pt * Math.min(1.8, dq[2]); ctx.fillRect(dx, dy, dsz, dsz); }
+}
+if (streak > 0.02) ctx.stroke();
+}
+ctx.strokeStyle = I(0.13 * sA * (0.4 + 0.6 * phiN)); ctx.lineWidth = 0.6 * lw; ctx.beginPath();
+for (var rg = 0; rg < 24; rg++) { var ag = rg / 24 * PI * 2, g0 = sysT(0.5 * Math.cos(ag), 0.5 * Math.sin(ag)), g1 = sysT(7.2 * Math.cos(ag), 7.2 * Math.sin(ag)); ctx.moveTo(X(g0[0]), Y(g0[1])); ctx.lineTo(X(g1[0]), Y(g1[1])); }
+ctx.stroke();
+var farF = 1 - 0.6 * phiN;
+this.orbits.forEach(function (R, oi) {
+var hot = oi === 3;
+ctx.lineWidth = (hot ? 1.2 : 0.7) * lw;
+if (oi % 2 === 1) ctx.setLineDash([1.5, 3]);
+[[PI, 2 * PI, farF], [0, PI, 1]].forEach(function (hf) {
+ctx.strokeStyle = hot ? A(0.9 * sA * hf[2]) : I(0.34 * sA * hf[2]);
+ctx.beginPath();
+for (var s4 = 0; s4 <= 100; s4++) { var an4 = hf[0] + (hf[1] - hf[0]) * s4 / 100, p4 = sysT(R * Math.cos(an4), R * Math.sin(an4)); if (s4 === 0) ctx.moveTo(X(p4[0]), Y(p4[1])); else ctx.lineTo(X(p4[0]), Y(p4[1])); }
+ctx.stroke();
+});
+ctx.setLineDash([]);
+});
+ctx.strokeStyle = I(0.55 * sA); ctx.lineWidth = 0.6 * lw; ctx.beginPath();
+for (var ct = 0; ct < 180; ct++) { var ac = ct / 90 * PI, ln2 = ct % 5 === 0 ? 0.32 : 0.14, c0 = sysT(7.2 * Math.cos(ac), 7.2 * Math.sin(ac)), c1 = sysT((7.2 + ln2) * Math.cos(ac), (7.2 + ln2) * Math.sin(ac)); ctx.moveTo(X(c0[0]), Y(c0[1])); ctx.lineTo(X(c1[0]), Y(c1[1])); }
+ctx.stroke();
+if (LAB) { ctx.font = '9px ' + MONO; for (var cl = 0; cl < 30; cl++) { var acl = cl / 30 * PI * 2, pc = sysT(7.85 * Math.cos(acl), 7.85 * Math.sin(acl)); ctx.fillStyle = I((o.min ? 0.3 : 0.62) * sA * Math.min(1, pc[2] * pc[2])); ctx.fillText(('0' + (cl + 1)).slice(-2), X(pc[0]) - 6, Y(pc[1]) + 3); } }
+var sun = sysT(0, 0), sux = X(sun[0]), suy = Y(sun[1]);
+var sg = ctx.createRadialGradient(sux, suy, 0, sux, suy, 26);
+sg.addColorStop(0, A2(0.5 * sA)); sg.addColorStop(1, A2(0));
+ctx.fillStyle = sg; ctx.fillRect(sux - 26, suy - 26, 52, 52);
+ctx.fillStyle = A2(0.95 * sA); ctx.beginPath(); ctx.arc(sux, suy, 4.5 * pt, 0, PI * 2); ctx.fill();
+if (LAB) { ctx.fillStyle = I(0.85 * sA); ctx.font = '11px ' + SANS; ctx.fillText('生物学', sux + 16, suy - 8); }
+var orbs = this.orbits, Rp = this.Rp;
+var pls = this.planets.map(function (pl) { var pp = sysT(orbs[pl.o] * Math.cos(pl.a), orbs[pl.o] * Math.sin(pl.a)); return { pl: pl, x: X(pp[0]), y: Y(pp[1]), f: pp[2] }; });
+pls.sort(function (a, b) { return a.f - b.f; });
+pls.forEach(function (q) {
+var pl = q.pl, px = q.x, py = q.y;
+if (pl.target) {
+var rr = Math.max(4 * pt, Rp * S);
+var tg = ctx.createRadialGradient(px - rr * 0.35, py - rr * 0.4, rr * 0.1, px, py, rr);
+tg.addColorStop(0, I(0.35 * sA * (1 - pA))); tg.addColorStop(1, 'rgba(17,19,20,' + (sA * (1 - pA)).toFixed(3) + ')');
+ctx.fillStyle = tg; ctx.beginPath(); ctx.arc(px, py, rr, 0, PI * 2); ctx.fill();
+ctx.strokeStyle = A(0.5 * sA * (1 - pA)); ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(px, py, rr + 7, 0, PI * 2); ctx.stroke();
+if (LAB) { ctx.fillStyle = A(sA * (1 - ss(l, 6.2, 7.2))); ctx.font = '12px ' + SANS; ctx.fillText(pl.n, px + rr + 12, py - 2); if (!o.min) { ctx.font = '9px ' + MONO; ctx.fillText('FORMICIDAE · LOCKED', px + rr + 12, py + 12); } }
+} else {
+var r2 = (2.4 + 2.2 * phiN) * pt * q.f;
+if (phiN > 0.05) {
+var pg = ctx.createRadialGradient(px - r2 * 0.35, py - r2 * 0.4, r2 * 0.1, px, py, r2);
+pg.addColorStop(0, I(0.95 * sA)); pg.addColorStop(1, I(0.12 * sA));
+ctx.fillStyle = pg;
+} else ctx.fillStyle = I(0.85 * sA);
+ctx.beginPath(); ctx.arc(px, py, r2, 0, PI * 2); ctx.fill();
+if (LAB) { ctx.font = '10px ' + SANS; ctx.fillStyle = I(0.6 * sA * Math.min(1, q.f)); ctx.fillText(pl.n, px + r2 + 6, py + 3); }
+}
+});
+if (o.leaders !== false) {
+var ex = X(this.P1[0] + 9.6);
+ctx.lineWidth = 0.6 * lw;
+this.leaders.forEach(function (tx2, li) {
+var al2 = -0.62 + li * 0.13, lp2 = sysT(6.4 * Math.cos(al2), 6.4 * Math.sin(al2)), lx = X(lp2[0]), ly = Y(lp2[1]), hot = li < 2;
+ctx.strokeStyle = hot ? A(0.85 * sA) : I(0.3 * sA); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 10, ly); ctx.lineTo(ex, ly); ctx.stroke();
+if (LAB) { ctx.fillStyle = hot ? A(sA) : I(0.6 * sA); ctx.font = '11px ' + MONO; ctx.fillText(tx2, ex + 8, ly + 4); }
+});
+}
+}
+if (pA > 0.01) {
+var Pp = this.Pp, Rq = this.Rp * S, PX = X(Pp[0]), PY = Y(Pp[1]), wA = pA * (1 - (NS ? ss(l, 9.8, 10.8) : ss(l, 9.2, 10.2)));
+var psi = 1.08 * ss(l, 9.5, 10.9), cps = Math.cos(psi), sps = Math.sin(psi), KH = 150 * (psi / 1.08), DP = 1200, PV = 450;
+var proj = function (sx, sy, hh) { var u = sx - CXS, v = sy - PV, hk = hh * KH, yv = v * cps - hk * sps, z = -v * sps - hk * cps, f = DP / Math.max(60, DP + z); return [CXS + u * f, PV + yv * f, f]; };
+var rA = NS ? 0 : pA * (1 - ss(l, 8.6, 9.4)) * (o.planetRing === false ? 0 : 1);
+var RX = 1.55, RY = 0.4, RR = -0.32, cR = Math.cos(RR), sR = Math.sin(RR);
+var ringPt = function (a, k) { var e1 = Math.cos(a) * RX * k, e2 = Math.sin(a) * RY * k; return [PX + (e1 * cR - e2 * sR) * Rq, PY + (e1 * sR + e2 * cR) * Rq]; };
+var drawRing = function (a0, a1, alpha, off) {
+if (rA <= 0.01) return;
+ctx.strokeStyle = I(0.55 * rA * alpha); ctx.lineWidth = 0.9 * lw; ctx.beginPath();
+for (var s6 = 0; s6 <= 80; s6++) { var q6 = ringPt(a0 + (a1 - a0) * s6 / 80, 1); if (s6 === 0) ctx.moveTo(q6[0], q6[1]); else ctx.lineTo(q6[0], q6[1]); }
+ctx.stroke();
+ctx.lineWidth = 0.6 * lw; ctx.beginPath();
+for (var rt = 0; rt <= 45; rt++) { var ar = a0 + (a1 - a0) * rt / 45, q7 = ringPt(ar, 1), q8 = ringPt(ar, rt % 5 === 0 ? 1.08 : 1.035); ctx.moveTo(q7[0], q7[1]); ctx.lineTo(q8[0], q8[1]); }
+ctx.stroke();
+if (LAB && !o.min) { ctx.font = '9px ' + MONO; ctx.fillStyle = I(0.62 * rA * alpha); for (var rl2 = 0; rl2 < 9; rl2++) { var q9 = ringPt(a0 + (a1 - a0) * (rl2 + 0.5) / 9, 1.17); ctx.fillText('No.' + ('0' + (rl2 + 1 + off)).slice(-2), q9[0] - 14, q9[1] + 3); } }
+};
+var gF = 1 - ss(psi, 0, 0.35);
+var gp = function (x, y) { return psi < 0.001 ? [PX + x * Rq, PY + y * Rq] : proj(PX + x * Rq, PY + y * Rq, 0); };
+var circ = function () { ctx.beginPath(); for (var c9 = 0; c9 <= 128; c9++) { var a9 = c9 / 128 * PI * 2, q9 = gp(Math.cos(a9), Math.sin(a9)); if (c9 === 0) ctx.moveTo(q9[0], q9[1]); else ctx.lineTo(q9[0], q9[1]); } ctx.closePath(); };
+var big = Rq > 6000;
+if (false) { var hal = ctx.createRadialGradient(PX, PY, Rq, PX, PY, Rq * 1.22); hal.addColorStop(0, I(0.1 * wA * gF)); hal.addColorStop(1, I(0)); ctx.fillStyle = hal; ctx.beginPath(); ctx.arc(PX, PY, Rq * 1.22, 0, PI * 2); ctx.arc(PX, PY, Rq, 0, PI * 2, true); ctx.fill(); }
+ctx.fillStyle = I(0.45 * pA * (1 - ss(psi, 0.05, 0.4)));
+for (var ai = 0; ai < this.atm.length; ai += 2) { var aq = gp(this.atm[ai], this.atm[ai + 1]), ax = aq[0], ay = aq[1]; if (ax < -2 || ax > W + 2 || ay < -2 || ay > H + 2) continue; ctx.fillRect(ax, ay, 1.1 * pt, 1.1 * pt); }
+drawRing(PI, 2 * PI, 0.5, 9);
+ctx.save();
+circ(); ctx.globalAlpha = pA; ctx.fillStyle = th.bg; ctx.fill(); ctx.globalAlpha = 1;
+ctx.clip();
+if (wA > 0.01) {
+if (false) { var lit = ctx.createRadialGradient(PX - Rq * 0.4, PY - Rq * 0.45, 0, PX - Rq * 0.4, PY - Rq * 0.45, Rq * 1.3); lit.addColorStop(0, I(0.16 * wA * gF)); lit.addColorStop(0.55, I(0.04 * wA * gF)); lit.addColorStop(1, I(0)); ctx.fillStyle = lit; ctx.fillRect(PX - Rq, PY - Rq, Rq * 2, Rq * 2); }
+ctx.fillStyle = I(0.7 * wA);
+for (var si = 0; si < this.sph.length; si += 2) { var sq = gp(this.sph[si], this.sph[si + 1]), qx = sq[0], qy = sq[1]; if (qx < -2 || qx > W + 2 || qy < -2 || qy > H + 2) continue; ctx.fillRect(qx, qy, 1.1 * pt, 1.1 * pt); }
+var rot = t * 0.1, tau = 0.35, ct2 = Math.cos(tau), st2 = Math.sin(tau);
+ctx.strokeStyle = I(0.26 * wA); ctx.lineWidth = 0.7 * lw; ctx.beginPath();
+var spt = function (lat, lon) { var x = Math.cos(lat) * Math.sin(lon + rot), y = -Math.sin(lat), z = Math.cos(lat) * Math.cos(lon + rot); return [x * ct2 - y * st2, x * st2 + y * ct2, z]; };
+for (var mer = 0; mer < 12; mer++) { var lon = mer / 12 * PI * 2, pen = false; for (var la = -90; la <= 90; la += 4) { var q = spt(la / 180 * PI, lon); if (q[2] <= 0) { pen = false; continue; } var gq = gp(q[0], q[1]); if (!pen) { ctx.moveTo(gq[0], gq[1]); pen = true; } else ctx.lineTo(gq[0], gq[1]); } }
+for (var par = -75; par <= 75; par += 15) { var pen2 = false; for (var lo = 0; lo <= 360; lo += 5) { var q2 = spt(par / 180 * PI, lo / 180 * PI); if (q2[2] <= 0) { pen2 = false; continue; } var gq2 = gp(q2[0], q2[1]); if (!pen2) { ctx.moveTo(gq2[0], gq2[1]); pen2 = true; } else ctx.lineTo(gq2[0], gq2[1]); } }
+ctx.stroke();
+if (NS) {
+var stA = wA * ss(l, 7.4, 8.4) * (1 - ss(l, 9.3, 10.1));
+if (stA > 0.01) {
+var tx0, tx1, ty0 = -1, ty1;
+if (psi < 0.001) { tx0 = Math.max(-1, (-20 - PX) / Rq); tx1 = Math.min(1, (900 - PX) / Rq); ty1 = Math.min(1, (H + 20 - PY) / Rq); } else { tx0 = -0.6; tx1 = 0.6; ty1 = -0.4; }
+if (tx1 > tx0 && ty1 > ty0) {
+var NXc = 120, NYc = Math.max(8, Math.min(80, Math.round(NXc * (ty1 - ty0) / (tx1 - tx0)))), ddx = (tx1 - tx0) / NXc, ddy = (ty1 - ty0) / NYc, NW = NXc + 1;
+var crt = Math.cos(rot), srt = Math.sin(rot), FV = new Float32Array(NW * (NYc + 1));
+for (var fj = 0; fj <= NYc; fj++) for (var fi = 0; fi <= NXc; fi++) {
+var fsx = tx0 + fi * ddx, fsy = ty0 + fj * ddy, frr = fsx * fsx + fsy * fsy, fv = NaN;
+if (frr < 0.998) { var fsz = Math.sqrt(1 - frr), ux = fsx * ct2 + fsy * st2, uy = -fsx * st2 + fsy * ct2, bx2 = ux * crt - fsz * srt, bz2 = fsz * crt + ux * srt, by2 = uy;
+fv = Math.sin(4.1 * bx2 + 1.3 * by2 + 0.4) * Math.cos(3.3 * bz2 - 0.7) + 0.55 * Math.sin(7.9 * by2 + 2.2 * bx2 + 1.1) + 0.35 * Math.sin(11.3 * bz2 + 6.1 * bx2) + 0.22 * Math.sin(17 * bx2 - 13 * by2 + 5 * bz2); }
+FV[fj * NW + fi] = fv;
+}
+var CS = { 1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 5: [[3, 0], [1, 2]], 6: [[0, 2]], 7: [[3, 2]], 8: [[2, 3]], 9: [[0, 2]], 10: [[0, 1], [2, 3]], 11: [[1, 2]], 12: [[1, 3]], 13: [[0, 1]], 14: [[0, 3]] };
+var LVS = [-1.05, -0.75, -0.45, -0.15, 0.15, 0.45, 0.75, 1.05], pMaj = new Path2D(), pMin = new Path2D();
+for (var cj = 0; cj < NYc; cj++) for (var cix = 0; cix < NXc; cix++) {
+var w0 = FV[cj * NW + cix], w1 = FV[cj * NW + cix + 1], w2 = FV[(cj + 1) * NW + cix + 1], w3 = FV[(cj + 1) * NW + cix];
+if (w0 !== w0 || w1 !== w1 || w2 !== w2 || w3 !== w3) continue;
+var xa0 = tx0 + cix * ddx, ya0 = ty0 + cj * ddy;
+for (var lk = 0; lk < LVS.length; lk++) {
+var Lv = LVS[lk], id = (w0 > Lv ? 1 : 0) | (w1 > Lv ? 2 : 0) | (w2 > Lv ? 4 : 0) | (w3 > Lv ? 8 : 0), cs2 = CS[id];
+if (!cs2) continue;
+var epf = function (e) { if (e === 0) return [xa0 + ddx * (Lv - w0) / (w1 - w0), ya0]; if (e === 1) return [xa0 + ddx, ya0 + ddy * (Lv - w1) / (w2 - w1)]; if (e === 2) return [xa0 + ddx * (Lv - w3) / (w2 - w3), ya0 + ddy]; return [xa0, ya0 + ddy * (Lv - w0) / (w3 - w0)]; };
+var path = lk % 3 === 1 ? pMaj : pMin;
+for (var cc = 0; cc < cs2.length; cc++) { var e1 = epf(cs2[cc][0]), e2 = epf(cs2[cc][1]), g1 = gp(e1[0], e1[1]), g2 = gp(e2[0], e2[1]); path.moveTo(g1[0], g1[1]); path.lineTo(g2[0], g2[1]); }
+}
+}
+ctx.lineWidth = 0.6 * lw; ctx.strokeStyle = I(0.13 * stA); ctx.stroke(pMin);
+ctx.lineWidth = 0.8 * lw; ctx.strokeStyle = I(0.26 * stA); ctx.stroke(pMaj);
+}
+}
+}
+if (!big && gF > 0.01) {
+var shd = ctx.createLinearGradient(PX - Rq * 0.7, PY - Rq * 0.8, PX + Rq * 0.8, PY + Rq * 0.9);
+shd.addColorStop(0, 'rgba(5,5,6,0)'); shd.addColorStop(0.5, 'rgba(5,5,6,' + (0.2 * wA * gF).toFixed(3) + ')'); shd.addColorStop(1, 'rgba(5,5,6,' + (0.85 * wA * gF).toFixed(3) + ')');
+ctx.fillStyle = shd; ctx.fillRect(PX - Rq, PY - Rq, Rq * 2, Rq * 2);
+}
+}
+ctx.restore();
+ctx.strokeStyle = I(0.75 * pA * (1 - ss(psi, 0.03, 0.3))); ctx.lineWidth = lw; circ(); ctx.stroke();
+if (wA > 0.01) { ctx.strokeStyle = I(0.6 * wA * gF); ctx.lineWidth = 1.8 * lw; ctx.beginPath(); for (var ra = 0; ra <= 40; ra++) { var rq2 = gp(Math.cos(PI * (1 + 0.62 * ra / 40)), Math.sin(PI * (1 + 0.62 * ra / 40))); if (ra === 0) ctx.moveTo(rq2[0], rq2[1]); else ctx.lineTo(rq2[0], rq2[1]); } ctx.stroke(); }
+drawRing(0, PI, 1, 0);
+if (rA > 0.01) {
+var sa0 = (t * 0.45) % (PI - 0.7);
+ctx.strokeStyle = A(0.95 * rA); ctx.lineWidth = 2.2 * lw; ctx.beginPath();
+for (var s7 = 0; s7 <= 20; s7++) { var q10 = ringPt(sa0 + 0.7 * s7 / 20, 1); if (s7 === 0) ctx.moveTo(q10[0], q10[1]); else ctx.lineTo(q10[0], q10[1]); }
+ctx.stroke();
+if (LAB) { ctx.fillStyle = A(rA); ctx.font = '13px ' + SANS; ctx.fillText('蚁群', PX + Rq * 1.75, PY - Rq * 0.55); if (!o.min) { ctx.font = '10px ' + MONO; ctx.fillText('FORMICIDAE / 3 HOPS / 覆盖 18 期', PX + Rq * 1.75, PY - Rq * 0.55 + 16); } }
+}
+var uA = NS ? ss(l, 9.0, 10.3) : ss(l, 8.8, 10.3);
+if (uA > 0.01) {
+var inP = function (x, y) { return x * x + y * y < 0.9995; };
+var cf = 1 - 0.7 * ss(psi, 0.3, 0.9);
+if (psi > 0.05) {
+var skA = ss(psi, 0.25, 0.9) * uA, sky = this.sky;
+for (var sk = 0; sk < sky.length; sk += 3) { ctx.fillStyle = I((0.25 + 0.6 * sky[sk + 2]) * skA); ctx.fillRect(sky[sk], sky[sk + 1], sky[sk + 2] > 0.85 ? 1.8 : 1.1, sky[sk + 2] > 0.85 ? 1.8 : 1.1); }
+}
+var EX0 = this.mesh.X0, EX1 = this.mesh.X0 + (this.mesh.NX - 1) * this.mesh.dx, EY1 = this.mesh.Y0 + (this.mesh.NY - 1) * this.mesh.dy, NB = 6;
+var ef = function (x, y) { var q = Math.min((x - EX0) / 0.06, (EX1 - x) / 0.06, (EY1 - y) / 0.045); q = Math.max(0, Math.min(1, q)); return q * q * (3 - 2 * q); };
+var bkt = function (v) { return Math.min(NB, Math.ceil(v * NB - 0.001)); };
+var mkP = function () { var arr = []; for (var bb = 0; bb <= NB; bb++) arr.push(new Path2D()); return arr; };
+var fillP = function (arr, base) { for (var bb = 1; bb <= NB; bb++) { ctx.fillStyle = I(base * bb / NB); ctx.fill(arr[bb]); } };
+var strokeP = function (arr, base) { for (var bb = 1; bb <= NB; bb++) { ctx.strokeStyle = I(base * bb / NB); ctx.stroke(arr[bb]); } };
+var LP = mkP();
+for (var lai = 0; lai < this.latm.length; lai += 2) { var lx0 = this.latm[lai], lb = bkt(ss(0.2 - Math.abs(lx0), 0, 0.08)); if (!lb) continue; var ql = proj(PX + lx0 * Rq, PY + this.latm[lai + 1] * Rq, 0); if (ql[0] < -2 || ql[0] > W + 2 || ql[1] < -2 || ql[1] > H + 2) continue; LP[lb].rect(ql[0], ql[1], 1.1 * pt, 1.1 * pt); }
+fillP(LP, 0.5 * uA);
+var SS = this.sst, SP = mkP();
+for (var ui = 0; ui < SS.length; ui += 3) { if (!inP(SS[ui], SS[ui + 1])) continue; var sb = bkt(ef(SS[ui], SS[ui + 1])); if (!sb) continue; var qs = proj(PX + SS[ui] * Rq, PY + SS[ui + 1] * Rq, SS[ui + 2]); if (qs[0] < -2 || qs[0] > W + 2 || qs[1] < -2 || qs[1] > H + 2) continue; var ssz = 1.1 * pt * Math.min(2, qs[2]); SP[sb].rect(qs[0], qs[1], ssz, ssz); }
+fillP(SP, 0.5 * uA);
+[[this.segA, 0.26, 0.6], [this.segB, 0.55, 0.9]].forEach(function (g) {
+var sg2 = g[0], GP = mkP(); ctx.lineWidth = g[2] * lw;
+for (var k2 = 0; k2 < sg2.length; k2 += 5) { if (!inP(sg2[k2], sg2[k2 + 1])) continue; var gb = bkt(ef((sg2[k2] + sg2[k2 + 2]) / 2, (sg2[k2 + 1] + sg2[k2 + 3]) / 2)); if (!gb) continue; var a1 = proj(PX + sg2[k2] * Rq, PY + sg2[k2 + 1] * Rq, sg2[k2 + 4]), a2 = proj(PX + sg2[k2 + 2] * Rq, PY + sg2[k2 + 3] * Rq, sg2[k2 + 4]); GP[gb].moveTo(a1[0], a1[1]); GP[gb].lineTo(a2[0], a2[1]); }
+strokeP(GP, g[1] * uA * cf);
+});
+var mA = uA * ss(psi, 0.12, 0.7);
+if (mA > 0.01) {
+var M = this.mesh;
+ctx.lineWidth = 0.8 * lw;
+for (var mj = 0; mj < M.NY; mj += 3) {
+var my0 = M.Y0 + mj * M.dy, prev = null, rowF = 1, RP = mkP();
+for (var mi2 = 0; mi2 < M.NX; mi2 += 2) {
+var mx0 = M.X0 + mi2 * M.dx;
+if (!inP(mx0, my0)) { prev = null; continue; }
+var qm = proj(PX + mx0 * Rq, PY + my0 * Rq, M.G[mj * M.NX + mi2]); rowF = qm[2];
+if (prev) { var rb = bkt(ef(mx0 - M.dx, my0)); if (rb) { RP[rb].moveTo(prev[0], prev[1]); RP[rb].lineTo(qm[0], qm[1]); } }
+prev = qm;
+}
+strokeP(RP, 0.42 * mA * Math.min(1, rowF * rowF));
+}
+var CP = mkP();
+for (var mc = 0; mc < M.NX; mc += 8) {
+var prev2 = null, mcx = M.X0 + mc * M.dx;
+for (var mr = 0; mr < M.NY; mr += 2) { var mcy = M.Y0 + mr * M.dy; if (!inP(mcx, mcy)) { prev2 = null; continue; } var qc = proj(PX + mcx * Rq, PY + mcy * Rq, M.G[mr * M.NX + mc]); if (prev2) { var cb = bkt(ef(mcx, mcy - M.dy)); if (cb) { CP[cb].moveTo(prev2[0], prev2[1]); CP[cb].lineTo(qc[0], qc[1]); } } prev2 = qc; }
+}
+strokeP(CP, 0.16 * mA);
+}
+if (psi > 0.02) {
+var hz = ss(psi, 0.02, 0.35) * uA;
+ctx.strokeStyle = I(0.85 * hz); ctx.lineWidth = 1.2 * lw; ctx.beginPath();
+for (var hxv = -0.4; hxv <= 0.4; hxv += 0.004) { var hyv = -Math.sqrt(1 - hxv * hxv), qh = proj(PX + hxv * Rq, PY + hyv * Rq, 0); if (hxv === -0.4) ctx.moveTo(qh[0], qh[1]); else ctx.lineTo(qh[0], qh[1]); }
+ctx.stroke();
+}
+var tr = this.trail, trH = this.trailH, cum = this.cum, tot = cum[cum.length - 1];
+ctx.strokeStyle = A(0.95 * uA); ctx.lineWidth = 1.6 * lw; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -t * 18;
+ctx.beginPath();
+for (var p5 = 0; p5 < tr.length; p5 += 2) { var qt = proj(PX + tr[p5] * Rq, PY + tr[p5 + 1] * Rq, trH[p5 / 2]); if (p5 === 0) ctx.moveTo(qt[0], qt[1]); else ctx.lineTo(qt[0], qt[1]); }
+ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
+ctx.fillStyle = A2(uA);
+for (var an5 = 0; an5 < 14; an5++) {
+var target = ((an5 / 14 + t * 0.025) % 1) * tot, seg = 1;
+while (seg < cum.length - 1 && cum[seg] < target) seg++;
+var f5 = (target - cum[seg - 1]) / Math.max(1e-9, cum[seg] - cum[seg - 1]);
+var axx = tr[(seg - 1) * 2] + (tr[seg * 2] - tr[(seg - 1) * 2]) * f5, ayy = tr[(seg - 1) * 2 + 1] + (tr[seg * 2 + 1] - tr[(seg - 1) * 2 + 1]) * f5, ahh = trH[seg - 1] + (trH[seg] - trH[seg - 1]) * f5;
+var qa = proj(PX + axx * Rq, PY + ayy * Rq, ahh);
+ctx.beginPath(); ctx.arc(qa[0], qa[1], 2.2 * pt * Math.min(1.6, qa[2]), 0, PI * 2); ctx.fill();
+}
+var MKP = this._mk = [], hovM = this.hoverMark;
+if (o.marks !== false) this.marks.forEach(function (m, mi) {
+var qm2 = proj(PX + m.x * Rq, PY + m.y * Rq, m.h), mx = qm2[0], my = qm2[1], a3 = uA * (o.live ? ss(l, 9.9 + mi * 0.08, 10.3 + mi * 0.08) : ss(t, 16.2 + mi * 0.35, 16.9 + mi * 0.35));
+MKP[mi] = [mx, my, a3];
+if (hovM === mi) m = Object.assign({}, m, { acc: true });
+if (a3 <= 0.01) return;
+var col = m.acc ? A : I;
+ctx.strokeStyle = col(0.95 * a3); ctx.lineWidth = lw;
+if (psi > 0.1) { var qb = proj(PX + m.x * Rq, PY + m.y * Rq, 0); ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(qb[0], qb[1]); ctx.lineTo(mx, my); ctx.stroke(); ctx.setLineDash([]); }
+ctx.beginPath(); ctx.arc(mx, my, 5, 0, PI * 2); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(mx - 10, my); ctx.lineTo(mx - 6, my); ctx.moveTo(mx + 6, my); ctx.lineTo(mx + 10, my); ctx.moveTo(mx, my - 10); ctx.lineTo(mx, my - 6); ctx.moveTo(mx, my + 6); ctx.lineTo(mx, my + 10); ctx.stroke();
+if (!LAB) return;
+var bx = mx + 30, by = my - 50;
+ctx.beginPath(); ctx.moveTo(mx + 5, my - 5); ctx.lineTo(bx, by + 16); ctx.stroke();
+ctx.font = '12px ' + SANS; var w1 = ctx.measureText(m.zh).width; ctx.font = '9px ' + MONO; var w2 = o.min ? 0 : ctx.measureText(m.en).width, bw = Math.max(w1, w2) + 16, bh = o.min ? 24 : 34;
+ctx.globalAlpha = a3; ctx.fillStyle = th.bg; ctx.fillRect(bx, by, bw, bh); ctx.globalAlpha = 1;
+ctx.strokeStyle = col(0.7 * a3); ctx.strokeRect(bx + 0.5, by + 0.5, bw, bh);
+ctx.fillStyle = col(a3); ctx.font = '12px ' + SANS; ctx.fillText(m.zh, bx + 8, by + 16);
+if (!o.min) { ctx.font = '9px ' + MONO; ctx.fillStyle = col(0.65 * a3); ctx.fillText(m.en, bx + 8, by + 28); }
+});
+}
+}
+}
+
+renderVals() {
+var self = this, st = this.state.stage, sel = this.state.sel, en = this.state.lang === 'en';
+function T(z, e) { return en ? e : z; }
+function N(nm) { return self.tr(nm); }
+var STEPS = en ? [
+{ title: 'Choose scope', desc: 'This is your knowledge galaxy, with your research at the center. Click fields to add them to your scope (up to 3). The farther out, the less familiar — and the more likely to surprise you.' },
+{ title: 'Set frequency', desc: 'Your research and the fields you picked converge into a new planet. Choose how often the probe sets out around it; every run brings back a new batch of signals.' },
+{ title: 'Read signals', desc: 'The probe lands on the convergence planet. Each marker on the surface is one signal — hover to magnify, click to read it.' }
+] : [
+{ title: '选择探索范围', desc: '这是你的知识星系，中心是你的研究。点击领域加入探索范围，最多 3 个；越远越陌生，也越可能带来意外。' },
+{ title: '设置探测频率', desc: '你的研究和选中的范围在这里交汇，凝成一颗新星球。选探测器多久绕它出发一次，每次都会带回一批新信号。' },
+{ title: '查看观测结果', desc: '探测器降落到交汇星球的地表。每个标注是一条信号，悬停可以放大，点击查看详情。' }
+];
+var steps = STEPS.map(function (s, i) {
+var cur = i === st, done = i < st;
+return { no: '0' + (i + 1), title: s.title, desc: s.desc, cur: cur, status: done ? T('已完成 ✓', 'Done ✓') : (cur ? T('进行中', 'In progress') : T('待设置', 'Pending')), mark: done ? '✓' : '', bg: cur ? '#151517' : 'transparent', bd: cur ? 'rgba(179,222,62,0.35)' : '#1c1c1e', nc: cur ? '#B3DE3E' : (done ? '#9a9c9e' : '#4a4c4f'), tc: cur ? '#ecece8' : (done ? '#9a9c9e' : '#5d5f62'), stc: '#9a9c9e', go: function () { self.go(i); } };
+});
+var DIRN = { '核心循环': 'Core Loop', '游戏化设计': 'Gamification', '玩家动机': 'Player Motivation', 'Death Stranding': 'Death Stranding' };
+function DN(n) { return self.dirs.some(function(d){return d.user && d.name===n;}) ? n : (en ? (DIRN[n] || n) : n); }
+var pri = this.state.primary, priD = this.dirs.filter(function (d) { return d.name === pri; })[0] || this.dirs[0];
+var dirs = this.dirs.map(function (d) { var on = d.name === pri; return { label: DN(d.name) + ' · ' + d.cards, on: on, bg: on ? 'rgba(236,236,232,0.04)' : 'transparent', bd: on ? 'rgba(179,222,62,0.4)' : '#2e2e31', fg: on ? '#ecece8' : '#9a9c9e', pick: function () { self.setState({ primary: d.name, editDir: false }); } }; });
+var doms = this.domains, selRows = [];
+for (var k = 0; k < 3; k++) {
+var nm = sel[k], line = k === 0 ? 'transparent' : '#232325';
+if (nm) {
+var dm = doms.filter(function (d) { return d.name === nm; })[0], rec = nm === '生物学';
+selRows.push({ filled: true, empty: false, name: N(nm), dist: dm ? N(dm.dist) : '', rec: rec, xbd: rec ? '#232325' : 'rgba(236,236,232,0.3)', xc: rec ? '#3a3a3c' : '#cfcfcb', remove: (function (n) { return function () { self.toggleDom(n); }; })(nm), line: line });
+} else selRows.push({ filled: false, empty: true, name: '', dist: '', rec: false, xbd: '#232325', xc: '#3a3a3c', remove: function () {}, line: line });
+}
+var KINDS = en ? ['Collision', 'Knowledge', 'Question'] : ['碰撞', '知识', '追问'];
+var raw = this.resList().map(function (r) { return { key: r.key, title: en ? r.en : r.zh, kind: KINDS[r.kind], domain: N(r.domain), desc: en ? r.den : r.dzh }; });
+var got = this.state.got;
+var results = raw.slice(0, 6).map(function (r, i) {
+var g = !!got[r.key], top = i === 0;
+return { no: '0' + (i + 1), title: r.title, domain: r.domain, kind: r.kind, line: i === 0 ? 'transparent' : '#232325', bg: top ? 'rgba(236,236,232,0.02)' : 'transparent', nc: top ? '#B3DE3E' : '#7d7f82', btn: g ? T('已收下', 'Kept') : T('收下', 'Keep'), btnBg: g ? 'transparent' : (top ? '#ffffff' : 'transparent'), btnBd: g ? '#3a3a3c' : (top ? '#ffffff' : 'rgba(236,236,232,0.3)'), btnC: g ? '#7d7f82' : (top ? '#161616' : '#ecece8'), take: function () { var o = Object.assign({}, self.state.got); o[r.key] = true; self.setState({ got: o }); }, open: function () { self.setState({ detail: i }); } };
+});
+var di = this.state.detail, dr = di != null && di >= 0 ? raw[di] : null;
+var det = dr ? { no: '0' + (di + 1), kind: dr.kind, title: dr.title, desc: dr.desc, from: DN(priD.name) + ' × ' + dr.domain, btn: got[dr.key] ? T('已收下 ✓', 'Kept ✓') : T('收下这条信号', 'Keep this signal'), take: function () { var o = Object.assign({}, self.state.got); o[dr.key] = true; self.setState({ got: o }); } } : { no: '', kind: '', title: '', desc: '', from: '', btn: '', take: function () {} };
+var freqs = ['daily', 'weekly', 'monthly', 'manual'].map(function (id) { var f = self.freqDef(id), on = id === self.state.freq; return { label: f.label, sub: f.sub, on: on, bg: on ? 'rgba(236,236,232,0.04)' : 'transparent', bd: on ? 'rgba(179,222,62,0.4)' : '#232325', fg: on ? '#ecece8' : '#cfcfcb', pick: function () { self.setState({ freq: id, toast: '' }); } }; });
+var fc = this.freqDef(this.state.freq);
+var resMeta = en ? [sel.length + ' / 3 selected', 'Probe · ' + fc.label, 'First batch · ' + results.length + ' signals'] : ['已选 ' + sel.length + ' / 3 个范围', '探测器 · ' + fc.label, '第一批 · ' + results.length + ' 条信号'];
+var CTAS = en ? ['Scope set — next: frequency →', 'Launch probe ↓', 'Done — start tuning ✓'] : ['设好范围，去设频率 →', '出发探测 ↓', '完成，开启灵感调频 ✓'];
+var selNames = sel.map(N).join(en ? ', ' : '、');
+var tx = {
+brand: T('首航校准', 'First Calibration'), tag: T('INSPIRATION TUNER · 主编 77', 'SIGNALS FROM FAR FIELDS · EDITOR 77'), back: T('← 上一步', '← Back'),
+manual: T('操作手册', 'MANUAL'), now: T('现在要做', 'YOUR MOVE'), act: [T('选 1–3 个探索范围', 'Pick 1–3 fields to explore'), T('探测器多久出发一次？', 'How often should the probe go?'), T('收下有用的信号', 'Keep the signals you like')][st], actHint: [T('在左侧星系点击领域加入。越远越陌生，也越可能带来意外。', 'Click fields in the galaxy. The farther out, the more surprising.'), T('选一个频率，它会按时带回新信号。', 'Pick a rhythm; it will bring back new signals on schedule.'), T('点标题或左侧的标注，查看每条信号的详情。', 'Click a title or a marker on the surface to read it.')][st], manualSub: T('MANUAL · 3 步设好你的灵感调频', '3 STEPS TO SET UP YOUR TUNER'),
+yourDir: T('你的研究方向', 'YOUR RESEARCH'), fromCards: T('来自 ' + priD.cards + ' 张卡片', 'from ' + priD.cards + ' cards'),
+dirNote: T('从你的卡片和白板中读出，选一个作为本次调频的主线。', 'Read from your cards and boards. Pick one as the main thread for this tuning.'),
+results: T('当前结果', 'Current results'), rec: T('推荐 · 信号最强', 'Recommended · strongest signal'), addHint: T('＋ 在左侧星系点击一个领域加入', '+ Click a field in the galaxy to add it'),
+near: T('近 · 1 跳', 'Near · 1 hop'), mid: T('中 · 2 跳', 'Mid · 2 hops'), far: T('远 · 3 跳', 'Far · 3 hops'), farNote: T('越远越陌生，也越可能带来意外', 'farther = less familiar, more surprising'),
+resNote: T('这是探测器带回的第一批信号，和左侧地表上的标注一一对应。点标题或标注可以看详情。之后它会按' + fc.label + '（' + fc.sub + '）继续出发。', "This is the probe's first batch; each one matches a marker on the surface. Click a title or marker to read it. Next run: " + fc.next + '.'),
+summary: T('设置汇总', 'SUMMARY'), sumDir: T('研究方向：' + priD.name + '（主线）', 'Research: ' + DN(priD.name) + ' (main thread)'),
+sumScope: T('探索范围：' + selNames, 'Scope: ' + selNames), sumFreq: T('探测频率：' + fc.label + ' · ' + fc.sub + '（下次：' + fc.next + '）', 'Frequency: ' + fc.label + ' · ' + fc.sub + ' (next: ' + fc.next + ')')
+};
+var h = this.h;
+return {
+cvRef: this.cvRef, cw: Math.round(1440 * this.dpr), ch: Math.round(900 * this.dpr),
+pDown: h.pDown, pMove: h.pMove, pUp: h.pUp, wheel: h.wheel, keyDown: h.keyDown, prev: h.prev, next: h.next,
+hasPrev: st > 0, cta: CTAS[st], ctaDisabled: st === 0 && sel.length === 0, ctaBg: '#ffffff',
+stepNo: '0' + (st + 1), steps: steps, resMeta: resMeta[st],
+rA: st === 0, rB: st === 1, rC: st === 2, primaryLabel: DN(priD.name), editDir: this.state.editDir, dirBtn: this.state.editDir ? T('收起', 'Done') : T('修改', 'Edit'), toggleDir: h.toggleDir,
+canvasLabel:T('灵感调频的探索画面：从你的研究方向出发，选择探索范围、查看观测结果、设置探测频率','Discovery calibration: choose scope, view discoveries and set frequency'),removeScopeLabel:T('移除这个范围','Remove this domain'), toggleLang: h.toggleLang, langBtn: en ? '中文' : 'EN', det: det, hasDetail: !!dr, closeDetail: function () { self.setState({ detail: -1 }); }, closeLabel: T('关闭', 'Close'), fromLabel: T('交汇自', 'From'),
+dirs: dirs, selRows: selRows, results: results, freqs: freqs, toast: this.state.toast, tx: tx
+};
+}
+}
+
+/* ============================================================
+  3. 挂载：把模板渲染进 #stage，并按窗口大小等比缩放
+============================================================ */
+(function () {
+  function evalIn(expr, scope) { try { return Function('sc', 'with(sc){return (' + expr + ')}')(scope); } catch (e) { return undefined; } }
+  function interp(str, scope) {
+    var whole = str.match(/^\{\{\s*([^{}]+?)\s*\}\}$/);
+    if (whole) return evalIn(whole[1], scope);
+    return str.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, function (_, e) { var v = evalIn(e, scope); return v == null ? '' : v; });
+  }
+  function render(node, scope, out) {
+    node.childNodes.forEach(function (n) {
+      if (n.nodeType === 3) { out.appendChild(document.createTextNode(interp(n.textContent, scope))); return; }
+      if (n.nodeType !== 1) return;
+      var tag = n.tagName.toLowerCase();
+      if (tag === 'sc-if') { if (interp(n.getAttribute('value'), scope)) render(n, scope, out); return; }
+      if (tag === 'sc-for') {
+        var list = interp(n.getAttribute('list'), scope) || [], as = n.getAttribute('as');
+        list.forEach(function (item) { var s2 = Object.create(scope); s2[as] = item; render(n, s2, out); });
+        return;
+      }
+      var el = document.createElement(tag);
+      Array.from(n.attributes).forEach(function (at) {
+        if (at.name === 'ref' || /^hint-/.test(at.name)) return;
+        var v = interp(at.value, scope);
+        if (/^on/.test(at.name)) { if (typeof v === 'function') el.addEventListener(at.name.slice(2), v); return; }
+        if (at.name === 'disabled' || at.name === 'aria-pressed' || at.name === 'aria-current' || at.name === 'aria-expanded') { if (at.name === 'disabled') { if (v === true) el.setAttribute('disabled', ''); } else el.setAttribute(at.name, String(!!v)); return; }
+        if (v === false || v == null) return;
+        el.setAttribute(at.name, v);
+      });
+      render(n, scope, el);
+      out.appendChild(el);
+    });
+  }
+
+  var stage = document.getElementById('stage');
+  var tpl = document.getElementById('tuner-template').content;
+  var app = new Component({});
+  var canvas = null;
+  var previousStage = null;
+  app.__render = function () {
+    var vals = app.renderVals();
+    var frag = document.createDocumentFragment();
+    render(tpl, vals, frag);
+    var fresh = frag.querySelector('canvas');
+    if (canvas && fresh) { canvas.setAttribute('aria-label',fresh.getAttribute('aria-label')); fresh.replaceWith(canvas); }   // 复用同一个 canvas，保留事件和动画
+    else if (fresh) { canvas = fresh; }
+    stage.innerHTML = '';
+    stage.appendChild(frag);
+    if (previousStage !== app.state.stage && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var panel = stage.querySelector('.calibration-panel');
+      if (panel) panel.animate([{opacity:0,transform:'translateY(18px)',filter:'blur(5px)'},{opacity:1,transform:'translateY(0)',filter:'blur(0)'}],{duration:550,easing:'cubic-bezier(.22,1,.36,1)'});
+    }
+    previousStage = app.state.stage;
+  };
+  app.__render();
+  app.cvRef(canvas);
+  app.start();
+  window.addEventListener('message',function(e){
+    if(e.origin!==location.origin||e.source!==parent||!e.data||!['lumior-calibration-init','lumior-calibration-language'].includes(e.data.type))return;
+    var patch={},lang=e.data.language;
+    if(lang==='en'||lang==='zh'){patch.lang=lang;app._trc={};document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.title=lang==='zh'?'首航校准':'First Calibration';}
+    var dirs=e.data.dirs;
+    if(e.data.type==='lumior-calibration-init'&&Array.isArray(dirs)&&dirs.length){app.dirs=dirs.filter(function(d){return typeof d.name==='string';}).map(function(d,i){return {name:d.name,cards:d.cards,src:'白板',user:true,star:i===0,r:15+i*8,a:i*1.6};});if(app.dirs.length)patch.primary=app.dirs[0].name;}
+    app.setState(patch);
+  });
+  window.tunerApp = app; // 方便在控制台调试：tunerApp.go(1) / tunerApp.setState({...})
+
+  function fit() {
+    var w=window.innerWidth,h=window.innerHeight;
+    var panel=w<760?w:Math.min(512,Math.max(440,w*.40));
+    var area=w<760?w:w-panel-24;
+    var visualH=w<760?Math.min(360,h*.42):h;
+    var k=Math.min(area/904,visualH/900);
+    stage.style.setProperty('--visual-scale',k);
+    stage.style.setProperty('--visual-left',Math.max(0,(area-904*k)/2)+'px');
+    stage.style.setProperty('--visual-top',Math.max(0,(visualH-900*k)/2)+'px');
+    stage.style.setProperty('--panel-width',panel+'px');
+    stage.style.setProperty('--visual-height',visualH+'px');
+  }
+  window.addEventListener('resize', fit); fit();
+})();
+</script>
+</body>
+</html>

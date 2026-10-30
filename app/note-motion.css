@@ -1,0 +1,14 @@
+.world > .note-removal-snapshot {
+  pointer-events: none !important;
+  cursor: default;
+  z-index: 4 !important;
+  transform-origin: 50% 70%;
+  transition: none;
+  will-change: transform, opacity;
+}
+
+.note-removal-snapshot * { pointer-events: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .note-removal-snapshot { display: none; }
+}

@@ -1,0 +1,50 @@
+.database-visual-preview {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-surface);
+}
+.database-preview-tools {
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+.database-preview-tools button {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--ui-fill-hover);
+  cursor: pointer;
+}
+.database-preview-frame {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: min(1380px, calc(100% - 16px));
+  margin: 0 auto 8px;
+  overflow: hidden;
+  border-radius: 20px;
+}
+.database-preview-frame > .database-page {
+  display: flex;
+}
+.database-preview-board {
+  width: 100%;
+  padding: 40px;
+  background: var(--ui-canvas);
+  background-image: radial-gradient(var(--ui-fill-hover) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.database-preview-board > p {
+  margin-bottom: 24px;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+}
+.database-preview-linked-card {
+  border: 1px solid var(--ui-line);
+  border-radius: 14px;
+}

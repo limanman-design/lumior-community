@@ -1,0 +1,700 @@
+[
+  {
+    "key": "canvas",
+    "scene": "workspace",
+    "location": "画板工作区",
+    "target": "卡片后面的画布",
+    "source": {
+      "file": "app/lumior.css",
+      "line": 1,
+      "selector": ".workspace",
+      "property": "background",
+      "value": "var(--ui-canvas)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "surface",
+    "scene": "workspace",
+    "location": "画布里的笔记卡片",
+    "target": "笔记卡片底色",
+    "source": {
+      "file": "app/lumior.css",
+      "line": 1,
+      "selector": ".note",
+      "property": "background",
+      "value": "var(--ui-surface)"
+    },
+    "note": "与画布合并后，卡片要靠边框才能分清。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "panel",
+    "scene": "dialog",
+    "location": "论文项目弹窗",
+    "target": "弹窗面板底色",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 20,
+      "selector": ".thesis-board-dialog",
+      "property": "background",
+      "value": "var(--ui-panel)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "control",
+    "scene": "toolbar",
+    "location": "选中文字后的工具条",
+    "target": "整条浮动工具栏",
+    "source": {
+      "file": "app/ai-answer-selection.css",
+      "line": 3,
+      "selector": ".ai-selection-tools",
+      "property": "background",
+      "value": "var(--ui-control)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "control-raised",
+    "scene": "button",
+    "location": "普通次要按钮",
+    "target": "编辑按钮的底色",
+    "source": {
+      "file": "app/globals.css",
+      "line": 79,
+      "selector": ":root, .dark",
+      "property": "--secondary",
+      "value": "var(--ui-control-raised)"
+    },
+    "note": "实际 Button 组件，通过 secondary 别名引用。",
+    "state": "static",
+    "kind": "component"
+  },
+  {
+    "key": "control-hover",
+    "scene": "toolbar",
+    "location": "文字工具条的按钮悬停",
+    "target": "工具栏里的高亮按钮",
+    "source": {
+      "file": "app/ai-answer-selection.css",
+      "line": 7,
+      "selector": ".ai-selection-tools button:hover",
+      "property": "background",
+      "value": "var(--ui-control-hover)"
+    },
+    "note": "",
+    "state": "hover",
+    "kind": "prototype"
+  },
+  {
+    "key": "glass",
+    "scene": "composer",
+    "location": "画布底部 AI 输入区",
+    "target": "半透明输入面板",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 13,
+      "selector": ".ai-canvas:has(.redesigned-composer:focus-within)",
+      "property": "--canvas-ai-surface",
+      "value": "var(--ui-glass)"
+    },
+    "note": "AI 输入框获得焦点时使用这层半透明底色；请和默认透明模糊底及不透明面板一起比较。",
+    "state": "focus",
+    "kind": "prototype"
+  },
+  {
+    "key": "text",
+    "scene": "reading",
+    "location": "拖动引用卡片的预览",
+    "target": "标题和正文文字",
+    "source": {
+      "file": "app/ai-answer-selection.css",
+      "line": 11,
+      "selector": ".ai-selection-drag-ghost",
+      "property": "color",
+      "value": "var(--ui-text)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "text-secondary",
+    "scene": "reading",
+    "location": "拖动引用卡片的预览",
+    "target": "摘要说明文字",
+    "source": {
+      "file": "app/ai-answer-selection.css",
+      "line": 15,
+      "selector": ".ai-selection-drag-ghost p",
+      "property": "color",
+      "value": "var(--ui-text-secondary)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "text-muted",
+    "scene": "reading",
+    "location": "AI 对话标题",
+    "target": "轮次 / 辅助说明",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 25,
+      "selector": ".ai-canvas-header .ai-chat-title small",
+      "property": "color",
+      "value": "var(--ui-text-muted)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "text-disabled",
+    "scene": "disabled",
+    "location": "画板顶部按钮",
+    "target": "不可用按钮的文字",
+    "source": {
+      "file": "app/lumior.css",
+      "line": 3,
+      "selector": ".header-actions [aria-disabled=true]",
+      "property": "color",
+      "value": "var(--ui-text-disabled)"
+    },
+    "note": "",
+    "state": "disabled",
+    "kind": "prototype"
+  },
+  {
+    "key": "white",
+    "scene": "save",
+    "location": "AI 回答下方",
+    "target": "新建笔记按钮的白底",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 33,
+      "selector": ".ai-canvas .ai-answer-actions .ai-save-card",
+      "property": "background",
+      "value": "var(--ui-white)"
+    },
+    "note": "同色还用于深色实底上的白字。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "ink",
+    "scene": "save",
+    "location": "AI 回答下方",
+    "target": "白底按钮上的深色字",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 33,
+      "selector": ".ai-canvas .ai-answer-actions .ai-save-card",
+      "property": "color",
+      "value": "var(--ui-ink)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "black",
+    "scene": "mask",
+    "location": "AI 对话滚动区",
+    "target": "滚动顶部的渐隐遮罩",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 28,
+      "selector": ".ai-canvas .ai-messages",
+      "property": "mask-image",
+      "value": "linear-gradient(transparent,var(--ui-black) 8px)"
+    },
+    "note": "这里的黑色用作遮罩的不透明部分，并不是可见黑底。换成其他不透明颜色，外观通常不变；透明度才影响遮罩效果。示例采用当前产品顶部 8px 渐隐样式。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "line-subtle",
+    "scene": "history",
+    "location": "AI 历史记录",
+    "target": "标签下方的分隔线",
+    "source": {
+      "file": "app/ai-canvas-history.css",
+      "line": 4,
+      "selector": ".ai-record-tabs",
+      "property": "border-bottom",
+      "value": "1px solid var(--ui-line-subtle)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "line",
+    "scene": "dialog",
+    "location": "论文项目弹窗",
+    "target": "弹窗的外轮廓",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 20,
+      "selector": ".thesis-board-dialog",
+      "property": "border",
+      "value": "1px solid var(--ui-line)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "line-strong",
+    "scene": "drop",
+    "location": "引用拖入画布时",
+    "target": "可放入卡片的边框",
+    "source": {
+      "file": "app/ai-answer-selection.css",
+      "line": 12,
+      "selector": ".ai-selection-drag-ghost.can-drop",
+      "property": "border-color",
+      "value": "var(--ui-line-strong)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "fill-subtle",
+    "scene": "receipt",
+    "location": "AI 操作结果",
+    "target": "操作结果卡的淡底",
+    "source": {
+      "file": "app/ai-canvas-history.css",
+      "line": 16,
+      "selector": ".ai-operation-receipt",
+      "property": "background",
+      "value": "var(--ui-fill-subtle)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "fill-hover",
+    "scene": "stage",
+    "location": "论文阶段导航",
+    "target": "鼠标悬停的阶段按钮",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 3,
+      "selector": ".thesis-canvas-controls button:is(:hover,:focus-visible)",
+      "property": "background",
+      "value": "var(--ui-fill-hover)"
+    },
+    "note": "",
+    "state": "hover",
+    "kind": "prototype"
+  },
+  {
+    "key": "fill-selected",
+    "scene": "stage",
+    "location": "论文阶段导航",
+    "target": "当前选中的阶段",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 4,
+      "selector": ".thesis-canvas-controls button[aria-pressed=true]",
+      "property": "background",
+      "value": "var(--ui-fill-selected)"
+    },
+    "note": "白色 10% 是已确认规范；与 hover 合并后，两种状态的底色将一样。",
+    "state": "selected",
+    "kind": "prototype"
+  },
+  {
+    "key": "fill-pressed",
+    "scene": "switch",
+    "location": "多维表设置",
+    "target": "关闭状态的开关底色",
+    "source": {
+      "file": "app/database.css",
+      "line": 2333,
+      "selector": ".database-property-switch",
+      "property": "background",
+      "value": "var(--ui-fill-pressed)"
+    },
+    "note": "名字叫“按下底色”，实际还用于开关和滚动条；可以先考虑改名。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "shadow-soft",
+    "scene": "composer",
+    "location": "画布底部 AI 输入区",
+    "target": "输入框下方的浅阴影",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 47,
+      "selector": ".ai-canvas .redesigned-composer",
+      "property": "box-shadow",
+      "value": "0 8px 32px var(--ui-shadow-soft),inset 0 1px var(--ui-line-subtle)"
+    },
+    "note": "阴影的模糊半径和位移仍保留，只试换颜色。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "shadow",
+    "scene": "toolbar",
+    "location": "选中文字后的工具条",
+    "target": "浮动工具条的阴影",
+    "source": {
+      "file": "app/ai-answer-selection.css",
+      "line": 3,
+      "selector": ".ai-selection-tools",
+      "property": "box-shadow",
+      "value": "0 5px 20px var(--ui-shadow)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "shadow-strong",
+    "scene": "dialog",
+    "location": "画布内多维表弹窗",
+    "target": "较高浮层的深阴影",
+    "source": {
+      "file": "app/canvas-database-overlay.css",
+      "line": 14,
+      "selector": "[data-slot='dialog-content'].canvas-database-overlay",
+      "property": "box-shadow",
+      "value": "0 25px 100px var(--ui-shadow-strong)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "overlay",
+    "scene": "overlay",
+    "location": "普通弹窗背板",
+    "target": "弹窗后面的轻遮罩",
+    "source": {
+      "file": "components/ui/dialog.tsx",
+      "line": 36,
+      "selector": "DialogOverlay",
+      "property": "background",
+      "value": "var(--ui-overlay)"
+    },
+    "note": "复用 Dialog 的遮罩色；背景模糊与透明底色一起起作用。",
+    "state": "static",
+    "kind": "component-style"
+  },
+  {
+    "key": "overlay-heavy",
+    "scene": "overlay",
+    "location": "图片全屏查看",
+    "target": "图片后面的深遮罩",
+    "source": {
+      "file": "app/image-card.css",
+      "line": 42,
+      "selector": ".image-lightbox-backdrop",
+      "property": "background",
+      "value": "var(--ui-overlay-heavy)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "brand",
+    "scene": "progress",
+    "location": "更新下载进度",
+    "target": "进度条已经完成的部分",
+    "source": {
+      "file": "app/desktop-updates.css",
+      "line": 39,
+      "selector": ".desktop-update-progress progress::-webkit-progress-value",
+      "property": "background",
+      "value": "var(--ui-brand)"
+    },
+    "note": "荧光绿用于品牌强调和进度；主操作按钮在暗色为白底，在亮色方案为近黑底。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "brand-soft",
+    "scene": "excerpt",
+    "location": "原文引用定位",
+    "target": "被定位段落的淡绿底",
+    "source": {
+      "file": "app/lumior.css",
+      "line": 77,
+      "selector": ".source-paragraphs .highlighted",
+      "property": "background",
+      "value": "var(--ui-brand-soft)"
+    },
+    "note": "颜色替换不改变用户自己选的 PDF 批注色。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "brand-line",
+    "scene": "workspace",
+    "location": "正在编辑的卡片",
+    "target": "编辑卡片的绿色边框",
+    "source": {
+      "file": "app/lumior.css",
+      "line": 3,
+      "selector": ".note.editing",
+      "property": "border-color",
+      "value": "var(--ui-brand-line)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "danger",
+    "scene": "delete",
+    "location": "论文删除提醒",
+    "target": "继续删除的红色文字",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 36,
+      "selector": ".thesis-delete-actions .destructive",
+      "property": "color",
+      "value": "var(--ui-danger)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "danger-soft",
+    "scene": "delete",
+    "location": "论文删除提醒",
+    "target": "继续删除的淡红底",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 36,
+      "selector": ".thesis-delete-actions .destructive",
+      "property": "background",
+      "value": "var(--ui-danger-soft)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "danger-line",
+    "scene": "error",
+    "location": "对话保存失败提示",
+    "target": "错误提示的红色轮廓",
+    "source": {
+      "file": "app/ai-chat.css",
+      "line": 1,
+      "selector": ".ai-storage-error",
+      "property": "border",
+      "value": "1px solid var(--ui-danger-line)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "danger-fill",
+    "scene": "delete",
+    "location": "论文删除提醒",
+    "target": "确认按钮高亮时的深红底",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 37,
+      "selector": ".thesis-delete-actions .destructive:is(:hover,:focus-visible)",
+      "property": "background",
+      "value": "var(--ui-danger-fill)"
+    },
+    "note": "与浅红文字色直接合并，会让白字更难看清。",
+    "state": "hover",
+    "kind": "prototype"
+  },
+  {
+    "key": "success",
+    "scene": "stage",
+    "location": "论文阶段导航",
+    "target": "进行中的绿色状态点",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 10,
+      "selector": ".thesis-stage-dot[data-status=progress]",
+      "property": "background",
+      "value": "var(--ui-success)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "success-soft",
+    "scene": "success",
+    "location": "预留用途 · 尚未使用",
+    "target": "成功提示淡底（假设示例）",
+    "source": null,
+    "note": "未检出产品引用。可优先删除，无需找另一个颜色代替。示例仅说明它原本可能怎么用。",
+    "state": "static",
+    "kind": "unused"
+  },
+  {
+    "key": "warning",
+    "scene": "stage",
+    "location": "论文阶段导航",
+    "target": "需要关注的黄色状态点",
+    "source": {
+      "file": "app/thesis-board.css",
+      "line": 11,
+      "selector": ".thesis-stage-dot[data-status=attention]",
+      "property": "background",
+      "value": "var(--ui-warning)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "warning-soft",
+    "scene": "warning",
+    "location": "论文资料待补提示",
+    "target": "提醒框的黄色淡底",
+    "source": {
+      "file": "app/thesis/thesis.css",
+      "line": 85,
+      "selector": ".thesis-alert",
+      "property": "background",
+      "value": "var(--ui-warning-soft)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "info",
+    "scene": "origin",
+    "location": "AI 生成卡片的来源标记",
+    "target": "来源标记的浅蓝字",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 108,
+      "selector": ".card-ai-origin",
+      "property": "color",
+      "value": "var(--ui-info)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "info-soft",
+    "scene": "origin",
+    "location": "AI 生成卡片的来源标记",
+    "target": "来源标记的淡蓝底",
+    "source": {
+      "file": "app/ai-canvas.css",
+      "line": 108,
+      "selector": ".card-ai-origin",
+      "property": "background",
+      "value": "var(--ui-info-soft)"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "literature",
+    "scene": "files",
+    "location": "资料列表 / 卡片类型",
+    "target": "文献的类型图标",
+    "source": {
+      "file": "app/content-type-colors.css",
+      "line": 5,
+      "selector": ":root",
+      "property": "--lumior-type-literature",
+      "value": "var(--ui-literature)"
+    },
+    "note": "这里只试换类型图标；文件或用户内容的颜色不会被改。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "note",
+    "scene": "files",
+    "location": "资料列表 / 卡片类型",
+    "target": "笔记的类型图标",
+    "source": {
+      "file": "app/content-type-colors.css",
+      "line": 6,
+      "selector": ":root",
+      "property": "--lumior-type-note-page",
+      "value": "var(--ui-note)"
+    },
+    "note": "这里只试换类型图标；文件或用户内容的颜色不会被改。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "board",
+    "scene": "files",
+    "location": "资料列表 / 卡片类型",
+    "target": "画板的类型图标",
+    "source": {
+      "file": "app/content-type-colors.css",
+      "line": 7,
+      "selector": ":root",
+      "property": "--lumior-type-board",
+      "value": "var(--ui-board)"
+    },
+    "note": "这里只试换类型图标；文件或用户内容的颜色不会被改。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "video",
+    "scene": "files",
+    "location": "资料列表 / 卡片类型",
+    "target": "视频的类型图标",
+    "source": {
+      "file": "app/content-type-colors.css",
+      "line": 8,
+      "selector": ":root",
+      "property": "--lumior-type-video",
+      "value": "var(--ui-video)"
+    },
+    "note": "这里只试换类型图标；文件或用户内容的颜色不会被改。",
+    "state": "static",
+    "kind": "prototype"
+  },
+  {
+    "key": "note-soft",
+    "scene": "filter",
+    "location": "多维表的筛选条件",
+    "target": "已启用筛选的淡紫底",
+    "source": {
+      "file": "app/database-query-toolbar.css",
+      "line": 100,
+      "selector": ".database-query-chip[data-active='true']",
+      "property": "background",
+      "value": "var(--database-condition-surface, var(--ui-note-soft))"
+    },
+    "note": "",
+    "state": "static",
+    "kind": "prototype"
+  }
+]

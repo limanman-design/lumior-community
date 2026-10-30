@@ -1,0 +1,96 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 3532375">
+<circle id="Ellipse 802" cx="6.5" cy="1.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 803" cx="6.5" cy="26.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 804" cx="6.5" cy="6.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<g id="Group 353313">
+<g id="Ellipse 806" filter="url(#filter0_f_0_4)">
+<circle cx="11.5" cy="16.5" r="2.5" fill="white" fill-opacity="0.3"/>
+</g>
+<circle id="Ellipse 807" cx="11.5" cy="16.5" r="1.5" fill="white" fill-opacity="0.8"/>
+</g>
+<g id="Group 353315">
+<g id="Ellipse 806_2" filter="url(#filter1_f_0_4)">
+<circle cx="16.5" cy="16.5" r="2.5" fill="white" fill-opacity="0.2"/>
+</g>
+<circle id="Ellipse 807_2" cx="16.5" cy="16.5" r="1.5" fill="white" fill-opacity="0.4"/>
+</g>
+<g id="Group 353321">
+<g id="Ellipse 806_3" filter="url(#filter2_f_0_4)">
+<circle cx="6.5" cy="16.5" r="2.5" fill="white" fill-opacity="0.2"/>
+</g>
+<circle id="Ellipse 807_3" cx="6.5" cy="16.5" r="1.5" fill="white" fill-opacity="0.4"/>
+</g>
+<g id="Group 353320">
+<circle id="Ellipse 807_4" cx="11.5" cy="21.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353322">
+<circle id="Ellipse 807_5" cx="16.5" cy="21.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353323">
+<circle id="Ellipse 807_6" cx="21.5" cy="16.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353324">
+<circle id="Ellipse 807_7" cx="16.5" cy="11.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353312">
+<g id="Ellipse 806_4" filter="url(#filter3_f_0_4)">
+<circle cx="11.5" cy="11.5" r="2.5" fill="white" fill-opacity="0.3"/>
+</g>
+<circle id="Ellipse 807_8" cx="11.5" cy="11.5" r="1.5" fill="white" fill-opacity="0.8"/>
+</g>
+<g id="Group 353325">
+<g id="Ellipse 806_5" filter="url(#filter4_f_0_4)">
+<circle cx="6.5" cy="11.5" r="2.5" fill="white" fill-opacity="0.3"/>
+</g>
+<circle id="Ellipse 807_9" cx="6.5" cy="11.5" r="1.5" fill="white" fill-opacity="0.8"/>
+</g>
+<circle id="Ellipse 808" cx="6.5" cy="21.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 811" cx="1.5" cy="6.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 812" cx="1.5" cy="11.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 813" cx="1.5" cy="16.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 814" cx="1.5" cy="21.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 821" cx="11.5" cy="1.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 822" cx="11.5" cy="26.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 823" cx="11.5" cy="6.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 829" cx="16.5" cy="1.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 830" cx="16.5" cy="26.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 837" cx="21.5" cy="1.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 838" cx="21.5" cy="26.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 839" cx="21.5" cy="6.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 853" cx="16.5" cy="6.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 840" cx="21.5" cy="11.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 842" cx="21.5" cy="21.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 845" cx="26.5" cy="6.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 846" cx="26.5" cy="11.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 847" cx="26.5" cy="16.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 848" cx="26.5" cy="21.5" r="1.5" fill="white" fill-opacity="0.04"/>
+</g>
+<defs>
+<filter id="filter0_f_0_4" x="7" y="12" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<filter id="filter1_f_0_4" x="12" y="12" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<filter id="filter2_f_0_4" x="2" y="12" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<filter id="filter3_f_0_4" x="7" y="7" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<filter id="filter4_f_0_4" x="2" y="7" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_4"/>
+</filter>
+</defs>
+</svg>

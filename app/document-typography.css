@@ -1,0 +1,104 @@
+/* Shared Note typography. Geometry belongs to each surface; text does not. */
+:root {
+  --note-body-compact-size: 14px;
+  --note-body-reading-size: 15px;
+  --note-body-line-height: 1.5;
+  --note-h1-size: 24px;
+  --note-h2-size: 20px;
+  --note-h3-size: 18px;
+  --note-h4-size: 16px;
+  --note-heading-line-height: 1.5;
+  --note-heading-weight: 600;
+  --note-heading-compact-margin: 8px;
+  --note-heading-reading-margin: 10px;
+  --note-block-compact-padding: 2px;
+  --note-block-reading-padding: 5px;
+
+  /* The document Title is independent of H1–H4 and paragraph spacing. */
+  --note-title-card-size: 24px;
+  --note-title-card-line-height: 31px;
+  --note-title-card-space-after: 12px;
+  --note-title-reading-size: 28px;
+  --note-title-reading-line-height: 1.45;
+  --note-title-reading-space-after: 28px;
+}
+
+.block-document {
+  --note-font-size: var(--note-body-reading-size);
+  --note-block-padding: var(--note-block-compact-padding);
+  --note-heading-margin: var(--note-heading-compact-margin);
+}
+
+:is(.card-block-inline, .card-block-preview, .library-preview,
+    .memory-note-content, .pdf-linked-note-body, .card-side-body) .block-document {
+  --note-font-size: var(--note-body-compact-size);
+}
+
+:is(.expanded-card-document, .library-full-card-content) .block-document {
+  --note-block-padding: var(--note-block-reading-padding);
+  --note-heading-margin: var(--note-heading-reading-margin);
+}
+
+body .block-document .bn-editor {
+  font-size: var(--note-font-size);
+  line-height: var(--note-body-line-height);
+}
+
+/* BlockNote assigns a line-height to every block, so setting only the editor
+   container would not control the line-height the user actually reads. */
+.block-document .bn-editor .bn-block-outer {
+  line-height: var(--note-body-line-height);
+}
+.block-document .bn-editor .bn-block-content {
+  padding-block: var(--note-block-padding);
+}
+body .block-document .bn-editor p {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Size the heading block itself as well as its text: the toggle and drag
+   controls must not inherit BlockNote's larger default 3em heading size. */
+.block-document .bn-editor [data-content-type='heading'] {
+  --level: var(--note-h1-size);
+  padding-block: 0;
+  line-height: var(--note-heading-line-height);
+}
+.block-document .bn-editor [data-content-type='heading'][data-level='2'] {
+  --level: var(--note-h2-size);
+}
+.block-document .bn-editor [data-content-type='heading'][data-level='3'] {
+  --level: var(--note-h3-size);
+}
+/* Older documents may contain H5/H6. Keep their data intact and display them
+   with the smallest supported heading size. New controls offer H1–H4 only. */
+.block-document .bn-editor [data-content-type='heading']:is(
+    [data-level='4'], [data-level='5'], [data-level='6']) {
+  --level: var(--note-h4-size);
+}
+.block-document .bn-editor [data-prev-level='1'] { --prev-level: var(--note-h1-size); }
+.block-document .bn-editor [data-prev-level='2'] { --prev-level: var(--note-h2-size); }
+.block-document .bn-editor [data-prev-level='3'] { --prev-level: var(--note-h3-size); }
+.block-document .bn-editor :is([data-prev-level='4'], [data-prev-level='5'], [data-prev-level='6']) {
+  --prev-level: var(--note-h4-size);
+}
+body .block-document .bn-editor [data-content-type='heading'] :is(h1,h2,h3,h4,h5,h6) {
+  margin: var(--note-heading-margin) 0;
+  font-size: inherit;
+  font-weight: var(--note-heading-weight);
+  line-height: var(--note-heading-line-height);
+  letter-spacing: 0;
+}
+
+.inline-card-title {
+  font: 600 var(--note-title-card-size)/var(--note-title-card-line-height)
+    var(--font-geist-sans), sans-serif;
+  margin: 0 0 var(--note-title-card-space-after);
+}
+.expanded-note-title-input,
+.expanded-card-document > h1 {
+  font: 600 var(--note-title-reading-size)/var(--note-title-reading-line-height)
+    var(--font-geist-sans), sans-serif;
+  margin: 0 0 var(--note-title-reading-space-after);
+}

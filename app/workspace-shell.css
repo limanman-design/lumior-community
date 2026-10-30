@@ -1,0 +1,236 @@
+/* Web pages have no desktop material behind them. Keep their outer chrome
+   opaque, including the initial render before the desktop bridge is available. */
+body:has(.workspace-shell) {
+  background: var(--ui-surface);
+}
+.workspace-shell {
+  --workspace-frame-surface: var(--ui-surface);
+  display: flex;
+  flex-direction: column;
+  background: var(--workspace-frame-surface);
+  width: 100%;
+  height: 100dvh;
+  min-width: 0;
+  overflow: hidden;
+  --workspace-top-inset: 40px;
+}
+/* Reuse the trusted preload platform already exposed by the tab strip.
+   macOS and supported Windows reveal native material; older Windows keeps
+   its opaque BrowserWindow background. Linux and Web retain the fallback. */
+body:has(.workspace-shell .board-tabs:is([data-platform='darwin'], [data-platform='win32'])) {
+  background: transparent;
+}
+.workspace-shell:has(.board-tabs:is([data-platform='darwin'], [data-platform='win32'])) {
+  --workspace-frame-surface: color-mix(in srgb, var(--ui-surface) 55%, transparent);
+  -webkit-backdrop-filter: var(--lumior-glass-blur);
+  backdrop-filter: var(--lumior-glass-blur);
+}
+/* Navigation labels and file rows are app controls, not document text. Keep
+   this scoped so reading, annotation and editor selection retain their defaults. */
+:where(
+  .board-tabs,
+  .workspace-sidebar,
+  .workspace-board-sheet,
+  .home-file-page,
+  .library-top,
+  .library-tile,
+  .library-list-heading,
+  .library-list-row,
+  .database-heading,
+  .database-toolbar,
+  .expanded-note-header,
+  .expanded-pdf-header,
+  .expanded-video-header,
+  .workspace header
+),
+:where(.workspace-shell, .workspace-board-sheet)
+  :where(button, select, input, textarea) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* A field may sit inside a non-selectable toolbar; read-only documents and
+   preview excerpts must still support copying text. No Cmd/Ctrl+A interception. */
+:where(
+  input:focus,
+  textarea:focus,
+  [contenteditable='true'],
+  [contenteditable='plaintext-only'],
+  .block-document,
+  .home-file-preview-excerpt,
+  .video-transcript-line > span,
+  .transcript-line > span,
+  .image-note-text
+) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.workspace-body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 8px 8px 0;
+}
+.workspace-stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 0 16px 16px 0;
+  overflow: hidden;
+}
+.workspace-shell:has(.workspace-sidebar[data-home='false']),
+.workspace-shell:has(.workspace-sidebar[data-expanded='false']) {
+  --workspace-stage-radius: 16px;
+}
+.workspace-shell .workspace-stage {
+  border-top-left-radius: var(--workspace-stage-radius, 0);
+  border-bottom-left-radius: var(--workspace-stage-radius, 0);
+}
+/* Combine transformed cards before rounding the board's outer edge.
+   A rectangular mask avoids applying the rounded antialiasing twice. */
+@supports (mask-image: linear-gradient(#000, #000)) and (mask-clip: no-clip) {
+  .workspace-shell .workspace-stage {
+    mask-image: linear-gradient(var(--ui-black), var(--ui-black));
+    mask-clip: no-clip;
+  }
+}
+.workspace-content {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.workspace-shell .workspace,
+.workspace-shell .library-page,
+.workspace-shell .library-sidebar {
+  height: 100%;
+}
+.workspace-shell .workspace {
+  background: var(--ui-canvas);
+}
+.workspace-shell .expanded-pdf-page,
+.workspace-shell .expanded-video-page,
+.workspace-shell .expanded-card-page,
+.workspace-shell .memory-atlas-page {
+  top: var(--workspace-top-inset);
+  left: var(--workspace-sidebar-offset);
+}
+.workspace-shell :is(.expanded-pdf-page, .expanded-video-page, .expanded-card-page) {
+  right: 8px;
+  bottom: 8px;
+}
+.workspace-shell :is(.expanded-pdf-page, .expanded-video-page, .expanded-card-page, .memory-atlas-page) {
+  border-radius: var(--workspace-stage-radius, 0) 16px 16px var(--workspace-stage-radius, 0);
+  overflow: hidden;
+}
+.workspace-shell .expanded-pdf-page .board-sidebar-toggle,
+.workspace-shell .expanded-video-page .board-sidebar-toggle,
+.workspace-shell .memory-atlas-page .memory-atlas-header {
+  display: none;
+}
+.workspace-shell .ai-panel.ai-sidebar,
+.workspace-shell .card-side-panel,
+.workspace-shell .research-source-panel {
+  top: var(--workspace-top-inset);
+}
+.workspace-shell .ai-panel.ai-sidebar {
+  right: 8px;
+  bottom: 8px;
+  border-left-color: var(--ui-line-subtle);
+  border-radius: 0 16px 16px 0;
+  overflow: hidden;
+  max-width: calc(100vw - var(--workspace-sidebar-offset) - 8px);
+}
+.workspace-shell .ai-panel.ai-expanded-pdf,
+.workspace-shell .ai-panel.ai-expanded-video,
+.workspace-shell .ai-panel.ai-expanded-note {
+  top: calc(var(--workspace-top-inset) + 56px);
+  right: 16px;
+  bottom: 16px;
+  max-width: calc(100vw - var(--workspace-sidebar-offset) - 24px);
+  border-radius: 16px;
+}
+.workspace-shell .ai-panel.ai-floating {
+  max-height: calc(100dvh - var(--workspace-top-inset) - 40px);
+}
+/* PDF header width is the viewport minus the 52px rail or 332px open list. */
+@media (min-width: 701px) and (max-width: 1002px) {
+  .workspace-shell .ai-panel.ai-expanded-pdf {
+    top: calc(var(--workspace-top-inset) + 100px);
+  }
+}
+@media (min-width: 1003px) and (max-width: 1282px) {
+  .workspace-shell:has(.workspace-sidebar[data-expanded='true'])
+    .ai-panel.ai-expanded-pdf {
+    top: calc(var(--workspace-top-inset) + 100px);
+  }
+}
+@media (max-width: 767px) {
+  .workspace-shell .ai-panel.ai-sidebar,
+  .workspace-shell .card-side-panel,
+  .workspace-shell .research-source-panel {
+    max-width: calc(100vw - 52px);
+  }
+  .workspace-shell .ai-panel.ai-floating {
+    max-width: calc(100vw - 52px - 20px);
+  }
+}
+@media (min-width: 701px) and (max-width: 767px) {
+  .workspace-shell .research-source-panel,
+  .workspace-shell .card-side-panel.beside-ai {
+    max-width: calc(66vw - 52px);
+  }
+}
+@media (max-width: 700px) {
+  .workspace-shell .library-sidebar {
+    top: var(--workspace-top-inset);
+    height: calc(100dvh - var(--workspace-top-inset));
+    max-width: calc(100vw - 52px);
+  }
+  .workspace-shell .ai-panel.ai-expanded-pdf,
+  .workspace-shell .ai-panel.ai-expanded-video,
+  .workspace-shell .ai-panel.ai-expanded-note {
+    max-width: calc(100vw - 52px - 24px);
+  }
+  .workspace-shell .card-side-panel.beside-ai {
+    right: calc((100vw - 52px) * 0.46);
+    width: calc((100vw - 52px) * 0.54);
+    max-width: calc((100vw - 52px) * 0.54);
+  }
+  .workspace-shell:has(.card-side-panel.beside-ai) .ai-panel.ai-sidebar {
+    width: calc((100vw - 52px) * 0.46);
+    max-width: calc((100vw - 52px) * 0.46);
+  }
+}
+@media (max-width: 600px) {
+  .workspace-shell .ai-panel.ai-floating {
+    max-width: calc(100vw - 52px - 12px);
+  }
+}
+@media (max-width: 700px) {
+  .workspace-shell :is(.expanded-pdf-with-ai, .expanded-video-with-ai, .expanded-card-with-ai) {
+    bottom: 52dvh;
+  }
+  .workspace-shell .ai-panel.ai-expanded-pdf,
+  .workspace-shell .ai-panel.ai-expanded-video,
+  .workspace-shell .ai-panel.ai-expanded-note {
+    top: calc(var(--workspace-top-inset) + 48dvh);
+  }
+}
+
+/* An inset stroke preserves the shared toolbar sizes and their hit areas. */
+.workspace-shell :is(.canvas-tools, .header-actions, .zoom, .flashlight-toggle,
+  .tutor-button, .sound-dock-controls, .card-toolbar, .expanded-video-controls) {
+  box-shadow: inset 0 0 0 1px var(--ui-line-subtle);
+}
+.workspace-shell :is(.pdf-viewer, .expanded-pdf-header) .pdf-controls {
+  height: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px var(--ui-line-subtle);
+}

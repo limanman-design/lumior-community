@@ -1,0 +1,4 @@
+.document-file-error{margin:8px 0;color:var(--ui-danger);font-size:13px;line-height:1.6}
+.document-file-status{display:block;margin:8px 48px;color:var(--ui-text-muted);font-size:12px;line-height:1.6}
+.block-document .bn-editor :is(img,video,audio){max-width:100%}
+.block-document .bn-editor audio{width:100%}

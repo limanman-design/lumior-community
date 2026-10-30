@@ -1,0 +1,134 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import './ui-colors.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-action-primary: var(--action-primary);
+  --color-action-primary-foreground: var(--action-primary-foreground);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+body {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+:root { --radius: 0.625rem; }
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+:root, .dark {
+  --background: var(--ui-canvas);
+  --foreground: var(--ui-text);
+  --card: var(--ui-surface);
+  --card-foreground: var(--ui-text);
+  --popover: var(--ui-panel);
+  --popover-foreground: var(--ui-text);
+  --primary: var(--ui-brand);
+  --primary-foreground: var(--ui-ink);
+  /* Main actions are neutral; legacy primary remains the brand accent. */
+  --action-primary: var(--ui-white);
+  --action-primary-foreground: var(--ui-ink);
+  --secondary: var(--ui-control-raised);
+  --secondary-foreground: var(--ui-text);
+  --muted: var(--ui-control);
+  --muted-foreground: var(--ui-text-muted);
+  --accent: var(--ui-control-hover);
+  --accent-foreground: var(--ui-white);
+  --destructive: var(--ui-danger);
+  --border: var(--ui-line-subtle);
+  --input: var(--ui-line);
+  --ring: var(--ui-brand);
+  --sidebar: var(--ui-surface);
+  --sidebar-foreground: var(--ui-text-secondary);
+  --sidebar-primary: var(--ui-brand);
+  --sidebar-primary-foreground: var(--ui-ink);
+  --sidebar-accent: var(--ui-fill-selected);
+  --sidebar-accent-foreground: var(--ui-text);
+  --sidebar-border: var(--ui-line-subtle);
+  --sidebar-ring: var(--ui-brand);
+  --chart-1: var(--ui-brand);
+  --chart-2: var(--ui-info);
+  --chart-3: var(--ui-board);
+  --chart-4: var(--ui-warning);
+  --chart-5: var(--ui-success);
+}
+
+/* Shared control values from the workspace shell, settings forms and search dialog. */
+:root {
+  --lumior-glass-surface: var(--ui-glass);
+  --lumior-glass-blur: blur(28px) saturate(110%);
+  --lumior-control-radius: 12px;
+  --lumior-menu-radius: 12px;
+  --lumior-menu-item-radius: 8px;
+  --lumior-menu-padding: 4px;
+  --lumior-field-radius: 10px;
+  --lumior-panel-radius: 16px;
+  --lumior-control-surface: var(--ui-glass);
+  --lumior-control-border: var(--ui-line);
+  --lumior-field-surface: var(--ui-control);
+  --lumior-field-border: var(--ui-line);
+  --lumior-field-focus: var(--ui-line-strong);
+  --lumior-field-ink: var(--ui-text);
+  --lumior-field-placeholder: var(--ui-text-muted);
+  --lumior-dialog-surface: var(--ui-panel);
+  --lumior-dialog-border: var(--ui-line);
+  --lumior-dialog-shadow: 0 20px 100px var(--ui-shadow);
+  --lumior-secondary-surface: var(--ui-control);
+  --lumior-secondary-border: var(--ui-line);
+  --lumior-secondary-hover: var(--ui-control-hover);
+}
+
+@source "../node_modules/@blocknote/shadcn";

@@ -1,0 +1,64 @@
+.workspace-loading {
+  --bg: var(--ui-canvas);
+  --grid: var(--ui-fill-hover);
+  --ink: var(--ui-white);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image: radial-gradient(ellipse 70% 75% at 50% 48%, transparent 30%, var(--bg) 100%), radial-gradient(circle, var(--grid) 1.1px, transparent 1.6px);
+  background-size: 100% 100%, 20px 20px;
+}
+.loading-mark { display:flex; align-items:center; gap:8px; height:40px; }
+.loading-logo { position:relative; width:40px; height:40px; flex:none; }
+.loading-logo svg { position:absolute; left:0; top:0; display:block; overflow:visible; }
+.loading-logo .g-ink { fill:var(--ink); }
+.loading-logo .g-ly { display:none; }
+.loading-logo.p-solid .ly-solid,
+.loading-logo.p-ht .ly-ht,
+.loading-logo.p-dot .ly-dot,
+.loading-logo.p-script .ly-script,
+.loading-logo.p-line .ly-line,
+.loading-logo.p-hatch .ly-hatch,
+.loading-logo.p-topo .ly-topo,
+.loading-logo.p-pix .ly-pix,
+.loading-logo.p-wire .ly-wire,
+.loading-logo.p-geo .ly-geo,
+.loading-logo.p-ascii .ly-solid,
+.loading-logo.p-r1 .ly-solid,
+.loading-logo.p-r2 .ly-solid,
+.loading-logo.p-r3 .ly-solid,
+.loading-logo.p-r4 .ly-solid { display:inline; }
+.loading-logo .ly-solid { transform-box:fill-box; transform-origin:center; }
+.loading-logo.p-ascii .ly-solid { animation:loading-logo-land .36s cubic-bezier(.3,1.4,.5,1); }
+.loading-logo .g-stroke { fill:none; stroke:var(--ink); }
+.loading-logo .ly-line .g-stroke { stroke-width:3.6; }
+.loading-logo .ly-script .g-stroke { stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.loading-logo .ly-dot .g-stroke { stroke-width:3.4; stroke-linecap:round; stroke-dasharray:0 6.2; }
+.loading-logo .ly-hatch .g-stroke { stroke-width:2; }
+.loading-logo .g-bgstroke { fill:none; stroke:var(--bg); }
+.loading-logo .ly-wire .g-stroke { stroke-width:2.2; }
+.loading-logo .ly-wire .g-guide { fill:none; stroke:var(--ink); stroke-width:1.4; stroke-dasharray:4 4; opacity:.45; }
+.loading-logo .ly-wire .g-dash { stroke-dasharray:5 4; }
+.loading-logo .g-bar { stroke:var(--ink); stroke-width:7; }
+.loading-logo .g-star { stroke:var(--ink); stroke-width:5; }
+.loading-wordmark { display:flex; align-items:center; width:96px; height:40px; flex:none; color:var(--ink); overflow:visible; }
+.loading-wordmark-svg { flex:none; display:block; overflow:visible; position:relative; top:2px; fill:currentColor; }
+.loading-wordmark-svg.word-hatch>path { stroke:currentColor; stroke-width:.8; }
+.loading-word-guides { fill:none; stroke:currentColor; stroke-width:1; stroke-dasharray:3 3; }
+.workspace-loading.is-ready { pointer-events:none; animation:workspace-loading-exit 200ms ease-out forwards; }
+.workspace-loading-label { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.workspace-loading-error { position:absolute; top:calc(50% + 64px); width:min(460px,calc(100% - 48px)); display:grid; justify-items:center; gap:16px; text-align:center; }
+.workspace-loading:has(> canvas) .workspace-loading-error { top:calc(50% + 124px); }
+.workspace-loading-error p { margin:0; overflow-wrap:anywhere; }
+.workspace-loading-error button { background:var(--ui-panel); border-radius:12px; padding:12px 20px; }
+.workspace-loading-error button:hover { background:var(--ui-control-raised); }
+@keyframes loading-logo-land { 0%{transform:scale(.88)} 45%{transform:scale(1.05)} 100%{transform:scale(1)} }
+@keyframes workspace-loading-exit { to{opacity:0} }
+@media(prefers-reduced-motion:reduce) {
+  .loading-logo.p-ascii .ly-solid { animation:none; }
+  .workspace-loading.is-ready { animation-duration:1ms; }
+}

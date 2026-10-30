@@ -1,0 +1,109 @@
+.observatory-intro {
+  --bg: var(--ui-canvas);
+  --grid: var(--ui-fill-hover);
+  --ink: var(--ui-white);
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  isolation: isolate;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 70% 75% at 50% 48%, transparent 30%, var(--bg) 100%),
+    radial-gradient(circle, var(--grid) 1.1px, transparent 1.6px);
+  background-size: 100% 100%, 20px 20px;
+  color: var(--ink);
+  font-family: var(--font-geist-sans), Arial, 'Noto Sans SC', sans-serif;
+}
+
+.observatory-topline {
+  position: absolute;
+  top: 27px;
+  left: 64px;
+  font: 8px monospace;
+  letter-spacing: 2px;
+  color: var(--ui-text-muted);
+}
+
+.observatory-story {
+  width: min(460px, calc(100% - 48px));
+  padding: 76px 0 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.observatory-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+  pointer-events: none;
+}
+
+.observatory-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: 11px monospace;
+  letter-spacing: 0.03em;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.observatory-start kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 6px;
+  border: 1px solid var(--ui-line);
+  border-radius: 4px;
+  font: inherit;
+  color: var(--ui-text-secondary);
+  background: var(--ui-fill-subtle);
+}
+
+.observatory-start kbd span {
+  color: var(--ui-text-muted);
+}
+
+.observatory-start:hover {
+  color: var(--ui-white);
+  background: var(--ui-fill-hover);
+}
+
+.observatory-start:focus-visible {
+  outline: 1px solid var(--ui-brand);
+  outline-offset: 4px;
+}
+
+@media (max-width: 600px) {
+  .observatory-story {
+    width: calc(100% - 32px);
+  }
+  .observatory-brand {
+    margin-bottom: 28px;
+  }
+  .observatory-topline {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .observatory-intro *,
+  .observatory-intro *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

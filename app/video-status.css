@@ -1,0 +1,21 @@
+.video-status-control{position:relative;display:inline-flex;align-items:center;flex:none;z-index:6}
+.video-status-control>.video-status-dot{display:block!important;width:18px!important;height:24px!important;padding:0!important;position:relative;background:transparent!important;border:0;border-radius:0;cursor:help}
+.video-status-dot::after{content:"";position:absolute;left:5px;top:8px;width:7px;height:7px;border-radius:50%;background:var(--ui-line-strong)}
+.video-status-control.status-ready .video-status-dot::after{background:var(--ui-brand)}
+.video-status-control.status-error .video-status-dot::after{background:var(--ui-danger)}
+.video-status-control.status-warning .video-status-dot::after{background:var(--ui-warning)}
+.video-status-control.status-loading .video-status-dot::after{background:var(--ui-note);animation:video-status-pulse 1s ease-in-out infinite}
+.video-status-dot:focus-visible{outline:2px solid var(--ui-brand)!important;outline-offset:1px!important;border-radius:5px}
+.video-status-popover{position:fixed;z-index:210;display:flex;flex-direction:column;gap:12px;width:300px;max-width:calc(100vw - 32px);margin:0;padding:14px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-panel);color:var(--ui-text);box-shadow:0 8px 32px var(--ui-shadow);white-space:normal;text-align:left;font-size:12px;line-height:19px;overflow:auto;overscroll-behavior:contain}
+.video-status-popover>strong{font-size:14px}
+.video-status-detail{display:flex;flex-direction:column;gap:5px}
+.video-status-detail>span{font-size:11px;color:var(--ui-text-muted)}
+.video-status-detail output{overflow-wrap:anywhere}
+.video-status-detail.status-error output{color:var(--ui-danger)}
+.video-status-popover button,.video-status-popover>a{align-self:flex-start;min-height:28px;padding:4px 10px;border:1px solid var(--ui-line);border-radius:var(--lumior-control-radius,12px);color:var(--ui-text);font-size:12px;line-height:18px;background:var(--ui-fill-subtle)}
+.video-status-popover button:hover,.video-status-popover>a:hover{background:var(--ui-fill-hover);color:var(--ui-white)}
+.video-status-popover button:disabled{opacity:.45;cursor:default}
+.video-status-popover button:focus-visible,.video-status-popover>a:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px}
+.video-status-popover>small{font-size:11px;color:var(--ui-text-muted)}
+@keyframes video-status-pulse{50%{opacity:.3}}
+@media(prefers-reduced-motion:reduce){.video-status-control.status-loading .video-status-dot::after{animation:none}}

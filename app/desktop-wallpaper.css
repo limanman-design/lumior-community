@@ -1,0 +1,21 @@
+.desktop-wallpaper-panel{display:flex;flex-direction:column;gap:24px}
+.wallpaper-status-row{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.desktop-wallpaper-panel h3{font-size:16px;font-weight:600;color:var(--ui-text)}
+.desktop-wallpaper-panel p{font-size:13px;line-height:1.65;color:var(--ui-text-muted);margin:6px 0 0}
+.wallpaper-status-row>button{flex:none;padding:10px 16px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-fill-hover);color:var(--ui-text);font-size:13px}
+.wallpaper-status-row>button[aria-pressed=true]{background:var(--ui-fill-selected)}
+.wallpaper-scenes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border:0;min-width:0;padding:0}
+.wallpaper-scenes>button{padding:8px;border:1px solid var(--ui-line);border-radius:16px;text-align:left;background:var(--ui-fill-subtle);color:var(--ui-text-secondary)}
+.wallpaper-scenes>button[aria-pressed=true]{border-color:var(--ui-line-strong);background:var(--ui-fill-selected);color:var(--ui-white)}
+.wallpaper-scenes strong{display:block;padding:10px 6px 4px;font-size:14px;font-weight:500}
+.wallpaper-swatch{display:block;height:110px;border-radius:10px;background-color:#020713;overflow:hidden}
+.wallpaper-swatch-galaxy{background:radial-gradient(ellipse at 55% 53%,#aac7fb40,transparent 55%),linear-gradient(145deg,#02060f 20%,#0d2945 47%,#3d72905e 52%,#0c2132 61%,#01040c 85%)}
+.wallpaper-swatch-shore{background:radial-gradient(ellipse at 66% 44%,#b6f8ff35,transparent 30%),linear-gradient(155deg,#051624 30%,#08374a 56%,#a0e5ed66 57%,#072733 60%,#03070e 73%)}
+.desktop-wallpaper-panel .wallpaper-current{margin:0;color:var(--ui-text-secondary);font-size:13px;line-height:1.65}
+.desktop-wallpaper-panel .wallpaper-failure{margin:0;color:var(--ui-danger)}
+.desktop-wallpaper-panel .wallpaper-footnote{margin:0;color:var(--ui-text-muted);font-size:12px}
+.desktop-wallpaper-panel button:disabled{opacity:.45;cursor:default}
+.desktop-wallpaper-panel button:not(:disabled):hover{background-color:var(--ui-fill-hover)}
+.desktop-wallpaper-panel button[aria-pressed=true]:not(:disabled):hover{background-color:var(--ui-fill-selected)}
+.desktop-wallpaper-panel button:focus-visible{outline:2px solid var(--ui-brand);outline-offset:3px}
+@media(max-width:600px){.wallpaper-status-row{align-items:flex-start;flex-direction:column;gap:12px}.wallpaper-swatch{height:84px}}

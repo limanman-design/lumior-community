@@ -1,0 +1,9 @@
+Expanded card header icons
+
+Downloaded from the user's Lumior Figma design on 2026-10-12.
+Source: https://www.figma.com/design/811RQYmbOW60HstAbBMfVT/Lumior
+
+pdf.svg: replaced in the community source with Google Material Symbols Rounded text_snippet, Apache-2.0. Local adaptation preserves the 20 x 20 display size and previous single-color presentation. See public/licenses/community-assets.txt for the exact source.
+note.svg: node 2693:229757, sticky_note_2_20dp_FFFFFF_FILL0_wght400_GRAD0_opsz20 1, 20 x 20.
+
+note.svg remains the original Figma export. pdf.svg is the documented community replacement, not an Icons8 export.

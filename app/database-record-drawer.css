@@ -1,0 +1,445 @@
+/* Keep the view mounted in one scroll container while record details change. */
+.database-page.database-page:not(.database-empty) {
+  --database-record-drawer-width: min(560px, 48cqw);
+  align-items: stretch;
+  overflow: hidden;
+  container-name: database-workspace;
+  container-type: inline-size;
+}
+
+.database-workspace-view {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-line) transparent;
+}
+
+.database-record-drawer {
+  position: absolute;
+  inset: 0 0 0 auto;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  height: 100%;
+  max-height: 100%;
+  align-self: stretch;
+  border: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: var(--database-record-drawer-width);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--ui-line);
+  background: var(--panel-bg, var(--ui-surface));
+  color: var(--lumior-field-ink, var(--ui-text));
+  box-shadow: -8px 0 24px var(--ui-shadow-soft);
+  color-scheme: dark;
+}
+.database-record-drawer:focus {
+  outline: none;
+}
+
+.database-record-drawer-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 9px 16px;
+  background: inherit;
+}
+.database-record-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--lumior-control-radius, 7px);
+  background: transparent;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+.database-record-back:hover {
+  background: var(--control-hover, var(--ui-fill-hover));
+  color: var(--ui-text);
+}
+.database-record-back > span {
+  display: none;
+}
+
+.database-record-drawer-context {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--lumior-field-muted, var(--ui-text-muted));
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.database-record-drawer-context svg {
+  flex: 0 0 auto;
+}
+
+.database-record-drawer-context span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.database-record-drawer-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.database-record-drawer-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius:var(--lumior-control-radius,12px);
+  background: transparent;
+  color: var(--ui-text-muted);
+}
+
+.database-record-drawer-actions > button:hover {
+  background: var(--control-hover, var(--ui-fill-hover));
+  color: var(--lumior-field-ink, var(--ui-text));
+}
+
+.database-record-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 30px 32px 36px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-line) transparent;
+  overscroll-behavior: contain;
+}
+
+.database-record-drawer-body > h2 {
+  margin: 0;
+}
+
+.database-record-drawer .database-record-heading,
+.database-record-drawer .database-record-title {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 28px;
+  padding: 3px 0;
+  border: 0;
+  border-radius: var(--lumior-field-radius, 7px);
+  background: transparent;
+  color: var(--foreground, var(--ui-text));
+  font: inherit;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.45px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.database-record-drawer .database-record-heading {
+  cursor: text;
+}
+
+.database-record-drawer .database-record-heading:hover {
+  background: var(--ui-fill-hover);
+}
+
+.database-record-drawer .database-record-title {
+  min-height: 48px;
+  resize: vertical;
+  background: var(--lumior-field-surface, var(--ui-fill-subtle));
+  border-color: var(--lumior-field-border, var(--ui-line));
+}
+
+.database-record-drawer .database-record-title:focus-visible {
+  border-color: var(--lumior-field-focus, var(--ui-brand));
+  outline: none;
+  box-shadow: none;
+}
+
+.database-record-drawer .database-record-properties {
+  gap: 18px;
+  margin: 0;
+}
+
+.database-record-drawer .database-record-property {
+  grid-template-columns: minmax(90px, 116px) minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  align-items: start;
+}
+
+.database-record-drawer .database-record-property > span:first-child {
+  min-height: 36px;
+  line-height: 20px;
+}
+
+.database-record-drawer .database-record-property > :last-child {
+  min-width: 0;
+}
+
+/* Detail content is complete and selectable, including existing text editors. */
+.database-record-drawer .database-text-cell > span {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: initial;
+  user-select: text;
+}
+
+.database-record-long-text {
+  position: relative;
+  min-width: 0;
+  padding-top: 22px;
+}
+
+.database-record-long-text > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  margin-bottom: 8px;
+  padding-right: 64px;
+}
+
+.database-record-edit-text {
+  position: absolute;
+  top: 22px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  min-height: 28px;
+  border-radius: 6px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.database-record-edit-text:hover {
+  background: var(--ui-fill-hover);
+}
+
+.database-title-cell .database-open-record {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: auto;
+  min-width: 48px;
+  padding: 0 5px;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.database-record-long-text > header > span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.database-record-long-text > header > span svg {
+  flex: 0 0 auto;
+}
+
+.database-record-long-text > header button {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius:var(--lumior-control-radius,12px);
+  background: transparent;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.database-record-long-text > header button:hover {
+  background: var(--control-hover, var(--ui-fill-hover));
+  color: var(--lumior-field-ink, var(--ui-text));
+}
+
+.database-record-long-text-content {
+  min-height: 26px;
+  padding: 0 2px;
+  color: var(--ui-text-secondary);
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.database-record-long-text-content[data-empty='true'] {
+  color: var(--ui-text-muted);
+}
+
+.database-record-drawer .database-record-value-empty {
+  color: var(--ui-text-muted);
+  font-size: 13px;
+}
+
+.database-record-edit-error {
+  margin: 7px 2px 0;
+  color: var(--ui-danger);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.database-record-drawer textarea.database-record-long-text-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 160px;
+  padding: 10px 12px;
+  border: 1px solid var(--lumior-field-border, var(--ui-line));
+  border-radius: var(--lumior-field-radius, 7px);
+  background: var(--lumior-field-surface, var(--ui-fill-subtle));
+  color: var(--lumior-field-ink, var(--ui-text));
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  resize: vertical;
+  user-select: text;
+}
+
+.database-record-drawer textarea.database-record-long-text-input:focus-visible {
+  border-color: var(--lumior-field-focus, var(--ui-brand));
+  outline: none;
+  box-shadow: none;
+}
+
+.database-record-drawer .database-record-times {
+  gap: 8px;
+  margin-top: 32px;
+  padding-top: 18px;
+  line-height: 18px;
+  user-select: text;
+}
+
+.database-record-drawer .database-record-times > span {
+  flex-wrap: wrap;
+}
+
+.database-table tr[data-state='selected'],
+.database-list button:has(.database-record-name[data-record-open='true']) {
+  background: var(--ui-fill-selected);
+  box-shadow: inset 2px 0 var(--ui-line-strong);
+}
+
+.database-table tr[data-state='selected'] .database-open-record {
+  opacity: 1;
+}
+
+.database-record-card:has(.database-record-name[data-record-open='true']) {
+  border-color: var(--ui-line);
+  background: var(--ui-fill-subtle);
+  box-shadow: none;
+}
+
+/* Reserve space for toolbar controls only; rows and cards keep their geometry. */
+@media (min-width: 1001px) {
+  @container database-workspace (min-width: 901px) {
+    .database-page[data-record-open='true'] .database-toolbar {
+      margin-right: max(
+        0px,
+        calc(
+          var(--database-record-drawer-width) -
+            max(
+              var(--database-document-gutter),
+              (100cqw - 1440px) / 2 + var(--database-document-gutter)
+            ) +
+            16px
+        )
+      );
+      flex-wrap: nowrap;
+    }
+    .database-page[data-record-open='true'] .database-toolbar-actions {
+      flex: 0 0 auto;
+    }
+  }
+}
+
+/* In a narrow workspace, retain the view underneath a full-width detail pane. */
+@container database-workspace (max-width: 900px) {
+  .database-record-back > span {
+    display: inline;
+  }
+  .database-record-back > svg {
+    transform: rotate(180deg);
+  }
+  .database-record-drawer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    border-left: 0;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .database-record-back > span {
+    display: inline;
+  }
+  .database-record-back > svg {
+    transform: rotate(180deg);
+  }
+  .database-record-drawer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    border-left: 0;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .database-record-drawer-header {
+    padding-inline: 12px;
+    gap: 7px;
+  }
+
+  .database-record-drawer-body {
+    padding: 24px 20px 32px;
+  }
+
+  .database-record-drawer .database-record-heading,
+  .database-record-drawer .database-record-title {
+    font-size: 25px;
+  }
+
+  .database-record-drawer .database-record-property {
+    grid-template-columns: minmax(78px, 96px) minmax(0, 1fr);
+    gap: 8px;
+  }
+}

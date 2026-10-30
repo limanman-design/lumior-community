@@ -1,0 +1,338 @@
+.desktop-ai-settings {
+  padding: 20px !important;
+  border: 1px solid var(--ui-line) !important;
+  border-radius: 16px;
+  background: var(--ui-panel);
+}
+.desktop-ai-settings .data-settings-status {
+  margin: 20px 0;
+}
+.desktop-ai-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.data-settings .desktop-ai-modes > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--lumior-control-radius);
+  background: transparent;
+  color: var(--ui-text-muted);
+}
+.desktop-ai-modes small {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--ui-fill-hover);
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  line-height: 14px;
+}
+.data-settings .desktop-ai-settings button:disabled {
+  cursor: not-allowed;
+}
+.data-settings .desktop-ai-settings[data-operation-busy] button:disabled {
+  cursor: wait;
+}
+.data-settings .desktop-ai-modes > button[aria-pressed='true'] {
+  border-color: var(--ui-line-strong);
+  background: var(--ui-fill-selected);
+  color: var(--ui-text);
+}
+.data-settings .desktop-ai-modes > button:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 3px;
+}
+.data-settings .desktop-ai-settings > .desktop-ai-trial {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+}
+.data-settings .desktop-ai-settings > .desktop-ai-personal {
+  padding: 0;
+  border: 0;
+}
+.desktop-ai-trial-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.desktop-ai-trial-heading strong {
+  color: var(--ui-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+.data-settings .desktop-ai-trial-heading button {
+  min-height: 24px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.desktop-ai-trial-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: min(calc(100% - 30px), 650px);
+  margin: 8px auto 0;
+}
+.desktop-ai-trial-form .desktop-ai-field {
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+}
+.desktop-ai-trial-claim-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.desktop-ai-trial-claim-row input {
+  flex: 1;
+}
+.data-settings .desktop-ai-trial-claim-row > button {
+  flex: none;
+  min-height: 40px;
+  padding-inline: 18px;
+  white-space: nowrap;
+}
+.desktop-ai-trial-balance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: var(--lumior-panel-radius);
+  background: var(--ui-fill-subtle);
+}
+.desktop-ai-trial-heading {
+  margin-top: 20px;
+}
+.desktop-ai-ticket-brand,
+.desktop-ai-ticket-description {
+  display: block;
+}
+.desktop-ai-ticket-brand {
+  margin-bottom: 3px;
+  color: var(--ui-text);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+}
+.desktop-ai-ticket-description {
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.desktop-ai-ticket-mark {
+  display: block;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  margin: 0 0 12px;
+  background: var(--ui-white);
+  mask: url('/assets/brand/lumior-logo.svg') center / contain no-repeat;
+  mask-mode: luminance;
+}
+.desktop-ai-ticket-stub-title {
+  display: block;
+  color: var(--ui-text);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.8px;
+}
+.desktop-ai-ticket-stub-description {
+  display: block;
+  margin-top: 8px;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.desktop-ai-ticket-stub-footnote {
+  display: block;
+  margin-top: auto;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.desktop-ai-mode-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: var(--lumior-panel-radius);
+  background: var(--ui-fill-subtle);
+}
+.data-settings .desktop-ai-mode-action p {
+  margin: 0;
+  font-size: 12px;
+}
+.desktop-ai-trial-balance dt {
+  margin-bottom: 6px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.desktop-ai-trial-balance dd {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.data-settings .desktop-ai-trial p {
+  margin: 8px 0;
+  font-size: 12px;
+}
+.data-settings .desktop-ai-trial p:first-child {
+  margin-top: 0;
+}
+.desktop-ai-trial-retry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.desktop-ai-providers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+  margin: 20px 0 0;
+  padding: 0;
+  border: 0;
+}
+.data-settings .desktop-ai-providers > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--lumior-control-radius);
+  background: transparent;
+  color: var(--ui-text-secondary);
+  text-align: left;
+}
+.data-settings .desktop-ai-providers > button[aria-pressed='true'] {
+  border-color: var(--ui-line-strong);
+  background: var(--ui-fill-selected);
+  color: var(--ui-text);
+}
+.desktop-ai-providers small {
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.data-settings .desktop-ai-providers > button:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 3px;
+}
+.desktop-ai-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.desktop-ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.desktop-ai-field label {
+  color: var(--ui-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+.desktop-ai-field input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--lumior-field-border);
+  border-radius: var(--lumior-field-radius);
+  background: var(--lumior-field-surface);
+  color: var(--lumior-field-ink);
+  font-size: 13px;
+}
+.desktop-ai-field input::placeholder {
+  color: var(--ui-text-muted);
+}
+.desktop-ai-field input:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 3px;
+}
+.desktop-ai-field input:disabled {
+  opacity: 0.45;
+}
+.data-settings :is(.desktop-ai-modes, .desktop-ai-providers) > button:not(:disabled):hover {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}
+.data-settings :is(.desktop-ai-modes, .desktop-ai-providers) > button[aria-pressed='true'] {
+  background: var(--ui-fill-selected);
+  color: var(--ui-text);
+}
+.data-settings .desktop-ai-form p {
+  margin: 0;
+  font-size: 12px;
+}
+.data-settings .desktop-ai-form .desktop-ai-privacy {
+  margin-top: -6px;
+}
+.data-settings .desktop-ai-form .desktop-ai-region-note {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--ui-fill-subtle);
+  color: var(--ui-text-muted);
+}
+.desktop-ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.desktop-ai-result {
+  display: block;
+  margin-top: 16px;
+  color: var(--ui-brand);
+  font-size: 13px;
+}
+.data-settings .desktop-ai-error p,
+.data-settings .desktop-ai-warning {
+  color: var(--ui-danger);
+}
+.desktop-ai-error {
+  margin-top: 16px;
+}
+@media (max-width: 640px) {
+  .desktop-ai-settings {
+    padding: 16px !important;
+  }
+  .desktop-ai-providers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .desktop-ai-trial-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .desktop-ai-trial-claim-row {
+    flex-direction: column;
+  }
+  .desktop-ai-trial-balance {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

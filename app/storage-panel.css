@@ -1,0 +1,322 @@
+.storage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.data-settings .data-settings-description {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  margin: 0;
+}
+.storage-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.storage-metrics > div {
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: 16px;
+  padding: 16px;
+}
+.storage-metrics span {
+  display: block;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.storage-metrics strong {
+  font-size: 24px;
+  color: var(--ui-text);
+  letter-spacing: -0.4px;
+}
+.storage-metrics small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ui-text-muted);
+}
+.storage-accent,
+.storage-metrics .storage-accent {
+  color: var(--ui-brand);
+}
+.data-settings .storage-estimate {
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.8;
+}
+.storage-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.data-settings .storage-actions button {
+  font-size: 12px;
+  padding: 5px 12px;
+}
+.data-settings .storage-clean-button {
+  margin-left: auto;
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+  border-color: var(--ui-danger-line);
+}
+.data-settings .storage-clean-button:not(:disabled):is(:hover, :focus-visible) {
+  background: var(--ui-danger-fill);
+  color: var(--ui-white);
+}
+.storage-filters {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.storage-filters input,
+.data-settings .storage-filters [data-slot='select-trigger'] {
+  min-width: 0;
+  height: 40px;
+  border: 1px solid var(--lumior-field-border);
+  border-radius: var(--lumior-field-radius);
+  padding: 9px 12px;
+  background: var(--lumior-field-surface);
+  color: var(--lumior-field-ink);
+  font-size: 12px;
+  outline: none;
+}
+.storage-filters input {
+  flex: 1;
+  width: 0;
+}
+.storage-filters input:focus,
+.storage-filters [data-slot='select-trigger']:focus-visible {
+  border-color: var(--ui-brand);
+}
+.storage-filters [data-slot='select-trigger'] {
+  max-width: 150px;
+  color-scheme: dark;
+}
+.storage-files {
+  max-height: clamp(140px, calc(100dvh - 520px), 270px);
+  min-height: 95px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-line) transparent;
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: 16px;
+}
+.storage-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--ui-line-subtle);
+}
+.storage-file:last-child {
+  border-bottom: 0;
+}
+.storage-file-kind {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: var(--ui-fill-subtle);
+  border-radius: 12px;
+  font-size: 10px;
+  color: var(--ui-text-muted);
+}
+.storage-file-kind.image {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+.storage-file-kind.pdf {
+  background: var(--ui-info-soft);
+  color: var(--ui-info);
+}
+.storage-file-kind.video {
+  background: var(--ui-note-soft);
+  color: var(--ui-note);
+}
+.storage-file-info {
+  min-width: 0;
+  flex: 1;
+}
+.storage-file-info > strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--ui-text);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.storage-file-info > span {
+  font-size: 11px;
+  color: var(--ui-text-muted);
+}
+.storage-locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin-top: 4px;
+}
+.storage-locations > span {
+  font-size: 11px;
+  color: var(--ui-text-muted);
+}
+.data-settings .storage-locations > button {
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-settings .storage-locations > button:hover {
+  color: var(--ui-text);
+  background: none;
+}
+.data-settings .storage-download {
+  min-height: 28px;
+  font-size: 12px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+.storage-duplicate {
+  color: var(--ui-warning);
+}
+.data-settings .storage-protection {
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.7;
+}
+.storage-empty {
+  padding: 24px;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+  margin: 0 !important;
+}
+.data-settings .storage-confirmation {
+  border: 1px solid var(--ui-danger-line);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--ui-danger-soft);
+}
+.storage-confirmation ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  max-height: 140px;
+  overflow: auto;
+}
+.storage-confirmation li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  padding: 5px 0;
+  color: var(--ui-text);
+}
+.storage-confirmation li > span:first-child {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.storage-confirmation li > span:last-child {
+  flex-shrink: 0;
+  color: var(--ui-text-muted);
+}
+.storage-confirmation > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.data-settings .storage-delete-confirm {
+  background: var(--ui-danger-fill);
+  border-color: var(--ui-danger);
+  color: var(--ui-white);
+}
+.data-settings .storage-delete-confirm:hover {
+  background: var(--ui-danger-fill);
+}
+.storage-message {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ui-text);
+}
+.data-settings-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--ui-canvas);
+}
+.data-settings .data-settings-tabs > button {
+  flex: 1;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+}
+.data-settings .data-settings-tabs > button[aria-pressed='true'] {
+  background: var(--ui-fill-selected);
+  color: var(--ui-text);
+}
+.data-settings:not(.settings-center):has(.storage-panel) {
+  width: min(760px, calc(100vw - 32px));
+  max-width: min(760px, calc(100vw - 32px)) !important;
+}
+.data-settings-backup {
+  display: grid;
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .data-settings:not(.settings-center):has(.storage-panel) {
+    padding: 20px !important;
+  }
+  .storage-metrics > div {
+    padding: 12px;
+  }
+  .storage-metrics strong {
+    font-size: 19px;
+  }
+  .storage-filters {
+    flex-wrap: wrap;
+  }
+  .storage-filters input {
+    flex-basis: 100%;
+    width: 100%;
+  }
+  .storage-filters [data-slot='select-trigger'] {
+    flex: 1;
+    max-width: none;
+  }
+  .data-settings .storage-clean-button {
+    margin-left: 0;
+  }
+  .storage-files {
+    max-height: 240px;
+  }
+  .storage-file {
+    gap: 8px;
+    padding: 10px;
+  }
+  .storage-file-kind {
+    width: 32px;
+    height: 32px;
+  }
+  .storage-locations {
+    max-height: 55px;
+    overflow: auto;
+  }
+}

@@ -1,0 +1,33 @@
+Ocean DataView
+https://github.com/jingerpie/ocean-dataview
+MIT License — Copyright (c) 2025 Ocean DataView
+
+Source revision: 3ac6c4e716d5f66fd2ac44366c44d558f4b260bb
+Imported 2026-10-16 from packages/dataview/src.
+
+Files: table-view/data-table.tsx, table-view/data-table-sticky-header.tsx,
+ui/table.tsx, hooks/use-scroll-sync.ts, use-scroll-parent.ts,
+use-debounced-callback.ts, use-callback-ref.ts.
+
+Local changes: flattened imports; use Lumior class-name helper; optional stable
+getRowId for editable records. The local database adapter lives outside this
+directory. Ocean supplies the actual table renderer and scroll/sticky-header
+behavior. Its remote query, URL state, and demo server are not included.
+
+Multi-view additions (2026-10-16): components/views/list-view/list-row.tsx,
+components/views/data-card.tsx, components/views/board-view/board-columns.tsx,
+utils/get-card-sizes.ts from the same revision.
+Local adaptations: list rows use stable record IDs; ListRow/DataCard render
+properties through render-property.ts instead of Ocean DataCell/provider;
+DataCard uses a native keyboard-accessible button and omits media previews;
+BoardColumns accepts header renderers and column drag/drop attributes.
+Lumior owns the gallery grid, grouping, editing, view selection and persistence.
+These are adapted presentation primitives, not the entire Ocean provider stack.
+
+Saved-view additions (2026-10-16): hooks/use-display-properties.ts and
+components/toolbars/notion/settings-tool/settings-visibility.tsx, plus the
+collapsible layout of components/ui/group-section.tsx, at the same revision.
+Visibility accepts local controlled state and localized labels instead of the
+URL/provider stack; the display-properties hook uses a generic property shape.
+GroupSection uses Lumior's existing Base UI accordion and a supplied group label.
+Named view persistence and the compact settings drawer are Lumior integration.

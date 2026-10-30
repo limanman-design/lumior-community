@@ -1,0 +1,4 @@
+{
+  "defaults": { "breathAmp": 2.8, "breathPeriod": 3.4, "headLag": 0.5, "holdLag": 0.2, "tiltDeg": 2, "tiltPeriod": 10, "swayAmount": 0.14, "swayPeriod": 6.2, "blinkMin": 5, "blinkMax": 14, "doubleBlinkChance": 0.15, "fps": 30, "eyes": "auto" },
+  "ranges": { "breathAmp": [0, 6, 0.1], "breathPeriod": [1, 10, 0.1], "headLag": [0, 2, 0.05], "holdLag": [0, 2, 0.05], "tiltDeg": [0, 5, 0.1], "tiltPeriod": [2, 20, 0.5], "swayAmount": [0, 0.4, 0.01], "swayPeriod": [1, 15, 0.1], "blinkMin": [1, 30, 0.5], "blinkMax": [1, 30, 0.5], "doubleBlinkChance": [0, 1, 0.05] }
+}

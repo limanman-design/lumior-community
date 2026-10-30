@@ -1,0 +1,159 @@
+.expanded-note-page {
+  min-width: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  --note-ai-width: clamp(320px, 34vw, 480px);
+}
+.workspace-shell:has(.expanded-note-page) .workspace {
+  visibility: hidden;
+}
+.expanded-note-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 56px;
+  padding: 8px;
+}
+.expanded-note-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+.expanded-note-title > img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.expanded-note-title > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.expanded-note-scroll {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 8px 8px;
+  overflow: auto;
+  border: 1px solid var(--ui-line);
+  border-radius: 16px;
+  background: var(--ui-canvas);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-line) transparent;
+  overscroll-behavior: contain;
+}
+.expanded-note-page .expanded-note-document {
+  width: min(720px, calc(100% - 64px));
+  margin: 92px auto 0;
+  padding: 0 0 40px;
+  background: transparent;
+}
+.expanded-note-title-input {
+  display: block;
+  width: 100%;
+  min-height: calc(var(--note-title-reading-size) * var(--note-title-reading-line-height));
+  padding: 0;
+  overflow: hidden;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ui-text);
+  overflow-wrap: anywhere;
+}
+.expanded-note-title-input::placeholder {
+  color: var(--ui-text-muted);
+}
+.expanded-note-document > .expanded-note-title-input,
+.expanded-note-document > .block-document {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.expanded-note-document .bn-container {
+  --bn-colors-editor-background: var(--ui-canvas);
+}
+.expanded-note-document .bn-editor {
+  min-height: 240px;
+  padding-bottom: 80px;
+  cursor: text;
+}
+.expanded-card-with-ai .expanded-note-scroll {
+  margin-right: calc(var(--note-ai-width) + 16px);
+}
+.ai-panel.ai-expanded-note {
+  z-index: 46;
+  top: 56px;
+  right: 8px;
+  bottom: 8px;
+  width: clamp(320px, 34vw, 480px);
+  height: auto;
+  border: 1px solid var(--ui-line);
+  border-radius: 16px;
+  background: var(--ui-surface);
+}
+@media (max-width: 700px) {
+  .workspace-shell:not([data-expanded-reader='true'])
+    .expanded-note-page.expanded-card-with-ai {
+    bottom: calc(52dvh - var(--workspace-top-inset) + 8px);
+  }
+  .expanded-note-header {
+    gap: 8px;
+  }
+  .expanded-note-title {
+    font-size: 12px;
+  }
+  .expanded-note-page .expanded-note-document {
+    width: calc(100% - 48px);
+    margin-top: 48px;
+    padding: 0 0 32px;
+  }
+  .expanded-note-document .bn-editor {
+    min-height: 160px;
+  }
+  .expanded-card-with-ai .expanded-note-scroll {
+    margin-right: 8px;
+  }
+  .ai-panel.ai-expanded-note {
+    width: calc(100% - 16px);
+    top: 48dvh;
+  }
+}
+/* An open board list leaves too little room for two reading columns here. */
+@media (min-width: 701px) and (max-width: 1032px) {
+  .workspace-shell:not([data-expanded-reader='true']):has(
+      .workspace-sidebar[data-expanded='true']
+    )
+    .expanded-note-page.expanded-card-with-ai {
+    bottom: calc(52dvh - var(--workspace-top-inset) + 8px);
+  }
+  .workspace-shell:not([data-expanded-reader='true']):has(
+      .workspace-sidebar[data-expanded='true']
+    )
+    .expanded-card-with-ai
+    .expanded-note-scroll {
+    margin-right: 8px;
+  }
+  .workspace-shell:has(.workspace-sidebar[data-expanded='true'])
+    .expanded-card-with-ai
+    .expanded-note-document {
+    width: calc(100% - 48px);
+    margin-top: 48px;
+    padding: 0 0 32px;
+  }
+  .workspace-shell:not([data-expanded-reader='true']):has(
+      .workspace-sidebar[data-expanded='true']
+    )
+    .ai-panel.ai-expanded-note {
+    top: calc(var(--workspace-top-inset) + 48dvh);
+    width: calc(100vw - var(--workspace-sidebar-offset) - 24px);
+  }
+}

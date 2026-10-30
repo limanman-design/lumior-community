@@ -1,0 +1,104 @@
+/* AI floats over the board, including when a citation or pinned PDF is open. */
+.workspace-shell .workspace.with-ai-sidebar {
+  margin-right: 0 !important;
+}
+
+.workspace-shell {
+  --canvas-tools-reserve: 192px;
+  --ai-drawer-width: min(480px, max(360px, 34vw), calc(100vw - var(--workspace-sidebar-offset) - 24px - var(--canvas-tools-reserve)));
+}
+.workspace-shell:has(.ai-panel.ai-canvas-drawer[data-state='open']) {
+  --canvas-tools-reserve: 136px;
+}
+
+.workspace-shell .ai-panel.ai-sidebar.ai-canvas-drawer {
+  top: calc(var(--workspace-top-inset) + 8px);
+  right: 16px;
+  bottom: 16px;
+  width: var(--ai-drawer-width);
+  max-width: max(0px, calc(100vw - var(--workspace-sidebar-offset) - 24px - var(--canvas-tools-reserve)));
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: 16px;
+  box-shadow: none;
+  container: ai-canvas-frame / inline-size;
+}
+
+/* Share the right-edge motion with PDF, video and note reading panels. */
+.ai-panel.ai-sidebar {
+  opacity: 1;
+  transform: translateX(0);
+  transition: transform 360ms cubic-bezier(.22, 1, .36, 1), opacity 240ms ease,
+    width 360ms cubic-bezier(.22, 1, .36, 1);
+}
+
+@starting-style {
+  .ai-panel.ai-sidebar[data-state='open'] {
+    opacity: 0;
+    transform: translateX(calc(100% + 16px));
+  }
+}
+
+.ai-panel.ai-sidebar[data-state='closed'] {
+  opacity: 0;
+  transform: translateX(calc(100% + 16px));
+  transition-duration: 220ms;
+  pointer-events: none;
+}
+.ai-panel[data-state='closed']:not(.ai-sidebar) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* A narrow paired drawer keeps every action accessible inside its own frame. */
+@container ai-canvas-frame (max-width: 260px) {
+  .ai-canvas-drawer .ai-header {
+    height: auto;
+    min-height: 104px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+  .ai-canvas-drawer .ai-chat-title {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .ai-canvas-drawer .ai-chat-title > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ai-canvas-drawer .ai-header-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    margin: 0;
+  }
+  .ai-canvas-drawer .ai-header-actions button { width: 100%; }
+  .ai-canvas-drawer .ai-messages { padding: 16px 10px; }
+  .ai-canvas-drawer .research-prompt { padding: 10px !important; gap: 8px; }
+  .ai-canvas-drawer .research-prompt > span { min-width: 0; overflow-wrap: anywhere; }
+  .ai-canvas-drawer .ai-composer-wrap { margin: 6px; }
+  .ai-canvas-drawer .redesigned-composer { padding: 8px; }
+  .ai-canvas-drawer .redesigned-composer .ai-compose-actions { flex-wrap: wrap; gap: 4px; }
+  .ai-canvas-drawer .redesigned-composer .ai-compose-spacer { display: none; }
+  .ai-canvas-drawer .redesigned-composer .ai-compose-actions .ai-skill-trigger {
+    max-width: calc(100% - 36px);
+    flex: 1 1 auto;
+    padding: 0 6px;
+  }
+  .ai-canvas-drawer .redesigned-composer .ai-model-trigger {
+    min-width: 40px;
+    max-width: 100%;
+    flex: 1 1 40px;
+    padding: 0 6px;
+  }
+  .ai-canvas-drawer .redesigned-composer .ai-reference { width: 100%; max-width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-panel.ai-sidebar {
+    transition: none;
+  }
+}

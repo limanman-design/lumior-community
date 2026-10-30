@@ -1,0 +1,158 @@
+/* Canvas drawers share the AI frame and never reserve board space. */
+.workspace-shell .workspace:is(.with-pinned-card, .with-source-panel, .resizable-pdf-open, .with-library-sidebar) {
+  margin-right: 0 !important;
+}
+.workspace-shell .canvas-side-panel {
+  --card-panel-right: 16px;
+  position: fixed;
+  z-index: 31;
+  top: calc(var(--workspace-top-inset) + 8px);
+  right: var(--card-panel-right);
+  bottom: 16px;
+  width: var(--ai-drawer-width);
+  max-width: max(0px, calc(100vw - var(--workspace-sidebar-offset) - var(--card-panel-right) - var(--canvas-tools-reserve) - 8px));
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: 16px;
+  background: var(--ui-surface);
+  overflow: hidden;
+  opacity: 1;
+  transform: translateX(0);
+  transition: transform 360ms cubic-bezier(.22, 1, .36, 1), opacity 240ms ease,
+    right 360ms cubic-bezier(.22, 1, .36, 1), width 360ms cubic-bezier(.22, 1, .36, 1);
+}
+.workspace-shell .canvas-side-panel.beside-ai {
+  --card-panel-right: calc(var(--ai-drawer-width) + 24px);
+}
+/* Bound both panes to the actual board when its workspace list is open. */
+.workspace-shell:has(.canvas-side-panel.beside-ai) {
+  --ai-drawer-width: min(480px, max(280px, 34vw), calc((100vw - var(--workspace-sidebar-offset) - var(--canvas-tools-reserve) - 32px) * .5));
+}
+.workspace-shell .canvas-side-panel > :is(.card-side-panel, .research-source-panel) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+  background: var(--ui-surface);
+  box-shadow: none;
+  overflow: hidden;
+}
+.workspace-shell .canvas-side-panel :is(.card-side-heading, .video-side-heading, .source-header) {
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 6px 12px 6px 16px;
+}
+.workspace-shell .canvas-side-panel:is([data-state='closed']) {
+  opacity: 0;
+  transform: translateX(calc(100% + 16px));
+  transition-duration: 220ms;
+  pointer-events: none;
+}
+.workspace-shell .canvas-side-panel:has(.pdf-panel-resizer[data-dragging='true']) {
+  transition: none;
+}
+.workspace-shell .canvas-side-panel .pdf-panel-resizer {
+  left: 0;
+  width: 8px;
+}
+@starting-style {
+  .workspace-shell .canvas-side-panel[data-state='open'] {
+    opacity: 0;
+    transform: translateX(calc(100% + 16px));
+  }
+}
+/* Library shares the same retained slide, with a separate detail region. */
+.workspace-shell .canvas-library-panel {
+  --library-preview-width: min(268px, calc((100vw - var(--workspace-sidebar-offset) - var(--canvas-tools-reserve) - 32px) * .5));
+  overflow: visible;
+  z-index: 35;
+  container-type: inline-size;
+}
+.workspace-shell .canvas-library-panel:has(.library-preview) {
+  width: min(480px, max(360px, 34vw), calc(100vw - var(--workspace-sidebar-offset) - var(--canvas-tools-reserve) - 32px - var(--library-preview-width)));
+}
+.workspace-shell .canvas-library-panel > .library-sidebar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+.workspace-shell .canvas-library-panel .library-grid-scroll {
+  border-radius: 0 0 16px 16px;
+}
+.workspace-shell .canvas-library-panel .library-preview {
+  top: -1px;
+  right: calc(100% + 9px);
+  bottom: -1px;
+  left: auto;
+  width: var(--library-preview-width);
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: 16px;
+  background: var(--ui-surface);
+  overflow: hidden;
+  box-shadow: none;
+}
+.workspace-shell .canvas-library-panel .library-preview-scroll { border-radius: 0; }
+.workspace-shell .canvas-library-panel .library-preview footer {
+  border-radius: 0;
+  height: auto;
+  min-height: 50px;
+  gap: 8px;
+}
+.workspace-shell .canvas-library-panel .library-preview .library-add {
+  height: auto;
+  min-height: 32px;
+  padding: 7px 10px;
+}
+.workspace-shell .canvas-library-panel .library-floating-info {
+  position: static;
+  max-height: 38%;
+  flex-shrink: 0;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--ui-line-subtle);
+  border-radius: 0;
+  background: transparent;
+}
+@container (max-width: 330px) {
+  .canvas-library-panel .library-filter-row { flex-wrap: wrap; gap: 6px; }
+  .canvas-library-panel .library-filter { max-width: 100%; }
+  .canvas-library-panel .library-grid,
+  .canvas-library-panel .has-preview .library-grid { grid-template-columns: 1fr; }
+}
+/* Only right-side controls move; card coordinates and left tools stay fixed. */
+.workspace-shell .workspace .board-header-controls {
+  position: absolute;
+  right: calc(8px + var(--canvas-sidebar-space, 0px));
+  transition: right 360ms cubic-bezier(.22, 1, .36, 1);
+}
+.workspace-shell .workspace .board-heading {
+  max-width: max(0px, calc(100% - 168px - var(--canvas-sidebar-space, 0px)));
+}
+.workspace-shell .workspace .canvas-right-controls {
+  right: calc(8px + var(--canvas-sidebar-space, 0px));
+  transition: right 360ms cubic-bezier(.22, 1, .36, 1), bottom 240ms ease;
+}
+.workspace-shell .workspace[data-sidebar-tools-stacked='true'] .canvas-right-controls {
+  bottom: 56px;
+}
+/* Position animations and live PDF resizing already supply intermediate frames. */
+.workspace-shell .workspace[data-sidebar-tools-following='true'] :is(.board-header-controls, .canvas-right-controls),
+.workspace-shell:has(.pdf-panel-resizer[data-dragging='true']) .workspace :is(.board-header-controls, .canvas-right-controls) {
+  transition-property: bottom;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shell .canvas-side-panel,
+  .workspace-shell .workspace :is(.board-header-controls, .canvas-right-controls) { transition: none; }
+}

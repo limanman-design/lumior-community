@@ -1,0 +1,29 @@
+name: Bug report / 问题反馈
+description: Report a reproducible problem using a synthetic example.
+body:
+  - type: markdown
+    attributes:
+      value: '请勿上传个人工作区、API Key 或邀请码。安全漏洞请先查看 SECURITY.md。'
+  - type: input
+    id: version
+    attributes:
+      label: Version and platform / 版本与平台
+      placeholder: Community source revision, Windows/macOS/browser version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce / 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual behavior / 预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Synthetic sample or redacted screenshot / 合成样例或脱敏截图

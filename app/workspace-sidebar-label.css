@@ -1,0 +1,26 @@
+.workspace-board-panel .workspace-sidebar-label {
+  display: flex;
+  min-width: 0;
+  height: 20px;
+  align-items: center;
+  overflow: hidden;
+}
+.workspace-sidebar-label-text {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@supports (text-box-trim: trim-both) and (overflow-x: clip) {
+  .workspace-sidebar-label-text {
+    overflow-x: clip;
+    overflow-y: visible;
+    text-box-trim: trim-both;
+    text-box-edge: text;
+  }
+  .workspace-sidebar-label-text[data-text-edge='cap'] {
+    text-box-edge: cap alphabetic;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "6e8c14f",
+  "skills": {
+    "mba-topic": {
+      "sha256": "f9d3afdaa36760ee034d7db7ac88a8dab1f9ce8ebbe7a52c3526c10bf4261af1"
+    },
+    "mba-lit": {
+      "sha256": "cccd903ff066996770b6fead76662a081f3a58b2c65e945a927649667eb0035d"
+    },
+    "mba-review": {
+      "sha256": "85448c9c3c040f3c973d0f9006279cbe1f75d153c70736bb6b4254c11e822f2e"
+    },
+    "mba-proposal": {
+      "sha256": "3208e18bc872fac4c867bc8f81ed257d55ca54d9b562d6e693ba4f6791407630"
+    }
+  }
+}

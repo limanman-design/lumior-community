@@ -1,0 +1,30 @@
+.pdf-excerpt-quote {
+  display: block;
+  margin: 0 0 18px;
+  padding: 8px 10px;
+  border: 0;
+  border-left: 4px solid var(--pdf-excerpt-accent, var(--ui-warning));
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  text-align: left;
+  user-select: text;
+}
+.pdf-excerpt-quote p { margin: 0; font: inherit; }
+.pdf-excerpt-quote-image { padding: 8px; }
+.pdf-excerpt-quote img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+  background: var(--ui-white);
+}
+.note:has(.pdf-excerpt-quote) .card-scroll { padding-bottom: 0; }
+.note:not(.editing) .pdf-excerpt-quote { cursor: grab; }
+.note.editing .pdf-excerpt-quote { cursor: text; }

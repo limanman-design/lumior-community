@@ -1,0 +1,729 @@
+{
+  "schemaVersion": 1,
+  "replacements": [
+    {
+      "path": "public/assets/ai-imgIcons8Left21.svg",
+      "sourcePath": "public/assets/material-symbols/chevron-right-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chevron_right/default/20px.svg",
+      "rotation": 180,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/video-card/collapse.svg",
+      "sourcePath": "public/assets/material-symbols/chevron-right-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chevron_right/default/20px.svg",
+      "rotation": 180,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8ExpandArrow1.svg",
+      "sourcePath": "public/assets/material-symbols/expand-more-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8ExpandArrow1.svg",
+      "sourcePath": "public/assets/material-symbols/expand-more-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8ExpandArrow2.svg",
+      "sourcePath": "public/assets/material-symbols/expand-more-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/chevron.svg",
+      "sourcePath": "public/assets/material-symbols/expand-more-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8Good1.svg",
+      "sourcePath": "public/assets/material-symbols/thumb-up-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_up/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/like.svg",
+      "sourcePath": "public/assets/material-symbols/thumb-up-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_up/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8ThumbsDown1.svg",
+      "sourcePath": "public/assets/material-symbols/thumb-down-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_down/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/dislike.svg",
+      "sourcePath": "public/assets/material-symbols/thumb-down-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_down/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8Plus41.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/design3-imgIcons8Plus41.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/composer/plus.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/workspace-shell/new-board.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/board-chrome/zoom-in.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/board-chrome/tool-plus.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/boards/plus.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-toolbar/plus.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/icon2-imgIcons8Note11.svg",
+      "sourcePath": "public/assets/material-symbols/text-snippet-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/expanded-card/pdf.svg",
+      "sourcePath": "public/assets/material-symbols/text-snippet-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8Edit51.svg",
+      "sourcePath": "public/assets/material-symbols/edit-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/edit/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/design3-imgIcons8Bursts1.svg",
+      "sourcePath": "public/assets/material-symbols/auto-awesome-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/toolbar-imgIcons8Ai1.svg",
+      "sourcePath": "public/assets/material-symbols/auto-awesome-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8Ai2.svg",
+      "sourcePath": "public/assets/material-symbols/auto-awesome-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/design3-imgIcons8Text21.svg",
+      "sourcePath": "public/assets/material-symbols/text-fields-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/text_fields/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8Text12.svg",
+      "sourcePath": "public/assets/material-symbols/text-fields-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/text_fields/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/icon8-imgIcons8More2.svg",
+      "sourcePath": "public/assets/sound/more_horiz.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/toolbar-imgIcons8More2.svg",
+      "sourcePath": "public/assets/sound/more_horiz.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8More11.svg",
+      "sourcePath": "public/assets/sound/more_horiz.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/board-chrome/more-hover.svg",
+      "sourcePath": "public/assets/sound/more_horiz.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/board-chrome/more.svg",
+      "sourcePath": "public/assets/sound/more_horiz.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/boards/more.svg",
+      "sourcePath": "public/assets/sound/more_horiz.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/icon1-imgIcons8Gallery1.svg",
+      "sourcePath": "public/assets/material-symbols/gallery-thumbnail-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/gallery_thumbnail/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/icon3-imgIcons8OpenPane2.svg",
+      "sourcePath": "public/assets/material-symbols/view-week-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/icon0-imgIcons8Frame11.svg",
+      "sourcePath": "public/assets/material-symbols/crop_square-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/crop_square/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/toolbar-imgIcons8Expand1.svg",
+      "sourcePath": "public/assets/material-symbols/crop_square-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/crop_square/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8Books1.svg",
+      "sourcePath": "public/assets/material-symbols/library-books-filled-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8Book71.svg",
+      "sourcePath": "public/assets/material-symbols/library-books-filled-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/books.svg",
+      "sourcePath": "public/assets/material-symbols/library-books-filled-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/toolbar-imgIcons8Compress2.svg",
+      "sourcePath": "public/assets/material-symbols/filter_none-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgIcons8PictureInPictureAlternative1.svg",
+      "sourcePath": "public/assets/material-symbols/filter_none-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/design3-imgIcons8PictureInPicture1.svg",
+      "sourcePath": "public/assets/material-symbols/filter_none-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/boards/section.svg",
+      "sourcePath": "public/assets/material-symbols/filter_none-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/icon4-imgIcons8Settings21.svg",
+      "sourcePath": "public/assets/material-symbols/settings-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/settings/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/toolbar-imgIcons8ClosePane2.svg",
+      "sourcePath": "public/assets/material-symbols/view-week-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg",
+      "rotation": 180,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-dock.svg",
+      "sourcePath": "public/assets/material-symbols/view-week-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg",
+      "rotation": 180,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/video-card/pin.svg",
+      "sourcePath": "public/assets/material-symbols/view-week-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg",
+      "rotation": 180,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8Left21.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8Close41.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-ui/close.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/image-card/collapse.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/composer/close.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/close.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8Sort1.svg",
+      "sourcePath": "public/assets/material-symbols/sort-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/sort/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8Search12.svg",
+      "sourcePath": "public/assets/material-symbols/search-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/sidebar-search.svg",
+      "sourcePath": "public/assets/material-symbols/search-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/video-card/search.svg",
+      "sourcePath": "public/assets/material-symbols/search-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/search.svg",
+      "sourcePath": "public/assets/material-symbols/search-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/board-chrome/tool-search.svg",
+      "sourcePath": "public/assets/material-symbols/search-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-toolbar/search.svg",
+      "sourcePath": "public/assets/material-symbols/search-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8Check1.svg",
+      "sourcePath": "public/assets/material-symbols/check-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/check/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/composer/check.svg",
+      "sourcePath": "public/assets/material-symbols/check-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/check/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgIcons8Broom1.svg",
+      "sourcePath": "public/assets/material-symbols/delete-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/delete/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgGroup331.svg",
+      "sourcePath": "public/assets/material-symbols/straight-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg",
+      "rotation": 0,
+      "circularButton": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/send.svg",
+      "sourcePath": "public/assets/material-symbols/straight-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg",
+      "rotation": 0,
+      "circularButton": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-ui/send.svg",
+      "sourcePath": "public/assets/material-symbols/straight-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg",
+      "rotation": 0,
+      "circularButton": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-ui/send-active.svg",
+      "sourcePath": "public/assets/material-symbols/straight-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg",
+      "rotation": 0,
+      "circularButton": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-imgGroup341.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/composer/remove.svg",
+      "sourcePath": "public/assets/material-symbols/close-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg",
+      "rotation": 0,
+      "circularButton": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/ai-minimize.svg",
+      "sourcePath": "public/assets/material-symbols/remove-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/remove/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-toolbar/minus.svg",
+      "sourcePath": "public/assets/material-symbols/remove-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/remove/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/board-chrome/zoom-out.svg",
+      "sourcePath": "public/assets/material-symbols/remove-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/remove/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/sidebar-library.svg",
+      "sourcePath": "public/assets/material-symbols/auto-awesome-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/sidebar-plus.svg",
+      "sourcePath": "public/assets/material-symbols/add-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/video-card/play.svg",
+      "sourcePath": "public/assets/sound/play_arrow.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/video-card/video-type.svg",
+      "sourcePath": "public/assets/sound/play_arrow.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/video-card/video.svg",
+      "sourcePath": "public/assets/sound/play_arrow.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/composer/video.svg",
+      "sourcePath": "public/assets/sound/play_arrow.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/library/imgGroup360.svg",
+      "sourcePath": "public/assets/sound/play_arrow.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/book.svg",
+      "sourcePath": "public/assets/material-symbols/library-books-filled-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/dock.svg",
+      "sourcePath": "public/assets/material-symbols/filter_none-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/edit.svg",
+      "sourcePath": "public/assets/material-symbols/edit-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/edit/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/research-ui/pdf.svg",
+      "sourcePath": "public/assets/material-symbols/text-snippet-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-ui/pdf.svg",
+      "sourcePath": "public/assets/material-symbols/text-snippet-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/pdf-ui/delete.svg",
+      "sourcePath": "public/assets/material-symbols/delete-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/delete/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/database/status.svg",
+      "sourcePath": "public/assets/material-symbols/radio-button-checked-outlined.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/radio_button_checked/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/canvas-toolbar/settings.svg",
+      "sourcePath": "public/assets/material-symbols/settings-rounded.svg",
+      "upstream": "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/settings/default/20px.svg",
+      "rotation": 0,
+      "circularButton": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/icon5-imgSubtract.png",
+      "sourcePath": "public/assets/board-chrome/logo.png",
+      "operation": "copy",
+      "license": "Project brand policy",
+      "provenance": "Owner-confirmed Lumior logo; no third-party character portrait"
+    },
+    {
+      "path": "public/assets/workspace-shell/avatar.png",
+      "sourcePath": "public/assets/board-chrome/logo.png",
+      "operation": "copy",
+      "license": "Project brand policy",
+      "provenance": "Owner-confirmed Lumior logo; no third-party character portrait"
+    },
+    {
+      "path": "public/assets/canvas-toolbar/section-example.png",
+      "sourcePath": "docs/open-source/assets/section-example.png",
+      "operation": "copy",
+      "license": "Project license",
+      "provenance": "Original synthetic section diagram; editable source public/assets/community/section-example.svg. Replaces an external promotional image or historical user-board screenshot."
+    },
+    {
+      "path": "public/assets/board-chrome/section-example.png",
+      "sourcePath": "docs/open-source/assets/section-example.png",
+      "operation": "copy",
+      "license": "Project license",
+      "provenance": "Original synthetic section diagram; editable source public/assets/community/section-example.svg. Replaces an external promotional image or historical user-board screenshot."
+    }
+  ]
+}

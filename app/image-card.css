@@ -1,0 +1,73 @@
+/* Image cards: Figma 2607:204337 / 2621:209041. User images stay dynamic. */
+.note.image-card{height:auto!important;min-height:0;padding:0;background:var(--ui-surface);border-radius:16px}
+.note.image-card .image-card-content{height:auto;gap:0;overflow:visible;border-radius:15px}
+.image-picture-frame{position:relative;flex:none;min-width:0}
+.note.image-card .image-picture-frame>img{display:block;width:100%;height:auto;object-fit:contain;border-radius:15px;pointer-events:none}
+.note.image-card .image-card-content:has(.image-note) .image-picture-frame>img{border-radius:15px 15px 0 0}
+.image-resize-corner{position:absolute;z-index:10;width:calc(18px * var(--inverse-zoom,1));height:calc(18px * var(--inverse-zoom,1));padding:0;border:0;border-radius:0;background:transparent;touch-action:none}
+.image-resize-corner::after{content:'';position:absolute;inset:calc(5px * var(--inverse-zoom,1));border:calc(1px * var(--inverse-zoom,1)) solid var(--ui-brand);border-radius:calc(2px * var(--inverse-zoom,1));background:var(--ui-control)}
+.image-resize-corner:is(:hover,:focus-visible){background:transparent}
+.image-resize-corner[data-resize-corner^='top']{top:calc(-9px * var(--inverse-zoom,1))}
+.image-resize-corner[data-resize-corner^='bottom']{bottom:calc(-9px * var(--inverse-zoom,1))}
+.image-resize-corner[data-resize-corner$='left']{left:calc(-9px * var(--inverse-zoom,1))}
+.image-resize-corner[data-resize-corner$='right']{right:calc(-9px * var(--inverse-zoom,1))}
+.image-resize-corner:is([data-resize-corner='top-left'],[data-resize-corner='bottom-right']){cursor:nwse-resize}
+.image-resize-corner:is([data-resize-corner='top-right'],[data-resize-corner='bottom-left']){cursor:nesw-resize}
+.image-picture-frame:has(.image-missing) .image-resize-corner{display:none}
+.note.image-card>.type-label{gap:4px;top:-24px}
+.note.image-card:is(:hover,:focus-within)>.type-label{opacity:1}
+.note.image-card:focus-within>.card-toolbar{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translate(-50%,0) scale(var(--inverse-zoom))!important}
+.canvas:not(.multi-select) .note.image-card.selected>.card-toolbar{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translate(-50%,0) scale(var(--inverse-zoom))!important}
+.image-type-icon{display:block;width:12px;height:12px;flex-shrink:0;background:currentColor;mask:url('/assets/image-card/image.svg') center/contain no-repeat}
+.image-missing{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:100%;min-height:200px;aspect-ratio:16/9;padding:24px;background:var(--ui-fill-subtle);color:var(--ui-text-muted);text-align:center;cursor:grab}
+.image-missing .image-type-icon{width:24px;height:24px}
+.image-missing strong{font-size:16px;color:var(--ui-text);overflow-wrap:anywhere}
+.image-missing p{font-size:13px!important;line-height:20px!important;color:var(--ui-text-muted)!important;margin:0}
+.image-missing button{border:1px solid var(--ui-line);border-radius:12px;padding:8px 12px;color:var(--ui-text);font-size:13px;cursor:pointer}
+.image-missing button:hover{background:var(--ui-fill-hover);color:var(--ui-white)}
+.image-missing button:disabled{opacity:.5;cursor:wait}
+.image-note-icon{display:block;width:20px;height:20px;flex-shrink:0;background:currentColor;mask:url('/assets/image-card/note.svg') center/contain no-repeat}
+.note.image-card .image-note{padding:10px 12px 12px}
+.image-note{color:var(--ui-white);font-size:14px;line-height:20px;min-width:0;user-select:text}
+.image-note-text,.image-note p{display:block;width:100%;padding:0;margin:0;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;line-height:20px;font-size:14px;font-weight:400;color:var(--ui-white)}
+.image-card-content .image-note p{font-size:14px;line-height:20px;color:var(--ui-white)}
+.image-note-text{cursor:text;background:transparent;border:0;border-radius:0}
+.image-note-text:hover{background:transparent;color:var(--ui-white)}
+.image-note textarea{display:block;width:100%;min-height:20px;max-height:280px;resize:none;overflow:auto;background:transparent;border:0;border-radius:0;padding:0;color:var(--ui-white);font:inherit;line-height:20px;outline:none;box-shadow:none;overscroll-behavior:contain}
+.image-note textarea::placeholder{color:var(--ui-text-muted)}
+.image-add-note{display:flex;align-items:center;gap:6px;padding:4px 6px;margin-left:-6px;border-radius:8px;color:var(--ui-text-muted);font-size:14px}
+.image-add-note:hover,.image-add-note:focus-visible{color:var(--ui-text);background:var(--ui-fill-hover)}
+.image-card .card-toolbar .image-note-action[aria-pressed=true]{background:var(--ui-fill-selected);color:var(--ui-text)}
+.image-card .card-toolbar{border-radius:16px}
+.card-side-panel.image-side-panel{padding:0;background:var(--ui-surface);gap:0;border-left:0}
+.image-side-panel .card-side-heading{height:48px;min-height:48px;padding:8px;margin:0;color:var(--ui-white)}
+.image-side-panel .card-side-heading>span{gap:6px}
+.image-side-panel .card-side-heading>span>img{width:16px;height:16px;flex-shrink:0}
+.image-side-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.image-side-actions>button{display:grid;place-items:center;width:32px;height:32px;padding:0;border-radius:var(--lumior-control-radius,12px);color:var(--ui-text-muted)}
+.image-side-actions>button:hover,.image-side-actions>button:focus-visible{background:var(--ui-control-raised);color:var(--ui-text)}
+.image-side-actions>button>img{width:20px;height:20px}
+.image-side-panel .image-card-content{display:flex;flex-direction:column;flex:1;min-height:0;height:auto;gap:0;padding:0 8px 24px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--ui-line) transparent}
+.image-side-panel .image-preview-expand{display:block;width:100%;padding:0;background:transparent;flex-shrink:0;border-radius:16px;overflow:hidden}
+.image-side-panel .image-preview-expand>img{display:block;width:100%;height:auto;object-fit:contain;border-radius:16px}
+.image-side-panel .image-note{margin:24px 12px 0;flex-shrink:0}
+.image-lightbox-backdrop{position:fixed;inset:0;z-index:60;background:var(--ui-overlay-heavy)}
+.image-lightbox{position:fixed;inset:0;z-index:61;display:flex;justify-content:center;align-items:center;padding:50px 32px 44px;outline:none;pointer-events:none}
+.image-lightbox-picture{display:block;max-width:100%;max-height:100%;width:min(100%,calc((100dvh - var(--image-vertical-space,94px)) * var(--image-aspect,1)));height:auto;object-fit:contain;pointer-events:auto}
+.image-lightbox-controls{position:absolute;right:16px;top:8px;display:flex;gap:8px;pointer-events:auto;background:var(--ui-glass);border:1px solid var(--ui-line-subtle);padding:4px;border-radius:16px}
+.image-lightbox-controls button{display:grid;place-items:center;width:32px;height:32px;padding:0;color:var(--ui-text-muted);border-radius:var(--lumior-control-radius,12px)}
+.image-lightbox-controls button:hover,.image-lightbox-controls button:focus-visible{color:var(--ui-text);background:var(--ui-fill-hover)}
+.image-lightbox-controls button img{width:20px;height:20px;opacity:.6}
+.image-lightbox-controls button:hover img,.image-lightbox-controls button:focus-visible img{opacity:.8}
+.image-lightbox-note{position:absolute;left:50%;transform:translateX(-50%);bottom:20px;width:min(600px,calc(100% - 32px));max-height:40vh;overflow:auto;border:1px solid var(--ui-line);padding:16px;border-radius:16px;background:var(--ui-glass);pointer-events:auto;box-shadow:0 8px 32px var(--ui-shadow)}
+.image-lightbox{--image-ai-width:clamp(320px,34vw,480px)}
+.image-lightbox-with-ai{padding-right:calc(var(--image-ai-width) + 32px)}
+.image-lightbox-with-ai .image-lightbox-note{left:calc((100% - var(--image-ai-width) - 16px) / 2);width:min(600px,calc(100% - var(--image-ai-width) - 48px))}
+.image-lightbox-ai-target{pointer-events:auto}
+.ai-panel.ai-expanded-image{z-index:62;top:56px;right:16px;bottom:16px;width:var(--image-ai-width);height:auto;border:1px solid var(--ui-line);border-radius:16px;background:var(--ui-surface);overflow:hidden}
+@media(max-width:700px){
+  .image-lightbox.image-lightbox-with-ai{padding:56px 16px calc(52dvh + 16px)}
+  .ai-panel.ai-expanded-image{top:48dvh;width:calc(100% - 32px)}
+  .image-lightbox-with-ai .image-lightbox-note{left:50%;width:calc(100% - 32px);bottom:calc(52dvh + 16px);max-height:24dvh}
+}
+@media(max-width:640px){.image-lightbox{padding:56px 16px 24px;--image-vertical-space:80px}.image-lightbox-controls{right:8px}.image-side-panel .image-note{margin-top:20px}}

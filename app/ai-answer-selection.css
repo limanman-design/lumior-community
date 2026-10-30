@@ -1,0 +1,19 @@
+.ai-answer-selection{min-width:0;user-select:text;-webkit-user-select:text}
+.ai-answer-selection.is-dragging{cursor:grabbing}
+.ai-selection-tools{position:fixed;z-index:210;display:flex;align-items:center;gap:4px;max-width:calc(100vw - 16px);height:36px;padding:4px;border:1px solid var(--ui-line);border-radius:10px;background:var(--ui-control);color:var(--ui-text);box-shadow:0 5px 20px var(--ui-shadow);user-select:none;-webkit-user-select:none}
+.ai-selection-tools button{display:flex;align-items:center;gap:5px;min-height:26px;padding:3px 7px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:12px;line-height:20px;white-space:nowrap;cursor:pointer}
+.ai-selection-tools button[data-ai-selection-drag]{cursor:grab;touch-action:none}
+.ai-selection-tools button[data-ai-selection-drag]:active{cursor:grabbing}
+.ai-selection-tools button:hover{background:var(--ui-control-hover)}
+.ai-selection-tools button:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px}
+.ai-selection-divider{height:15px;width:1px;background:var(--ui-control-hover)}
+.ai-selection-tools.is-dragging{opacity:0;pointer-events:none}
+.ai-selection-drag-ghost{position:fixed;z-index:220;width:260px;max-width:calc(100vw - 16px);pointer-events:none;padding:16px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-panel);color:var(--ui-text);box-shadow:0 12px 40px var(--ui-shadow);user-select:none;-webkit-user-select:none}
+.ai-selection-drag-ghost.can-drop{border-color:var(--ui-line-strong)}
+.ai-selection-drag-ghost>span{display:flex;align-items:center;gap:7px;font-size:12px}
+.ai-selection-drag-ghost strong{font-size:12px;font-weight:500}
+.ai-selection-drag-ghost p{margin:10px 0;max-height:110px;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ui-text-secondary);font-size:12px;line-height:1.5}
+.ai-selection-drag-ghost small{display:block;color:var(--ui-text-secondary);font-size:11px;line-height:1.5}
+.ai-selection-drag-ghost.can-drop small{color:var(--ui-text)}
+.ai-selection-canvas-target{position:fixed;z-index:200;pointer-events:none;box-sizing:border-box;border:1px solid var(--ui-line-strong);border-radius:8px;box-shadow:inset 0 0 24px var(--ui-line-subtle)}
+.ai-selection-drop-point{position:fixed;z-index:221;display:grid;place-items:center;width:24px;height:24px;transform:translate(-50%,-50%);pointer-events:none;border:1px solid var(--ui-line-strong);border-radius:50%;background:var(--ui-control-raised);color:var(--ui-text);box-shadow:0 2px 12px var(--ui-shadow)}

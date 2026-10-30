@@ -1,0 +1,64 @@
+.canvas-flashlight-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  overflow: hidden;
+  --flashlight-x: 50vw;
+  --flashlight-y: 50vh;
+}
+.flashlight-light-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.flashlight-beam {
+  /* Each level supplies its own cone; keep the origin aligned with the lamp. */
+  transform: translate(var(--flashlight-x), var(--flashlight-y)) rotate(-45deg);
+  transform-origin: 0 0;
+}
+.flashlight-lamp {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  transform: translate(
+    calc(var(--flashlight-x) - 11px),
+    calc(var(--flashlight-y) - 11px)
+  );
+  filter: drop-shadow(0 1px 2px #0008);
+}
+.canvas.flashlight-active,
+.canvas.flashlight-active .note:not(.editing),
+.canvas.flashlight-active .canvas-video-start {
+  cursor: none;
+}
+.canvas-hint.flashlight-hint {
+  z-index: 16;
+  color: var(--ui-text-muted);
+}
+
+/* Reading mode: prevent hover, focus and card actions without blocking canvas navigation. */
+.canvas .world.flashlight-reading {
+  pointer-events: none;
+}
+.canvas .world.flashlight-reading * {
+  pointer-events: none !important;
+}
+.canvas
+  .world.flashlight-reading
+  :is(
+    .card-toolbar,
+    .connector,
+    .resize-edge,
+    .resize-handle,
+    .card-hover-zone,
+    .section-color-picker
+  ) {
+  display: none !important;
+}
+.canvas .world.flashlight-reading .note {
+  outline: none !important;
+  box-shadow: none !important;
+}

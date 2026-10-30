@@ -1,0 +1,33 @@
+.canvas-top-toolbar-dock{position:absolute;inset:8px var(--canvas-sidebar-space,0px) auto 0;z-index:25;container:canvas-toolbar / inline-size;display:flex;justify-content:center;pointer-events:none}
+.canvas-top-toolbar-surface{position:relative;box-sizing:border-box;max-width:calc(100% - 16px);min-height:40px;display:flex;align-items:center;justify-content:center;padding:4px;background:var(--ui-glass);color:var(--ui-text);border-radius:16px;pointer-events:auto;box-shadow:inset 0 0 0 1px var(--ui-line-subtle);transition:width 240ms var(--control-ease);animation:canvas-toolbar-enter 180ms var(--control-ease) both}
+.canvas-top-toolbar-content{display:flex;flex:none;width:max-content;max-width:calc(100cqw - 24px)}
+.canvas-card-toolbar{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;user-select:none}
+.canvas-card-toolbar button{display:flex;align-items:center;justify-content:center;gap:6px;flex:none;height:32px;min-width:32px;padding:0 8px;border:0;border-radius:var(--lumior-control-radius,12px);background:transparent;color:var(--ui-text-muted);font:inherit;font-size:14px;line-height:20px;cursor:pointer;transition:background-color 150ms var(--control-ease),color 150ms var(--control-ease)}
+.canvas-card-toolbar button:is(:hover,:focus-visible,[data-popup-open]){background:var(--ui-control-raised);color:var(--ui-text)}
+.canvas-card-toolbar button:focus-visible{outline:1px solid var(--ui-brand);outline-offset:-1px}
+.canvas-card-toolbar :is(svg,.wake-orb,.workspace-symbol){display:block;flex:none;width:20px;height:20px}
+.canvas-card-toolbar svg{stroke-width:1.75;pointer-events:none}
+.canvas-card-toolbar .canvas-card-chat{color:var(--ui-text)}
+.canvas-card-tool-divider{height:20px;width:1px;flex:none;background:var(--ui-fill-hover);margin-inline:0}
+.canvas-card-toolbar .document-reading-control{display:flex;align-items:center;flex:none}
+.canvas-card-toolbar .document-read-button{width:auto;padding:0 8px}
+.canvas-card-toolbar .document-reading-popover{top:calc(100% + 12px);bottom:auto;right:0;left:auto;max-width:min(320px,calc(100cqw - 24px));white-space:normal;z-index:40}
+.canvas-card-action-menu{width:220px;max-width:calc(100vw - 24px);border:1px solid var(--ui-line);border-radius:var(--lumior-menu-radius);padding:var(--lumior-menu-padding)}
+.canvas-card-action-menu [data-slot='dropdown-menu-item']{gap:10px;min-height:36px;font-size:13px}
+.canvas-card-action-menu [data-slot='dropdown-menu-item']>svg{width:18px;height:18px;stroke-width:1.75}
+.canvas-card-toolbar.is-compact{gap:2px;flex-wrap:wrap;justify-content:center}
+.canvas-card-toolbar.is-compact button{padding-inline:6px;width:auto}
+.canvas-card-toolbar.is-compact .canvas-card-tool-divider{margin-inline:1px}
+.canvas-top-toolbar-surface .canvas-selection-toolbar{height:auto;min-height:32px;max-width:100%;min-width:0;gap:8px;padding:0;background:transparent;border-radius:0;box-shadow:none;backdrop-filter:none}
+.canvas-top-toolbar-surface .canvas-selection-toolbar button{height:32px}
+.canvas-top-toolbar-surface .canvas-selection-toolbar button:is(:hover,:focus-visible,[data-popup-open]){background:var(--ui-control-raised)}
+.workspace-shell .workspace.with-card-toolbar:not([data-card-toolbar-narrow=true]) .board-heading{max-width:min(20%,max(0px,calc((100% - var(--canvas-sidebar-space,0px) - 540px)/2)))}
+.workspace .note:is(:hover,:focus-within)>.type-label{opacity:1}
+.workspace[data-card-toolbar-narrow=true] .canvas-top-toolbar-dock{top:56px}
+@container canvas-toolbar (max-width:360px){
+ .canvas-top-toolbar-content{max-width:calc(100cqw - 24px)}
+ .canvas-card-toolbar.is-compact .canvas-card-tool-divider{display:none}
+}
+.canvas-top-toolbar-surface .canvas-selection-chat>.wake-orb{display:block}
+@keyframes canvas-toolbar-enter{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.canvas-top-toolbar-surface{animation:none;transition:none}.canvas-card-toolbar button{transition:none}}

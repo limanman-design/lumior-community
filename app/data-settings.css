@@ -1,0 +1,103 @@
+.data-settings {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-line) transparent;
+  background: var(--ui-surface) !important;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-line) !important;
+  border-radius: 24px !important;
+  padding: 28px !important;
+  gap: 16px !important;
+}
+.data-settings h2 {
+  color: var(--ui-white);
+  font-size: 22px;
+}
+.data-settings > div {
+  min-width: 0;
+}
+.data-settings h3 {
+  color: var(--ui-text);
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+.data-settings p {
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 4px 0 12px;
+}
+.data-settings section {
+  border-top: 1px solid var(--ui-line);
+  padding-top: 20px;
+}
+.data-settings :where(button:not([data-slot='dialog-close'])) {
+  border: 1px solid var(--lumior-secondary-border);
+  border-radius: var(--lumior-control-radius);
+  background: var(--lumior-secondary-surface);
+  min-height: 32px;
+  padding: 5px 12px;
+  color: var(--ui-text);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 20px;
+}
+.data-settings :where(button:not(:disabled):hover) {
+  background: var(--ui-control-hover);
+}
+.data-settings button svg {
+  color: inherit;
+}
+.data-settings button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+.data-settings button.primary {
+  background: var(--action-primary);
+  color: var(--action-primary-foreground);
+  border-color: var(--action-primary);
+}
+.data-settings-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--ui-panel);
+  border-radius: 16px;
+  padding: 16px;
+}
+.data-settings-status strong {
+  font-size: 14px;
+}
+.data-settings-status p {
+  margin-bottom: 0;
+}
+.save-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ui-success);
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+.save-dot.loading,
+.save-dot.saving {
+  background: var(--ui-success);
+}
+.save-dot.error {
+  background: var(--ui-danger);
+}
+.backup-preview {
+  margin-top: 12px;
+  border-radius: 12px;
+  background: var(--ui-panel);
+  padding: 16px;
+}
+.data-settings .backup-error {
+  color: var(--ui-danger);
+}
+.data-settings .data-settings-footnote {
+  margin: 0;
+  font-size: 12px;
+}

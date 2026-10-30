@@ -1,0 +1,35 @@
+.desktop-pet-panel{display:flex;flex-direction:column;gap:20px;min-width:0}
+.pet-settings-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:8px}
+.data-settings .pet-settings-heading [data-slot=dialog-title]{margin:0;color:var(--ui-text);font-size:26px;font-weight:600;line-height:1.3}
+.data-settings .pet-settings-heading p{margin:10px 0 0;color:var(--ui-text-secondary);font-size:14px}
+.data-settings .pet-visibility-toggle{flex:none;padding:10px 16px;white-space:nowrap;background:var(--ui-control);border-color:transparent}
+.pet-preview-card{position:relative;display:flex;flex-direction:column;align-items:center;border:1px solid var(--ui-line);border-radius:20px;background:var(--ui-panel);padding:28px 24px 24px;min-width:0}
+.pet-preview-stage{display:flex;align-items:center;justify-content:center;width:100%;min-width:0}
+.pet-preview-character{position:relative;max-width:100%;flex:none}
+.pet-preview-character canvas{display:block;width:100%;height:100%}
+.pet-preview-character>span{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--ui-text-muted);text-align:center}
+.pet-preview-actions{display:flex;justify-content:center;margin-top:12px}
+.pet-quick-note-hint{display:flex;align-items:center;gap:8px;padding:10px 22px;border-radius:999px;background:var(--ui-canvas);color:var(--ui-text-secondary);box-shadow:0 4px 16px var(--ui-shadow-soft);font-size:14px;cursor:default;user-select:none}
+.data-settings .pet-customize-toggle{position:absolute;right:20px;bottom:24px;display:flex;align-items:center;gap:6px;padding:9px 14px;background:var(--ui-control);border-color:var(--ui-line)}
+.pet-customize-toggle[aria-expanded=true] svg{transform:rotate(180deg)}
+.pet-customization{padding:20px 24px;border:1px solid var(--ui-line);border-radius:16px;background:var(--ui-panel)}
+.pet-size-heading,.pet-size-footer{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pet-size-heading label{font-size:14px;font-weight:500;color:var(--ui-text)}
+.pet-size-heading output{font-size:13px;color:var(--ui-text-secondary);font-variant-numeric:tabular-nums}
+.pet-customization input[type=range]{display:block;width:100%;margin:20px 0 10px;accent-color:var(--ui-text);cursor:pointer}
+.pet-customization input[type=range]:disabled{cursor:default;opacity:.45}
+.pet-size-footer>span{font-size:12px;color:var(--ui-text-muted)}
+.data-settings .pet-size-footer button{font-size:12px;background:transparent;border:0;padding:3px 10px;min-height:28px;color:var(--ui-text-secondary)}
+.data-settings .pet-customization p{font-size:12px;color:var(--ui-text-muted);margin:12px 0 0}
+.data-settings .pet-settings-help p{font-size:12px;color:var(--ui-text-muted);margin:0 0 6px;line-height:1.7}
+.data-settings .pet-settings-error{margin:0;color:var(--ui-danger)}
+.pet-parameter-group{border-top:1px solid var(--ui-line-subtle);margin-top:20px;padding-top:18px}
+.pet-parameter-group h3,.pet-parameter-group summary{font-size:13px;font-weight:600;margin:0 0 16px;color:var(--ui-text-secondary)}
+.pet-parameter-group summary{cursor:pointer;margin-bottom:0}.pet-parameter-group[open] summary{margin-bottom:16px}
+.pet-parameter{display:grid;grid-template-columns:120px minmax(80px,1fr) 60px;align-items:center;gap:16px;margin:14px 0;font-size:13px}
+.pet-parameter input[type=range]{margin:0}.pet-parameter output{text-align:right;color:var(--ui-text-secondary);font-size:12px;font-variant-numeric:tabular-nums}
+.pet-eye-controls,.pet-fps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px;font-size:13px}
+.data-settings .pet-eye-controls button,.data-settings .pet-fps button{padding:6px 12px;font-size:12px;background:var(--ui-control)}
+.data-settings .pet-eye-controls button[aria-pressed=true],.data-settings .pet-fps button[aria-pressed=true]{background:var(--ui-text);color:var(--ui-canvas);border-color:var(--ui-text)}
+.pet-fps>span{margin-right:auto}.data-settings .pet-reset-animation{margin-top:20px;padding:6px 12px;font-size:12px;color:var(--ui-text-secondary)}
+@media(max-width:720px){.pet-settings-heading{align-items:flex-start;flex-wrap:wrap;gap:16px}.pet-preview-card{padding-inline:16px}.pet-preview-actions{align-self:flex-start}.data-settings .pet-customize-toggle{right:16px}.pet-customization{padding:16px}}

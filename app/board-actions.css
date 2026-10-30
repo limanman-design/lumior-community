@@ -1,0 +1,16 @@
+/* Both the current workspace sidebar and the legacy overview use this menu. */
+.board-actions {
+  width: 220px !important;
+  border-radius: var(--lumior-menu-radius) !important;
+  padding: var(--lumior-menu-padding) !important;
+  background: var(--ui-glass) !important;
+}
+.board-actions [role='menuitem'] {
+  height: 40px;
+  border-radius: var(--lumior-menu-item-radius);
+  padding: 0 8px;
+  font-size: 14px;
+}
+.board-actions .board-delete {
+  color: var(--ui-danger);
+}

@@ -1,0 +1,122 @@
+/* Canvas sections are used by the workspace directly, independently of the
+   legacy board overview. Keep their controls and previews on the same entry. */
+.canvas.section-drawing,
+.canvas.section-drawing .note {
+  cursor: crosshair;
+}
+.canvas.section-drawing .world > .note,
+.canvas.section-drawing .world > .connections {
+  pointer-events: none;
+}
+.world > .canvas-section {
+  position: absolute;
+  z-index: auto;
+  border: 1px solid color-mix(in srgb, var(--section-color, var(--ui-line-strong)) 24%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--section-color, var(--ui-white)) 9%, transparent);
+  pointer-events: none;
+}
+.canvas-section:has(.section-title:hover),
+.canvas-section:has(.section-title:focus-within) {
+  border-color: var(--ui-brand);
+}
+.section-title {
+  position: absolute;
+  z-index: 6;
+  left: -1px;
+  bottom: calc(100% + 8px);
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--ui-panel);
+  color: var(--ui-white);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: grab;
+  pointer-events: auto;
+}
+.section-title:hover {
+  background: var(--ui-shadow-strong);
+}
+.section-title > button {
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: inherit;
+  cursor: grab;
+}
+.section-title input {
+  width: 180px;
+  height: 24px;
+  padding: 2px 8px;
+  background: transparent;
+  outline: none;
+  color: var(--ui-white);
+  font: inherit;
+  line-height: 20px;
+  cursor: text;
+}
+.section-color-picker {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 6px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  border: 0;
+  border-radius: 18px;
+  padding: 5px;
+  background: var(--ui-glass);
+  backdrop-filter: blur(8px);
+  transform: translateY(-50%);
+  cursor: default;
+  pointer-events: auto;
+}
+.section-color-swatch {
+  display: block;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--ui-line-subtle);
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.section-color-swatch:hover {
+  transform: scale(1.12);
+}
+.section-color-swatch[aria-pressed='true'],
+.section-color-swatch:focus-visible {
+  outline: 1.5px solid var(--ui-brand);
+  outline-offset: 3px;
+}
+.world > .canvas-section:has(.section-color-picker) {
+  z-index: 7;
+}
+.section-preview {
+  position: absolute;
+  z-index: 1;
+  border: 1px solid var(--ui-line-strong);
+  border-radius: 8px;
+  background: var(--ui-fill-subtle);
+  pointer-events: none !important;
+}
+.canvas-tools button[aria-pressed='true'] {
+  background: var(--ui-fill-selected);
+}
+.canvas-section > .section-title {
+  background: color-mix(in srgb, var(--section-color, var(--ui-white)) 24%, var(--ui-surface));
+  color: color-mix(in srgb, var(--section-color, var(--ui-white)) 40%, var(--ui-white));
+}
+/* Preserve the existing Chinese and English research-board heading scale. */
+:is([data-card-id='game-title'], [data-card-id='game-title-en']) .canvas-text-input {
+  font-size: 64px !important;
+  line-height: 1.2 !important;
+  letter-spacing: 1px;
+}

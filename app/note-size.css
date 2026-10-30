@@ -1,0 +1,79 @@
+.note.note-content-sized .card-block-inline .bn-editor {
+  min-height: 0;
+}
+.note-size-form {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--ui-line);
+  border-radius: 16px;
+  background: var(--ui-panel);
+}
+.note-size-field {
+  flex: 1;
+  min-width: 120px;
+}
+.note-size-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--ui-text);
+}
+.note-size-input {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--lumior-field-border);
+  border-radius: var(--lumior-field-radius);
+  background: var(--lumior-field-surface);
+}
+.note-size-input:focus-within {
+  border-color: var(--ui-brand);
+}
+.note-size-input:has(input[aria-invalid='true']) {
+  border-color: var(--ui-danger);
+}
+.note-size-input input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--ui-text);
+}
+.note-size-input span {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+.settings-center .note-size-form > button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: var(--lumior-control-radius);
+  background: var(--action-primary);
+  color: var(--action-primary-foreground);
+  font-size: 13px;
+}
+.settings-center .note-size-form > button:not(:disabled):hover {
+  background: var(--action-primary);
+}
+.note-size-input:has(input:disabled) {
+  opacity: 0.45;
+}
+.data-settings .note-size-error {
+  width: 100%;
+  margin: 0;
+  color: var(--ui-danger);
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .note-size-form {
+    gap: 12px;
+    padding: 14px;
+  }
+}

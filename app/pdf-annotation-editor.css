@@ -1,0 +1,107 @@
+.pdf-selection-toolbar {
+  position: fixed;
+  z-index: 150;
+  width: min(280px, calc(100vw - 16px));
+  padding: 8px;
+  background: var(--ui-glass);
+  border: 1px solid var(--ui-line);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px var(--ui-shadow);
+  backdrop-filter: blur(18px);
+  color: var(--ui-text);
+  transition: opacity .16s ease;
+}
+.pdf-annotation-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  margin: 0 2px 8px;
+}
+.pdf-selection-toolbar .pdf-annotation-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 6px;
+  flex: none;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.pdf-selection-toolbar .pdf-annotation-delete { margin-left: auto; }
+.pdf-selection-toolbar .pdf-annotation-icon:disabled { opacity: .35; cursor: default; }
+.pdf-selection-toolbar .pdf-annotation-icon:not(:disabled):hover { background: var(--ui-fill-hover); }
+.pdf-selection-toolbar button:focus-visible,
+.pdf-custom-color:focus-within { outline: 2px solid var(--ui-brand); outline-offset: 2px; }
+.pdf-annotation-icon img { width: 16px; height: 16px; display: block; pointer-events: none; }
+.pdf-copy-feedback { font-size: 12px; line-height: 18px; color: var(--ui-brand); }
+.pdf-copy-feedback.error { color: var(--ui-danger); }
+.pdf-annotation-colors {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 4px 12px;
+}
+.pdf-selection-toolbar .pdf-color-choice,
+.pdf-custom-color {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pdf-selection-toolbar .pdf-color-choice { border: 2px solid transparent; }
+.pdf-selection-toolbar .pdf-color-choice[aria-pressed='true'] { outline: 2px solid var(--ui-white); outline-offset: 2px; }
+.pdf-custom-color { overflow: hidden; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
+.pdf-custom-color input { opacity: 0; width: 24px; height: 24px; cursor: pointer; }
+.pdf-note-input {
+  position: relative;
+  min-height: 44px;
+  border: 1px solid var(--ui-line);
+  background: var(--ui-shadow);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.pdf-note-input textarea {
+  display: block;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  max-height: 120px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 11px 42px 11px 12px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-line) transparent;
+}
+.pdf-note-input[data-multiline='true'] { padding-bottom: 34px; }
+.pdf-note-input[data-multiline='true'] textarea { padding: 10px 12px; }
+.pdf-note-input textarea::placeholder { color: var(--ui-text-muted); }
+.pdf-selection-toolbar .pdf-note-input button {
+  position: absolute;
+  right: 8px;
+  bottom: 9px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pdf-note-input button img { display: block; width: 24px; height: 24px; pointer-events: none; }
+.pdf-selection-toolbar .pdf-note-input button:disabled { cursor: default; opacity: 1; }
+.pdf-note-input button:not(:disabled):hover { box-shadow: 0 0 0 2px var(--ui-line); }
+.pdf-annotation-status { display: block; margin-top: 8px; font-size: 12px; line-height: 18px; color: var(--ui-danger); }

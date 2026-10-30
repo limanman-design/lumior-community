@@ -1,0 +1,12 @@
+.ai-generating-card{position:absolute;z-index:12;width:360px;height:220px;box-sizing:border-box;padding:20px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:var(--card);border:1px solid color-mix(in srgb,var(--primary) 55%,var(--border));border-radius:16px;color:var(--muted-foreground);box-shadow:0 8px 28px var(--ui-shadow-soft)}
+.ai-generating-card>.workspace-symbol{color:var(--primary)}
+.ai-generating-card output{display:grid;gap:6px;max-width:100%;font-size:14px}
+.ai-generating-card strong{font-weight:500;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--foreground)}
+.ai-generating-card output>span{font-size:12px}
+.ai-generating-lines{display:grid;gap:8px;width:100%}
+.ai-generating-lines i{height:5px;width:100%;border-radius:4px;background:linear-gradient(100deg,var(--muted) 20%,color-mix(in srgb,var(--foreground) 12%,var(--muted)) 45%,var(--muted) 70%);background-size:240% 100%;animation:ai-generating-sweep 2.4s ease-in-out infinite}
+.ai-generating-lines i:nth-child(2){width:84%}.ai-generating-lines i:nth-child(3){width:62%}
+.ai-generating-card button{align-self:flex-end;flex-shrink:0;margin-top:auto;height:28px;padding:0 12px;border:1px solid var(--border);border-radius:var(--lumior-control-radius,12px);color:var(--foreground);background:transparent;cursor:pointer}
+.ai-generating-card button:hover{background:var(--muted)}
+@keyframes ai-generating-sweep{from{background-position:140% 0}to{background-position:-100% 0}}
+@media(prefers-reduced-motion:reduce){.ai-generating-lines i{animation:none}}

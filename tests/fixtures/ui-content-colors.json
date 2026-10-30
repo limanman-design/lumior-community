@@ -1,0 +1,359 @@
+[
+  {
+    "file": "app/canvas-flashlight.css",
+    "selector": ".flashlight-lamp",
+    "property": "filter",
+    "value": "drop-shadow(0 1px 2px #0008)",
+    "reason": "插画 / 灯光与遮罩"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-select-cell[data-color='blue']",
+    "property": "background",
+    "value": "#3e6e952e",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-select-cell[data-color='blue']",
+    "property": "color",
+    "value": "#9fc5e5",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-select-cell[data-color='green']",
+    "property": "background",
+    "value": "#4a765d30",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-select-cell[data-color='green']",
+    "property": "color",
+    "value": "#a3c8b2",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-value-status[data-color='blue']",
+    "property": "background",
+    "value": "#3e6e952e",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-value-status[data-color='blue']",
+    "property": "color",
+    "value": "#9fc5e5",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-value-status[data-color='green']",
+    "property": "background",
+    "value": "#4a765d30",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-value-status[data-color='green']",
+    "property": "color",
+    "value": "#a3c8b2",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-record-property\n  .database-select-cell[data-color='blue']\n  .database-status-dot",
+    "property": "color",
+    "value": "#9fc5e5",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ".database-record-property\n  .database-select-cell[data-color='green']\n  .database-status-dot",
+    "property": "color",
+    "value": "#a3c8b2",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='gray']",
+    "property": "--database-tag-bg",
+    "value": "#ffffff12",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='gray']",
+    "property": "--database-tag-ink",
+    "value": "#c3c3c3",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='brown']",
+    "property": "--database-tag-bg",
+    "value": "#a0775930",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='brown']",
+    "property": "--database-tag-ink",
+    "value": "#c9a58c",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='orange']",
+    "property": "--database-tag-bg",
+    "value": "#cb854b2a",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='orange']",
+    "property": "--database-tag-ink",
+    "value": "#e3ae7e",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='yellow']",
+    "property": "--database-tag-bg",
+    "value": "#bca34b28",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='yellow']",
+    "property": "--database-tag-ink",
+    "value": "#d9c77d",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='green']",
+    "property": "--database-tag-bg",
+    "value": "#60957728",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='green']",
+    "property": "--database-tag-ink",
+    "value": "#a3c8b2",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='blue']",
+    "property": "--database-tag-bg",
+    "value": "#5a8fb82a",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='blue']",
+    "property": "--database-tag-ink",
+    "value": "#9fc5e5",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='purple']",
+    "property": "--database-tag-bg",
+    "value": "#9272b52b",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='purple']",
+    "property": "--database-tag-ink",
+    "value": "#c7acdf",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='pink']",
+    "property": "--database-tag-bg",
+    "value": "#b66e922a",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='pink']",
+    "property": "--database-tag-ink",
+    "value": "#dfa9c3",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='red']",
+    "property": "--database-tag-bg",
+    "value": "#b55f572a",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/database.css",
+    "selector": ":is(.database-value-status, .database-option-color)[data-color='red']",
+    "property": "--database-tag-ink",
+    "value": "#e2a09a",
+    "reason": "用户自选多维表标签色"
+  },
+  {
+    "file": "app/desktop-wallpaper.css",
+    "selector": ".wallpaper-swatch",
+    "property": "background-color",
+    "value": "#020713",
+    "reason": "壁纸预览画面"
+  },
+  {
+    "file": "app/desktop-wallpaper.css",
+    "selector": ".wallpaper-swatch-galaxy",
+    "property": "background",
+    "value": "radial-gradient(ellipse at 55% 53%,#aac7fb40,transparent 55%),linear-gradient(145deg,#02060f 20%,#0d2945 47%,#3d72905e 52%,#0c2132 61%,#01040c 85%)",
+    "reason": "壁纸预览画面"
+  },
+  {
+    "file": "app/desktop-wallpaper.css",
+    "selector": ".wallpaper-swatch-shore",
+    "property": "background",
+    "value": "radial-gradient(ellipse at 66% 44%,#b6f8ff35,transparent 30%),linear-gradient(155deg,#051624 30%,#08374a 56%,#a0e5ed66 57%,#072733 60%,#03070e 73%)",
+    "reason": "壁纸预览画面"
+  },
+  {
+    "file": "app/earthrise-background.css",
+    "selector": ".earthrise-background",
+    "property": "background",
+    "value": "#030408",
+    "reason": "插画 / 灯光与遮罩"
+  },
+  {
+    "file": "app/earthrise-background.css",
+    "selector": ".earthrise-background::after",
+    "property": "background",
+    "value": "linear-gradient(180deg, #03040810, #03040850)",
+    "reason": "插画 / 灯光与遮罩"
+  },
+  {
+    "file": "app/inspiration.css",
+    "selector": ".observatory-feeds",
+    "property": "background",
+    "value": "#030408",
+    "reason": "地球画面衔接"
+  },
+  {
+    "file": "app/lumior.css",
+    "selector": ".pdf-citation-highlight",
+    "property": "background",
+    "value": "#ebd54524",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/lumior.css",
+    "selector": ".pdf-citation-highlight",
+    "property": "outline",
+    "value": "1px solid #cab54c77",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/lumior.css",
+    "selector": ".note:has(.pdf-excerpt-color) .image-card-content>img",
+    "property": "background",
+    "value": "#fff",
+    "reason": "PDF 白纸底色"
+  },
+  {
+    "file": "app/memory-atlas.css",
+    "selector": ".memory-atlas-page",
+    "property": "background",
+    "value": "#02060f",
+    "reason": "星海画面衔接"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-selectable-text ::selection",
+    "property": "background",
+    "value": "#519aef66",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-search-hit",
+    "property": "background",
+    "value": "#ffd84d66",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-search-hit.active",
+    "property": "background",
+    "value": "#ff922a99",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-search-hit.active",
+    "property": "outline",
+    "value": "1px solid #d97519",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-note-marker",
+    "property": "border",
+    "value": "2px solid #fff",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-note-marker",
+    "property": "background",
+    "value": "#357ff6",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-note-marker",
+    "property": "box-shadow",
+    "value": "0 2px 6px #0003",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-note-marker",
+    "property": "color",
+    "value": "#fff",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-note-marker:hover",
+    "property": "background",
+    "value": "#246deb",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".pdf-note-marker:focus-visible",
+    "property": "outline",
+    "value": "2px solid #357ff6",
+    "reason": "PDF 原文上的检索 / 引用标记"
+  },
+  {
+    "file": "app/pdf-viewer.css",
+    "selector": ".note.pdf-card .pdf-cover",
+    "property": "background",
+    "value": "#fff",
+    "reason": "PDF 白纸底色"
+  },
+  {
+    "file": "app/trial-night-highway.css",
+    "selector": ".trial-night-highway",
+    "property": "background",
+    "value": "#07080f",
+    "reason": "插画 / 灯光与遮罩"
+  }
+]

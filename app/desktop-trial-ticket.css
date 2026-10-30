@@ -1,0 +1,231 @@
+.desktop-trial-ticket {
+  --tt-bg: var(--ui-control);
+  --tt-stub-bg: var(--ui-control);
+  --tt-ink: var(--ui-white);
+  --tt-edge: var(--ui-fill-pressed);
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  min-width: 0;
+  margin: 12px auto 8px;
+  color: var(--tt-ink);
+  isolation: isolate;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.data-settings .desktop-ai-trial > .desktop-trial-ticket {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tear-ticket__stage {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  width: var(--tt-w);
+  height: var(--tt-h);
+  margin-left: calc(var(--tt-w) * var(--tt-fit) / -2);
+  transform: scale(var(--tt-fit));
+  transform-origin: top left;
+  transition: transform 540ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.desktop-trial-ticket[data-used] .tear-ticket__stage {
+  transform: translateX(calc(var(--tt-stub) * var(--tt-fit) / 2))
+    scale(var(--tt-fit));
+}
+
+.tear-ticket__plane,
+.tear-ticket__piece {
+  position: absolute;
+  inset: 0;
+}
+
+.tear-ticket__plane {
+  transform-style: preserve-3d;
+}
+
+.tear-ticket__piece {
+  pointer-events: none;
+}
+
+.tear-ticket__piece--stub {
+  will-change: transform;
+}
+
+.tear-ticket__edge,
+.tear-ticket__fibres {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tear-ticket__edge path {
+  fill: none;
+  stroke: var(--tt-edge);
+  stroke-width: 1;
+}
+
+.tear-ticket__paper {
+  position: absolute;
+  inset: 0;
+  background: var(--tt-bg);
+  pointer-events: auto;
+}
+
+.tear-ticket__paper--stub {
+  background: var(--tt-stub-bg);
+}
+
+.tear-ticket__art {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: calc(var(--tt-body-w) - 16px);
+  height: calc(var(--tt-h) * 0.74 - 16px);
+  overflow: hidden;
+  border-radius: 18px;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    var(--ui-control-hover) 0%,
+    var(--ui-control) 58%,
+    var(--ui-panel) 100%
+  );
+}
+
+.tear-ticket__art-parallax {
+  position: absolute;
+  inset: -6px;
+  display: grid;
+  place-items: center;
+}
+
+.tear-ticket__content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: var(--tt-body-w);
+  min-height: calc(var(--tt-h) * 0.26);
+  padding: 10px 24px 12px;
+  outline: none;
+  color: var(--ui-text);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.tear-ticket__content:focus-visible {
+  outline: 1px solid var(--ui-brand);
+  outline-offset: -8px;
+  border-radius: 10px;
+}
+
+.tear-ticket__content > :first-child {
+  margin-top: 0;
+}
+
+.tear-ticket__content > :last-child {
+  margin-bottom: 0;
+}
+
+.tear-ticket__stub {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: var(--tt-stub);
+  padding: 24px 28px;
+  overflow-wrap: anywhere;
+}
+
+.tear-ticket__fibres path {
+  fill: none;
+  stroke: var(--tt-bg);
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.desktop-trial-ticket[data-instant] .tear-ticket__stage {
+  transition: none;
+}
+
+.desktop-trial-ticket-loading {
+  position: relative;
+  width: 320px;
+  height: 180px;
+}
+
+.desktop-trial-ticket-loading svg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.desktop-trial-ticket-loading-glow {
+  position: absolute;
+  inset: 10% 23%;
+  border-radius: 50%;
+  background: var(--ui-fill-hover);
+  filter: blur(26px);
+  animation: lumior-trial-ticket-breathe 4s ease-in-out infinite alternate;
+}
+
+.desktop-trial-ticket-loading-orbits {
+  transform-origin: 160px 90px;
+  animation: lumior-trial-ticket-orbit 22s linear infinite;
+}
+
+.desktop-trial-ticket-loading-orbits ellipse {
+  fill: none;
+  stroke: var(--ui-text-muted);
+  stroke-width: 1;
+}
+
+.desktop-trial-ticket-loading-core {
+  fill: var(--ui-text-muted);
+  filter: drop-shadow(0 0 10px var(--ui-line));
+}
+
+.desktop-trial-ticket-loading-satellite {
+  transform-origin: 160px 90px;
+  animation: lumior-trial-ticket-orbit 7s linear infinite;
+  fill: var(--ui-text-secondary);
+  filter: drop-shadow(0 0 5px var(--ui-line-strong));
+}
+
+@keyframes lumior-trial-ticket-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lumior-trial-ticket-breathe {
+  to {
+    transform: scale(1.15);
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tear-ticket__stage {
+    transition: none;
+  }
+  .desktop-trial-ticket-loading-glow,
+  .desktop-trial-ticket-loading-orbits,
+  .desktop-trial-ticket-loading-satellite {
+    animation: none;
+  }
+}

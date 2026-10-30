@@ -1,0 +1,61 @@
+.world > .canvas-section.section-selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 calc(1px * var(--inverse-zoom, 1)) color-mix(in srgb,var(--primary) 20%,transparent);
+}
+.section-selection-edge,
+.selection-frame-edge {
+  position: absolute;
+  display: block;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+.section-selection-edge[data-edge='top'],
+.selection-frame-edge[data-edge='top'] {
+  top: calc(-3px * var(--inverse-zoom));
+  left: 0;
+  right: 0;
+  height: calc(6px * var(--inverse-zoom));
+}
+.section-selection-edge[data-edge='bottom'],
+.selection-frame-edge[data-edge='bottom'] {
+  bottom: calc(-3px * var(--inverse-zoom));
+  left: 0;
+  right: 0;
+  height: calc(6px * var(--inverse-zoom));
+}
+.section-selection-edge[data-edge='left'],
+.selection-frame-edge[data-edge='left'] {
+  left: calc(-3px * var(--inverse-zoom));
+  top: 0;
+  bottom: 0;
+  width: calc(6px * var(--inverse-zoom));
+}
+.section-selection-edge[data-edge='right'],
+.selection-frame-edge[data-edge='right'] {
+  right: calc(-3px * var(--inverse-zoom));
+  top: 0;
+  bottom: 0;
+  width: calc(6px * var(--inverse-zoom));
+}
+.canvas-selection-frame {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  border: calc(1.5px * var(--inverse-zoom)) solid var(--primary);
+  border-radius: calc(8px * var(--inverse-zoom));
+}
+.canvas-selection-frame .selection-frame-edge:active,
+.canvas-section.section-selected .section-title:active {
+  cursor: grabbing;
+}
+
+.section-selection-edge[data-edge='left'],
+.section-selection-edge[data-edge='right'] { cursor: ew-resize; }
+.section-selection-edge[data-edge='top'],
+.section-selection-edge[data-edge='bottom'] { cursor: ns-resize; }
+.section-selection-edge { z-index: 6; }
+.section-selection-edge:focus-visible { outline: calc(1px * var(--inverse-zoom)) solid var(--ui-brand); }
+.canvas-section:has(.section-selection-edge:hover) { border-color: var(--ui-brand); }
+
+.workspace .selection-marquee{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,transparent)}

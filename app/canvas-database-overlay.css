@@ -1,0 +1,85 @@
+[data-slot='dialog-content'].canvas-database-overlay {
+  display: flex;
+  width: calc(100vw - 64px);
+  max-width: 1500px;
+  height: calc(100dvh - 64px);
+  max-height: none;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--ui-line);
+  border-radius: 14px;
+  background: var(--background, var(--ui-canvas));
+  box-shadow: 0 25px 100px var(--ui-shadow-strong);
+}
+.canvas-database-overlay-backdrop {
+  background: var(--ui-shadow-strong);
+  backdrop-filter: blur(5px);
+}
+.canvas-database-overlay-header {
+  display: flex;
+  min-height: 49px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 0 18px;
+  border-bottom: 1px solid var(--ui-line-subtle);
+  color: var(--ui-text-secondary);
+}
+.canvas-database-overlay-header > svg {
+  flex: 0 0 auto;
+  stroke-width: 1.5;
+}
+.canvas-database-overlay-header [data-slot='dialog-title'] {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.canvas-database-overlay-header output {
+  flex: 0 0 auto;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.canvas-database-overlay-header output[data-status='error'] {
+  color: var(--ui-danger);
+}
+.canvas-database-overlay-header button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+}
+.canvas-database-overlay-header button:hover {
+  background: var(--ui-fill-hover);
+  color: var(--ui-white);
+}
+.canvas-database-overlay-header button:focus-visible {
+  outline: 1px solid var(--lumior-field-focus, var(--ui-brand));
+}
+.canvas-database-overlay .database-document {
+  margin-top: 42px;
+}
+@media (max-width: 760px) {
+  [data-slot='dialog-content'].canvas-database-overlay {
+    width: calc(100vw - 20px);
+    height: calc(100dvh - 24px);
+    border-radius: 10px;
+  }
+  .canvas-database-overlay .database-document {
+    --database-document-gutter: 20px;
+    margin-top: 24px;
+  }
+}

@@ -1,0 +1,15 @@
+.pdf-translation-confirmation-overlay{z-index:1100;background:var(--ui-shadow-strong);backdrop-filter:blur(5px)}
+.pdf-translation-confirmation{z-index:1101;width:520px;max-width:calc(100vw - 40px);padding:32px;border:1px solid var(--ui-line-subtle);border-radius:24px;background:var(--ui-canvas);color:var(--ui-text);box-shadow:0 24px 80px var(--ui-shadow);gap:18px}
+.pdf-translation-confirmation [data-slot=dialog-title]{font-size:22px;line-height:30px;font-weight:500;margin-right:30px}
+.pdf-translation-confirmation [data-slot=dialog-description]{font-size:16px;line-height:26px;color:var(--ui-text-secondary);margin:0}
+.pdf-translation-confirmation-close{position:absolute;top:20px;right:20px;width:28px;height:28px;display:grid;place-items:center;border-radius:var(--lumior-control-radius,12px);color:var(--ui-text-secondary)}
+.pdf-translation-confirmation-close:hover{background:var(--ui-fill-hover);color:var(--ui-white)}
+.pdf-translation-confirmation-preference{display:flex;align-items:center;gap:9px;font-size:13px;line-height:20px;color:var(--ui-text-secondary);margin-top:2px;cursor:pointer;width:max-content}
+.pdf-translation-confirmation-preference input{width:16px;height:16px;accent-color:var(--ui-text);cursor:pointer}
+.pdf-translation-confirmation-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:4px}
+.pdf-translation-confirmation-actions>button{height:42px;min-width:76px;padding:0 20px;border-radius:12px;font-size:15px;line-height:22px}
+.pdf-translation-confirmation-cancel{border:1px solid var(--ui-line);background:transparent;color:var(--ui-text)}
+.pdf-translation-confirmation-cancel:hover{background:var(--ui-fill-hover)}
+.pdf-translation-confirmation-start{background:var(--ui-text);color:var(--ui-ink)}
+.pdf-translation-confirmation-start:hover{background:var(--ui-white)}
+.pdf-translation-confirmation button:focus-visible,.pdf-translation-confirmation input:focus-visible{outline:2px solid var(--ui-brand);outline-offset:3px}

@@ -1,0 +1,25 @@
+/* Content identity colours: PDF and NotePage match the existing expanded-card
+   assets; the remaining hues reuse the current Section palette. Saved status,
+   Section and PDF highlight colours keep their separate meanings. */
+:root {
+  --lumior-type-literature: var(--ui-literature);
+  --lumior-type-note-page: var(--ui-note);
+  --lumior-type-board: var(--ui-board);
+  --lumior-type-video: var(--ui-video);
+  --lumior-type-image: var(--ui-info);
+}
+[data-file-kind='literature'] {
+  --lumior-type-color: var(--lumior-type-literature);
+}
+[data-file-kind='notePage'] {
+  --lumior-type-color: var(--lumior-type-note-page);
+}
+[data-file-kind='board'] {
+  --lumior-type-color: var(--lumior-type-board);
+}
+[data-file-kind='video'] {
+  --lumior-type-color: var(--lumior-type-video);
+}
+[data-file-kind='image'] {
+  --lumior-type-color: var(--lumior-type-image);
+}

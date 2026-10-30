@@ -1,0 +1,16 @@
+/* Base placement is shared by canvas references and library counts. The
+   existing canvas and library rules supply their specific visual treatment. */
+.card-reference-count {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 5px;
+  background: var(--ui-control);
+  color: var(--ui-brand);
+  font-size: 11px;
+  padding: 3px 6px;
+}

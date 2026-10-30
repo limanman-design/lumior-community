@@ -1,0 +1,268 @@
+.board-tabs {
+  display: flex;
+  align-items: center;
+  flex: 0 0 40px;
+  width: 100%;
+  height: 40px;
+  min-width: 0;
+  background: transparent;
+  color: var(--ui-text-muted);
+  user-select: none;
+}
+.board-tabs[data-platform='darwin'] {
+  -webkit-app-region: drag;
+}
+.board-tabs[data-platform='win32'] {
+  -webkit-app-region: drag;
+}
+.board-tabs .windows-caption-buttons {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 0 8px;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+.board-tabs .windows-caption-buttons button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 12px;
+}
+.board-tabs .windows-caption-buttons button:is(:hover, :focus-visible) {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}
+.board-tabs .windows-caption-buttons .windows-caption-close:is(:hover, :focus-visible) {
+  background: var(--ui-danger-fill);
+  color: var(--ui-white);
+}
+.board-tabs button {
+  border: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  -webkit-app-region: no-drag;
+}
+.board-tabs button:focus-visible {
+  outline: 1px solid var(--ui-brand);
+  outline-offset: -2px;
+}
+.board-tabs button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.board-tabs .board-tabs-navigation {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 112px;
+  width: 112px;
+  height: 100%;
+  padding: 0 8px;
+}
+.board-tabs .board-tabs-navigation::after {
+  position: absolute;
+  right: 0;
+  top: 12px;
+  width: 1px;
+  height: 16px;
+  background: var(--ui-line);
+  content: '';
+}
+.board-tabs[data-has-sidebar='false'] .board-tabs-navigation {
+  flex-basis: 76px;
+  width: 76px;
+}
+.board-tabs[data-sidebar-expanded='true'] .board-tabs-navigation {
+  flex-basis: 332px;
+  width: 332px;
+}
+.board-tabs[data-platform='darwin'] .board-tabs-navigation {
+  flex-basis: 196px;
+  width: 196px;
+  padding-left: 92px;
+}
+.board-tabs[data-platform='darwin'][data-has-sidebar='false']
+  .board-tabs-navigation {
+  flex-basis: 160px;
+  width: 160px;
+}
+.board-tabs[data-platform='darwin'][data-sidebar-expanded='true']
+  .board-tabs-navigation {
+  flex-basis: 332px;
+  width: 332px;
+}
+.board-tabs[data-platform='win32'] .board-tabs-navigation {
+  flex-basis: 332px;
+  width: 332px;
+  gap: 4px;
+}
+.board-tabs .windows-window-menus {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+}
+.board-tabs[data-platform='win32'] .windows-window-menus button {
+  flex: 0 0 auto;
+  width: auto;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+.board-tabs .windows-window-menus button[aria-expanded='true'] {
+  background: var(--ui-fill-selected);
+  color: var(--ui-text);
+}
+.board-tabs .board-tabs-navigation button,
+.board-tabs .board-tabs-new {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 8px;
+}
+.board-tabs .board-tabs-navigation img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.board-tabs .board-tabs-back img,
+.board-tabs .board-tabs-forward img {
+  opacity: 0.75;
+}
+.board-tabs
+  .board-tabs-navigation
+  button:not(:disabled):is(:hover, :focus-visible)
+  img {
+  opacity: 1;
+}
+.board-tabs .board-tabs-forward img {
+  transform: scaleX(-1);
+}
+.board-tabs .board-tabs-sidebar:is(:hover, :focus-visible) img {
+  filter: url('#workspace-shell-hover-ink');
+}
+.board-tabs .board-tabs-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+  padding: 4px 8px;
+}
+.board-tabs .board-tabs-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-app-region: no-drag;
+}
+.board-tabs .board-tabs-track::-webkit-scrollbar {
+  display: none;
+}
+.board-tabs .board-tabs-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* Share available space before the track starts scrolling at the minimum. */
+  flex: 0 1 228px;
+  width: 228px;
+  height: 32px;
+  min-width: 120px;
+  border-radius: 8px;
+  transition:
+    background 0.14s,
+    color 0.14s;
+}
+.board-tabs .board-tabs-item:hover {
+  background: var(--ui-fill-hover);
+}
+.board-tabs .board-tabs-item.is-active {
+  color: var(--ui-text);
+  background: var(--ui-fill-selected);
+}
+.board-tabs .board-tabs-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px 0 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: left;
+}
+.board-tabs .board-tabs-select:hover {
+  background: transparent;
+}
+.board-tabs .board-tabs-select svg {
+  flex: 0 0 16px;
+}
+.board-tabs .board-tabs-select span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.board-tabs .board-tabs-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-right: 4px;
+  border-radius: 6px;
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    background 0.12s;
+}
+.board-tabs .board-tabs-item:is(:hover, :focus-within) .board-tabs-close {
+  opacity: 1;
+}
+.board-tabs .board-tabs-navigation button:not(:disabled):hover,
+.board-tabs .board-tabs-new:hover,
+.board-tabs .board-tabs-close:hover {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}
+.board-tabs .board-tabs-empty {
+  padding: 0 8px;
+  font-size: 14px;
+  opacity: 0.65;
+}
+@media (max-width: 767px) {
+  .board-tabs:not([data-platform='darwin'])[data-sidebar-expanded='true']
+    .board-tabs-navigation {
+    flex-basis: 112px;
+    width: 112px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-tabs .board-tabs-item,
+  .board-tabs .board-tabs-close {
+    transition: none;
+  }
+}

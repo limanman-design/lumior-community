@@ -1,0 +1,109 @@
+.desktop-updates-panel {
+  padding: 20px !important;
+  border: 1px solid var(--ui-line) !important;
+  border-radius: 16px;
+  background: var(--ui-panel);
+}
+.desktop-updates-panel .data-settings-status {
+  margin: 20px 0 16px;
+}
+.data-settings .desktop-updates-version {
+  color: var(--ui-text-secondary);
+  font-size: 12px;
+}
+.desktop-update-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.desktop-update-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  color: var(--ui-text-secondary);
+  font-size: 12px;
+}
+.desktop-update-progress progress {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  accent-color: var(--ui-brand);
+  border-radius: 999px;
+}
+.desktop-update-progress progress::-webkit-progress-bar {
+  background: var(--ui-fill-hover);
+  border-radius: 999px;
+}
+.desktop-update-progress progress::-webkit-progress-value {
+  background: var(--ui-brand);
+  border-radius: 999px;
+}
+.desktop-update-notice {
+  position: fixed;
+  z-index: 70;
+  right: 24px;
+  bottom: 24px;
+  width: min(400px, calc(100vw - 32px));
+  padding: 18px;
+  border: 1px solid var(--ui-line);
+  border-radius: 18px;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  box-shadow: 0 12px 40px var(--ui-shadow);
+  pointer-events: auto;
+}
+.desktop-update-notice strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.desktop-update-notice p {
+  margin: 8px 0 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ui-text-secondary);
+}
+.desktop-update-notice button {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--lumior-control-radius);
+  background: var(--ui-control-hover);
+  color: var(--ui-text);
+  font-size: 12px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.desktop-update-notice button.primary {
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+  color: var(--action-primary-foreground);
+}
+.desktop-update-notice button:not(:disabled):hover {
+  background: var(--ui-control-hover);
+}
+.desktop-update-notice button.primary:not(:disabled):hover {
+  background: var(--action-primary);
+}
+.desktop-update-notice button:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 3px;
+}
+.desktop-update-notice button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+.data-settings .desktop-update-error,
+.desktop-update-notice .desktop-update-error {
+  color: var(--ui-danger);
+  margin-top: 16px;
+}
+@media (max-width: 640px) {
+  .desktop-updates-panel {
+    padding: 16px !important;
+  }
+  .desktop-update-notice {
+    right: 16px;
+    bottom: 16px;
+  }
+}

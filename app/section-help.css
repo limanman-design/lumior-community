@@ -1,0 +1,16 @@
+.section-symbol{display:inline-grid;place-items:center;width:20px;height:20px;flex-shrink:0;pointer-events:none}
+.section-symbol>img{display:block;width:16.6667px;height:16.6667px}
+.canvas-tools button:not(.add-button){border-radius:12px}
+.canvas-tools button[aria-pressed=true]{background:var(--ui-fill-selected)}
+.canvas-tools .icon[src*="canvas-toolbar"]{opacity:1}
+.lumior-tooltip.section-help{display:block;width:428px;max-width:calc(100vw - 96px);max-height:calc(100dvh - 24px);overflow:auto;padding:19px;border-radius:16px;border:1px solid var(--ui-line-subtle);background:var(--ui-surface);color:var(--ui-text);box-shadow:0 8px 32px var(--ui-shadow-soft);font-size:14px;line-height:18px}
+.section-help-heading{display:flex;align-items:flex-start;gap:8px;min-height:36px}
+.section-help-badge{display:grid;place-items:center;flex-shrink:0;width:24px;height:24px;background:var(--ui-control-raised);border-radius:8px}
+.section-help-heading strong{display:block;font-weight:600;font-size:14px;line-height:18px}
+.section-help-heading>div>span{display:block;margin-top:2px;color:var(--ui-text-muted);font-size:12px;line-height:16px}
+.section-help p{max-width:378px;margin:16px 0;font-size:14px;line-height:18px}
+.section-help-example{position:relative;width:100%;aspect-ratio:388/218;overflow:hidden;border-radius:12px;pointer-events:none}
+/* Focus the native 1972x1230 artwork on source x150/y85 through x1258/y708:
+   show both leading Section titles and their columns, with the third at the edge. */
+.section-help-example>.section-help-image{position:absolute;left:-13.5379%;top:-13.6437%;width:177.9783%}
+.section-help-example img{display:block;width:100%;height:auto;max-width:none}

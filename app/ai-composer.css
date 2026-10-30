@@ -1,0 +1,156 @@
+.redesigned-composer .ai-compose-actions {
+  min-width: 0;
+}
+.redesigned-composer .ai-send .research-icon {
+  /* Match the 32px control: oversized artwork expands the grid track off-center. */
+  width: 32px !important;
+  height: 32px !important;
+}
+.ai-panel .redesigned-composer .ai-compose-actions .ai-stop {
+  background: var(--ui-white);
+  color: var(--ui-ink);
+}
+.ai-panel .redesigned-composer .ai-compose-actions .ai-stop:hover {
+  background: var(--ui-text);
+}
+.redesigned-composer .ai-compose-actions .ai-skill-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-width: 0;
+  max-width: min(180px, 48%);
+  flex: 0 1 auto;
+  padding: 0 8px;
+  border-radius: var(--lumior-field-radius);
+  color: var(--lumior-field-ink);
+  font-size: 13px;
+}
+.ai-skill-trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-skill-trigger > svg {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  transition: transform 140ms ease;
+}
+.redesigned-composer .ai-compose-actions .ai-skill-trigger:is(:hover, [data-popup-open]) {
+  background: var(--lumior-secondary-surface);
+}
+.ai-skill-trigger[data-popup-open] > svg { transform: rotate(180deg); }
+.redesigned-composer .ai-compose-actions .ai-skill-trigger:focus-visible {
+  outline: 2px solid var(--lumior-field-focus);
+  outline-offset: 2px;
+}
+.redesigned-composer .ai-compose-actions .ai-skill-trigger:disabled { opacity: .45; }
+.ai-skill-menu {
+  width: 224px;
+  min-width: 0;
+  max-width: calc(100vw - 24px);
+  padding: var(--lumior-menu-padding);
+  border: 1px solid var(--lumior-control-border);
+  border-radius: var(--lumior-menu-radius);
+  background: var(--lumior-dialog-surface);
+  box-shadow: var(--lumior-dialog-shadow);
+  color: var(--lumior-field-ink);
+}
+.ai-skill-menu .ai-skill-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: var(--lumior-menu-item-radius);
+  font-size: 14px;
+}
+.ai-skill-menu .ai-skill-option:is(:hover, :focus-visible, [data-highlighted]) {
+  background: var(--ui-fill-hover);
+  color: var(--lumior-field-ink);
+}
+.ai-skill-check { display: flex; width: 18px; flex: 0 0 18px; }
+.ai-skill-menu .ai-skill-option[data-selected=true],
+.ai-model-menu [role=menuitem][data-selected=true] {
+  background: var(--ui-fill-selected);
+  color: var(--lumior-field-ink);
+}
+.ai-skill-unavailable { margin: 0; color: var(--muted-foreground); font-size: 12px; line-height: 18px; }
+.ai-reference-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 4px 10px;
+  color: var(--ui-text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+.ai-reference-warning button {
+  color: var(--ui-warning);
+  text-decoration: underline;
+  border-radius: 4px;
+}
+.redesigned-composer .ai-model-trigger {
+  min-width: 0;
+  max-width: min(220px, calc(100% - 110px));
+  flex-shrink: 1;
+}
+.ai-model-menu .ai-provider-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.ai-model-menu .ai-provider-logo {
+  display: block;
+  background-color: var(--ui-white);
+  -webkit-mask: var(--ai-provider-mark) center / contain no-repeat;
+  mask: var(--ai-provider-mark) center / contain no-repeat;
+}
+.ai-model-menu .ai-provider-kimi {
+  --ai-provider-mark: url('/assets/ai-providers/kimi.svg');
+}
+.ai-model-menu .ai-provider-openai {
+  --ai-provider-mark: url('/assets/ai-providers/openai.svg');
+}
+.ai-model-menu [role='menuitem']:is(:hover, :focus-visible, [data-highlighted]) .ai-provider-logo {
+  background-color: var(--ui-white);
+}
+.ai-model-menu .ai-model-configure {
+  color: var(--ui-text-muted);
+}
+.ai-model-menu .ai-model-configure small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.ai-model-menu .ai-model-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 420px) {
+  .redesigned-composer .ai-compose-actions {
+    gap: 6px;
+  }
+  .redesigned-composer .ai-model-trigger {
+    padding: 0 8px;
+  }
+}
+
+.ai-attachment-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 144px; overflow: auto; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: var(--ui-line) transparent; }
+.ai-file-attachment { position: relative; flex: 0 1 210px; width: 210px; min-width: 0; max-width: 100%; border: 1px solid var(--ui-line); border-radius: 10px; background: var(--ui-shadow-strong); overflow: hidden; }
+.ai-file-attachment .ai-file-open { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; height: auto; padding: 7px 10px; border-radius: 9px; text-align: left; background: transparent; }
+.ai-file-attachment .ai-file-preview { display: grid; place-items: center; width: 38px; height: 44px; flex: 0 0 38px; border-radius: 5px; background: var(--ui-fill-subtle); color: var(--ui-text-muted); overflow: hidden; }
+.ai-file-attachment .ai-file-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ai-file-attachment.is-pdf .ai-file-preview img { object-fit: contain; background: var(--ui-white); }
+.ai-file-attachment .ai-file-details { display: block; flex: 1; min-width: 0; }
+.ai-file-attachment .ai-file-details strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--ui-text); }
+.ai-file-attachment .ai-file-details small { display: block; margin-top: 2px; font-size: 11px; line-height: 16px; color: var(--ui-text-muted); }
+.ai-file-attachment.is-removable .ai-file-details { padding-right: 12px; }
+.ai-file-attachment .ai-file-remove { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border-radius: 5px; color: var(--ui-text-muted); background: var(--ui-glass); }
+.ai-file-attachment .ai-file-open:focus-visible, .ai-file-attachment .ai-file-remove:focus-visible { outline: 2px solid var(--ui-brand); outline-offset: -2px; }
+.ai-note-picker .ai-file-attachment { width: 100%; max-width: none; margin-bottom: 5px; }
+.ai-note-picker .ai-file-attachment:last-child { margin-bottom: 0; }

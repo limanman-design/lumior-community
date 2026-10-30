@@ -1,0 +1,153 @@
+.note.database-card {
+  min-height: 220px;
+  padding: 0;
+  overflow: visible;
+}
+.canvas-database-card {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+}
+.workspace header.canvas-database-card-header,
+.canvas-database-card-header {
+  position: static;
+  z-index: auto;
+  display: flex;
+  height: auto;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 14px 12px;
+  pointer-events: auto;
+  color: inherit;
+  font-size: inherit;
+}
+.canvas-database-card-header > svg,
+.canvas-database-card-missing > svg {
+  flex: 0 0 auto;
+  color: var(--ui-note);
+  stroke-width: 1.5;
+}
+.canvas-database-card-heading {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+.canvas-database-card-heading strong,
+.canvas-database-card-heading span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.canvas-database-card-heading strong {
+  font-size: 15px;
+  font-weight: 550;
+}
+.canvas-database-card-heading span,
+.canvas-database-card-footer,
+.canvas-database-card-empty,
+.canvas-database-card-notice {
+  color: var(--ui-text-muted);
+}
+.canvas-database-card-open {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border: 1px solid var(--ui-line);
+  border-radius: 6px;
+  background: var(--ui-fill-subtle);
+  color: var(--ui-text-secondary);
+  cursor: pointer;
+  font: inherit;
+}
+.canvas-database-card-open:hover {
+  background: var(--ui-fill-hover);
+  color: var(--ui-white);
+}
+.canvas-database-card-open:focus-visible {
+  outline: 1px solid var(--lumior-field-focus, var(--ui-brand));
+  outline-offset: 2px;
+}
+.canvas-database-card-preview {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  padding: 0 14px;
+}
+.canvas-database-card-preview table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font: inherit;
+}
+.canvas-database-card-preview th,
+.canvas-database-card-preview td {
+  height: 35px;
+  overflow: hidden;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ui-line-subtle);
+  color: var(--ui-text-secondary);
+  font-weight: 400;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.canvas-database-card-preview th {
+  height: 29px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.canvas-database-card-preview :is(th, td):first-child {
+  width: 46%;
+  padding-left: 0;
+}
+.canvas-database-card-preview td:first-child {
+  color: var(--ui-text);
+}
+.canvas-database-card-footer {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 10px;
+}
+.canvas-database-card-empty {
+  display: grid;
+  min-height: 100px;
+  margin: 0;
+  place-items: center;
+}
+.canvas-database-card-notice {
+  margin: -3px 14px 7px;
+  font-size: 10px;
+}
+.canvas-database-card-missing {
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+.canvas-database-card-missing strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.canvas-database-card-missing p {
+  max-width: 240px;
+  margin: 0;
+  color: var(--ui-text-muted);
+}

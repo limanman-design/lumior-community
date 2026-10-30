@@ -1,0 +1,51 @@
+name: Community checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir desktop install --frozen-lockfile
+      - name: Check shared colors and types
+        run: |
+          pnpm colors:check
+          node node_modules/typescript/bin/tsc --noEmit --incremental false
+      - name: Run public application and simulated AI protocol tests
+        run: node scripts/test-public.mjs
+      - name: Build web application
+        run: pnpm build
+      - name: Prepare community desktop resources
+        run: pnpm desktop:build
+
+# No environment secrets, model credentials, signing, installer publishing or
+# production update-feed activation are available to contribution checks.
+# Private ledger/operations integration tests run separately in the service repo.

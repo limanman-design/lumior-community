@@ -1,0 +1,166 @@
+.workspace-file-sidebar {
+  min-width: 0;
+  padding-top: 20px;
+}
+.workspace-file-section + .workspace-file-section {
+  margin-top: 22px;
+}
+.workspace-file-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  margin: 0 8px 6px;
+}
+.workspace-file-section-heading h2 {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.workspace-file-add-folder {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+.workspace-file-section-heading:is(:hover, :focus-within)
+  .workspace-file-add-folder {
+  opacity: 1;
+}
+.workspace-file-add-folder:is(:hover, :focus-visible) {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}
+.workspace-file-short-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.workspace-file-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 36px;
+  border-radius: 8px;
+}
+.workspace-file-row:is(:hover, [data-popup-open], :has([data-popup-open])) {
+  background: var(--ui-fill-hover);
+}
+.workspace-file-row[data-selected] {
+  background: var(--ui-fill-selected);
+}
+.workspace-file-row[data-dragging] {
+  opacity: 0.45;
+}
+.workspace-file-row[data-drop-target],
+.workspace-file-root-drop[data-drop-target] {
+  background: var(--ui-fill-selected);
+  outline: 1px solid var(--ui-brand);
+  outline-offset: -1px;
+}
+.workspace-file-root-drop {
+  margin-top: 6px;
+  padding: 8px 9px;
+  border: 1px dashed var(--ui-line);
+  border-radius: 8px;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+.workspace-file-open {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+.workspace-file-open > svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: var(--lumior-type-color, var(--ui-text-muted));
+}
+.workspace-file-open > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-file-row:is(:hover, :has(:focus-visible), [data-popup-open], :has([data-popup-open]))
+  .workspace-file-open {
+  padding-right: 36px;
+  color: var(--ui-text);
+}
+.workspace-file-row[data-selected] .workspace-file-open {
+  color: var(--ui-text);
+}
+.workspace-file-more {
+  position: absolute;
+  right: 5px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-muted);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+}
+.workspace-file-row:is(:hover, :has(:focus-visible), [data-popup-open], :has([data-popup-open]))
+  .workspace-file-more {
+  opacity: 1;
+  pointer-events: auto;
+}
+.workspace-file-more:is(:hover, :focus-visible, [data-popup-open]) {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}
+.workspace-file-open:focus-visible,
+.workspace-file-more:focus-visible,
+.workspace-file-add-folder:focus-visible {
+  outline: 1px solid var(--ui-brand);
+  outline-offset: -1px;
+}
+.workspace-file-empty {
+  margin: 4px 9px;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+@media (hover: none) {
+  .workspace-file-more,
+  .workspace-file-add-folder {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .workspace-file-open {
+    padding-right: 36px;
+  }
+}

@@ -1,0 +1,14 @@
+/* app/board-chrome.css:86 */
+.lumior-menu [data-slot=dropdown-menu-item][data-variant=destructive]{color:var(--ui-danger);border-radius:var(--lumior-menu-item-radius)}
+/* app/board-chrome.css:87 */
+.lumior-menu [data-slot=dropdown-menu-item][data-variant=destructive]:is(:hover,:focus-visible,[data-highlighted]){background:var(--control-hover);color:var(--ui-danger)}
+/* app/board-chrome.css:88 */
+.lumior-menu [data-slot=dropdown-menu-item] svg{color:inherit}
+/* app/lumior.css:3 */
+.lumior-menu{width:auto;min-width:205px;background:var(--ui-panel);color:var(--ui-text);padding:var(--lumior-menu-padding);border:1px solid var(--ui-line-subtle);box-shadow:0 10px 40px var(--ui-shadow);border-radius:var(--lumior-menu-radius)}
+/* app/lumior.css:3 */
+.lumior-menu [data-slot=dropdown-menu-item]{min-height:32px;padding:6px 10px;gap:10px;cursor:pointer;border-radius:var(--lumior-menu-item-radius)}
+/* app/lumior.css:3 */
+.lumior-menu kbd{margin-left:auto;font-size:11px;color:var(--ui-text-muted)}
+/* app/lumior.css:17 */
+.lumior-menu [data-slot=dropdown-menu-item]:hover,.lumior-menu [data-slot=dropdown-menu-item][data-highlighted]{background:var(--control-hover)}

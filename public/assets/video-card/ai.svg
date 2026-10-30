@@ -1,0 +1,81 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 3532375">
+<mask id="mask0_0_6" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+<rect id="Rectangle 290" width="20" height="20" fill="#323131"/>
+</mask>
+<g mask="url(#mask0_0_6)">
+<g id="Group 353313">
+<g id="Ellipse 806" filter="url(#filter0_f_0_6)">
+<circle cx="7.5" cy="12.5" r="2.5" fill="white" fill-opacity="0.3"/>
+</g>
+<circle id="Ellipse 807" cx="7.5" cy="12.5" r="1.5" fill="white" fill-opacity="0.8"/>
+</g>
+<g id="Group 353315">
+<g id="Ellipse 806_2" filter="url(#filter1_f_0_6)">
+<circle cx="12.5" cy="12.5" r="2.5" fill="white" fill-opacity="0.2"/>
+</g>
+<circle id="Ellipse 807_2" cx="12.5" cy="12.5" r="1.5" fill="white" fill-opacity="0.4"/>
+</g>
+<g id="Group 353321">
+<g id="Ellipse 806_3" filter="url(#filter2_f_0_6)">
+<circle cx="2.5" cy="12.5" r="2.5" fill="white" fill-opacity="0.2"/>
+</g>
+<circle id="Ellipse 807_3" cx="2.5" cy="12.5" r="1.5" fill="white" fill-opacity="0.4"/>
+</g>
+<g id="Group 353320">
+<circle id="Ellipse 807_4" cx="7.5" cy="17.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353322">
+<circle id="Ellipse 807_5" cx="12.5" cy="17.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353323">
+<circle id="Ellipse 807_6" cx="17.5" cy="12.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353324">
+<circle id="Ellipse 807_7" cx="12.5" cy="7.5" r="1.5" fill="white" fill-opacity="0.2"/>
+</g>
+<g id="Group 353312">
+<g id="Ellipse 806_4" filter="url(#filter3_f_0_6)">
+<circle cx="7.5" cy="7.5" r="2.5" fill="white" fill-opacity="0.3"/>
+</g>
+<circle id="Ellipse 807_8" cx="7.5" cy="7.5" r="1.5" fill="white" fill-opacity="0.8"/>
+</g>
+<g id="Group 353325">
+<g id="Ellipse 806_5" filter="url(#filter4_f_0_6)">
+<circle cx="2.5" cy="7.5" r="2.5" fill="white" fill-opacity="0.3"/>
+</g>
+<circle id="Ellipse 807_9" cx="2.5" cy="7.5" r="1.5" fill="white" fill-opacity="0.8"/>
+</g>
+<circle id="Ellipse 823" cx="7.5" cy="2.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 853" cx="12.5" cy="2.5" r="1.5" fill="white" fill-opacity="0.04"/>
+<circle id="Ellipse 840" cx="17.5" cy="7.5" r="1.5" fill="white" fill-opacity="0.04"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_6" x="3" y="8" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_6"/>
+</filter>
+<filter id="filter1_f_0_6" x="8" y="8" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_6"/>
+</filter>
+<filter id="filter2_f_0_6" x="-1" y="9" width="7" height="7" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="0.5" result="effect1_foregroundBlur_0_6"/>
+</filter>
+<filter id="filter3_f_0_6" x="3" y="3" width="9" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_0_6"/>
+</filter>
+<filter id="filter4_f_0_6" x="-1" y="4" width="7" height="7" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="0.5" result="effect1_foregroundBlur_0_6"/>
+</filter>
+</defs>
+</svg>

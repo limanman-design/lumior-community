@@ -1,0 +1,563 @@
+Lumior community asset substitutions
+
+This notice applies only to the community source snapshot. The original private development checkout is not modified.
+
+The listed replacement SVG paths come from Google Material Symbols, Apache License 2.0, copyright Google LLC. Local adaptations preserve display dimensions, the original presentation colors and opacity, with rotation where recorded. For composite buttons, basic circle backgrounds are reconstructed and the new glyph is centered inside them. Old Icons8 paths and layer IDs are not retained.
+License: https://github.com/google/material-design-icons/blob/master/LICENSE
+
+Two unverified character portraits are replaced by existing owner-confirmed Lumior logo PNGs, subject to the project brand policy. This notice does not claim unrelated Figma exports or images as Google or original Lumior work.
+
+Community audio offers the local white, pink and brown noise generator. No rain recording, photograph cover or live radio stream is bundled or offered. The cover reuses the Lumior logo.
+
+The section illustration is an original synthetic vector drawing. Both PNG examples are rasterizations of public/assets/community/section-example.svg; no external promotion or user-board screenshot is retained. Its colors come from the project UI palette. The SVG is the editable source and may be rendered with any SVG rasterizer.
+
+Per-file provenance:
+
+public/assets/ai-dock.svg
+  Source in checkout: public/assets/material-symbols/view-week-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg
+  Rotation: 180 degrees
+
+public/assets/ai-imgGroup331.svg
+  Source in checkout: public/assets/material-symbols/straight-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg
+  Rotation: 0 degrees
+  Circular button background retained as simple primitives
+
+public/assets/ai-imgGroup341.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+  Circular button background retained as simple primitives
+
+public/assets/ai-imgIcons8Book71.svg
+  Source in checkout: public/assets/material-symbols/library-books-filled-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8Books1.svg
+  Source in checkout: public/assets/material-symbols/library-books-filled-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8Edit51.svg
+  Source in checkout: public/assets/material-symbols/edit-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/edit/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8ExpandArrow1.svg
+  Source in checkout: public/assets/material-symbols/expand-more-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8Good1.svg
+  Source in checkout: public/assets/material-symbols/thumb-up-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_up/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8Left21.svg
+  Source in checkout: public/assets/material-symbols/chevron-right-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chevron_right/default/20px.svg
+  Rotation: 180 degrees
+
+public/assets/ai-imgIcons8PictureInPictureAlternative1.svg
+  Source in checkout: public/assets/material-symbols/filter_none-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8Plus41.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8Text12.svg
+  Source in checkout: public/assets/material-symbols/text-fields-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/text_fields/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-imgIcons8ThumbsDown1.svg
+  Source in checkout: public/assets/material-symbols/thumb-down-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_down/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/ai-minimize.svg
+  Source in checkout: public/assets/material-symbols/remove-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/remove/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/board-chrome/more-hover.svg
+  Source in checkout: public/assets/sound/more_horiz.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/board-chrome/more.svg
+  Source in checkout: public/assets/sound/more_horiz.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/board-chrome/section-example.png
+  Source in checkout: docs/open-source/assets/section-example.png
+  License: Project license
+  Provenance: Original synthetic section diagram; editable source public/assets/community/section-example.svg. Replaces an external promotional image or historical user-board screenshot.
+
+public/assets/board-chrome/tool-plus.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/board-chrome/tool-search.svg
+  Source in checkout: public/assets/material-symbols/search-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/board-chrome/zoom-in.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/board-chrome/zoom-out.svg
+  Source in checkout: public/assets/material-symbols/remove-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/remove/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/boards/more.svg
+  Source in checkout: public/assets/sound/more_horiz.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/boards/plus.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/boards/section.svg
+  Source in checkout: public/assets/material-symbols/filter_none-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/canvas-toolbar/section-example.png
+  Source in checkout: docs/open-source/assets/section-example.png
+  License: Project license
+  Provenance: Original synthetic section diagram; editable source public/assets/community/section-example.svg. Replaces an external promotional image or historical user-board screenshot.
+
+public/assets/canvas-toolbar/settings.svg
+  Source in checkout: public/assets/material-symbols/settings-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/settings/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/composer/check.svg
+  Source in checkout: public/assets/material-symbols/check-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/check/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/composer/close.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/composer/plus.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/composer/remove.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+  Circular button background retained as simple primitives
+
+public/assets/composer/video.svg
+  Source in checkout: public/assets/sound/play_arrow.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/database/status.svg
+  Source in checkout: public/assets/material-symbols/radio-button-checked-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/radio_button_checked/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/design3-imgIcons8Bursts1.svg
+  Source in checkout: public/assets/material-symbols/auto-awesome-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/design3-imgIcons8PictureInPicture1.svg
+  Source in checkout: public/assets/material-symbols/filter_none-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/design3-imgIcons8Plus41.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/design3-imgIcons8Text21.svg
+  Source in checkout: public/assets/material-symbols/text-fields-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/text_fields/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/expanded-card/pdf.svg
+  Source in checkout: public/assets/material-symbols/text-snippet-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/icon0-imgIcons8Frame11.svg
+  Source in checkout: public/assets/material-symbols/crop_square-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/crop_square/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/icon1-imgIcons8Gallery1.svg
+  Source in checkout: public/assets/material-symbols/gallery-thumbnail-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/gallery_thumbnail/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/icon2-imgIcons8Note11.svg
+  Source in checkout: public/assets/material-symbols/text-snippet-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/icon3-imgIcons8OpenPane2.svg
+  Source in checkout: public/assets/material-symbols/view-week-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/icon4-imgIcons8Settings21.svg
+  Source in checkout: public/assets/material-symbols/settings-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/settings/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/icon5-imgSubtract.png
+  Source in checkout: public/assets/board-chrome/logo.png
+  License: Project brand policy
+  Provenance: Owner-confirmed Lumior logo; no third-party character portrait
+
+public/assets/icon8-imgIcons8More2.svg
+  Source in checkout: public/assets/sound/more_horiz.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/image-card/collapse.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgGroup360.svg
+  Source in checkout: public/assets/sound/play_arrow.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg
+  Rotation: 0 degrees
+  Circular button background retained as simple primitives
+
+public/assets/library/imgIcons8Ai2.svg
+  Source in checkout: public/assets/material-symbols/auto-awesome-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8Broom1.svg
+  Source in checkout: public/assets/material-symbols/delete-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/delete/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8Check1.svg
+  Source in checkout: public/assets/material-symbols/check-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/check/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8Close41.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8ExpandArrow1.svg
+  Source in checkout: public/assets/material-symbols/expand-more-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8ExpandArrow2.svg
+  Source in checkout: public/assets/material-symbols/expand-more-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8Left21.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8More11.svg
+  Source in checkout: public/assets/sound/more_horiz.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8Search12.svg
+  Source in checkout: public/assets/material-symbols/search-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/library/imgIcons8Sort1.svg
+  Source in checkout: public/assets/material-symbols/sort-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/sort/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/pdf-toolbar/minus.svg
+  Source in checkout: public/assets/material-symbols/remove-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/remove/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/pdf-toolbar/plus.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/pdf-toolbar/search.svg
+  Source in checkout: public/assets/material-symbols/search-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/pdf-ui/close.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/pdf-ui/delete.svg
+  Source in checkout: public/assets/material-symbols/delete-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/delete/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/pdf-ui/pdf.svg
+  Source in checkout: public/assets/material-symbols/text-snippet-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/pdf-ui/send-active.svg
+  Source in checkout: public/assets/material-symbols/straight-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg
+  Rotation: 0 degrees
+  Circular button background retained as simple primitives
+
+public/assets/pdf-ui/send.svg
+  Source in checkout: public/assets/material-symbols/straight-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg
+  Rotation: 0 degrees
+  Circular button background retained as simple primitives
+
+public/assets/research-ui/book.svg
+  Source in checkout: public/assets/material-symbols/library-books-filled-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/books.svg
+  Source in checkout: public/assets/material-symbols/library-books-filled-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/library_books/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/chevron.svg
+  Source in checkout: public/assets/material-symbols/expand-more-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/expand_more/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/close.svg
+  Source in checkout: public/assets/material-symbols/close-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/close/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/dislike.svg
+  Source in checkout: public/assets/material-symbols/thumb-down-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_down/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/dock.svg
+  Source in checkout: public/assets/material-symbols/filter_none-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/edit.svg
+  Source in checkout: public/assets/material-symbols/edit-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/edit/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/like.svg
+  Source in checkout: public/assets/material-symbols/thumb-up-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/thumb_up/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/pdf.svg
+  Source in checkout: public/assets/material-symbols/text-snippet-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/text_snippet/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/search.svg
+  Source in checkout: public/assets/material-symbols/search-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/research-ui/send.svg
+  Source in checkout: public/assets/material-symbols/straight-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/straight/default/20px.svg
+  Rotation: 0 degrees
+  Circular button background retained as simple primitives
+
+public/assets/sidebar-library.svg
+  Source in checkout: public/assets/material-symbols/auto-awesome-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/sidebar-plus.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/sidebar-search.svg
+  Source in checkout: public/assets/material-symbols/search-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/toolbar-imgIcons8Ai1.svg
+  Source in checkout: public/assets/material-symbols/auto-awesome-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/auto_awesome/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/toolbar-imgIcons8ClosePane2.svg
+  Source in checkout: public/assets/material-symbols/view-week-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg
+  Rotation: 180 degrees
+
+public/assets/toolbar-imgIcons8Compress2.svg
+  Source in checkout: public/assets/material-symbols/filter_none-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/filter_none/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/toolbar-imgIcons8Expand1.svg
+  Source in checkout: public/assets/material-symbols/crop_square-rounded.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/crop_square/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/toolbar-imgIcons8More2.svg
+  Source in checkout: public/assets/sound/more_horiz.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/more_horiz/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/video-card/collapse.svg
+  Source in checkout: public/assets/material-symbols/chevron-right-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chevron_right/default/20px.svg
+  Rotation: 180 degrees
+
+public/assets/video-card/pin.svg
+  Source in checkout: public/assets/material-symbols/view-week-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/view_week/default/20px.svg
+  Rotation: 180 degrees
+
+public/assets/video-card/play.svg
+  Source in checkout: public/assets/sound/play_arrow.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/video-card/search.svg
+  Source in checkout: public/assets/material-symbols/search-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/search/default/20px.svg
+  Rotation: 0 degrees
+
+public/assets/video-card/video-type.svg
+  Source in checkout: public/assets/sound/play_arrow.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/video-card/video.svg
+  Source in checkout: public/assets/sound/play_arrow.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/play_arrow/fill1/20px.svg
+  Rotation: 0 degrees
+
+public/assets/workspace-shell/avatar.png
+  Source in checkout: public/assets/board-chrome/logo.png
+  License: Project brand policy
+  Provenance: Owner-confirmed Lumior logo; no third-party character portrait
+
+public/assets/workspace-shell/new-board.svg
+  Source in checkout: public/assets/material-symbols/add-outlined.svg
+  License: Apache-2.0
+  Upstream: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/add/default/20px.svg
+  Rotation: 0 degrees

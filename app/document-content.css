@@ -1,0 +1,23 @@
+@import './document-typography.css';
+
+:root{--content-link-color:var(--ui-note);--content-table-border:var(--ui-line)}
+/* Shared content colours also override imported inline link colours. */
+body a[href],body .block-document .bn-editor a[href],body .ai-markdown a[href],body .explore-modal a[href]{color:var(--content-link-color)}
+body .block-document .bn-editor a[href] span{color:inherit!important}
+body .block-document .bn-editor :is(table,th,td),body .ai-markdown :is(table,th,td){border-color:var(--content-table-border)!important}
+.mermaid-block{display:flex!important;flex-direction:column;align-items:stretch!important;gap:8px;width:100%}
+.mermaid-block pre[hidden]{display:none!important}
+.mermaid-diagram{width:100%;overflow:auto;padding:16px 0;color:var(--ui-text-muted);font-size:13px;line-height:1.6}
+.mermaid-diagram svg{display:block;height:auto;max-width:100%;margin:auto}
+.mermaid-diagram[data-state=error]{color:var(--ui-text-secondary)}
+.mermaid-source-toggle{align-self:flex-end;border:1px solid var(--ui-line);border-radius:6px;padding:4px 8px;color:var(--ui-text-secondary);background:transparent;font-size:12px;cursor:pointer}
+.mermaid-source-toggle:hover{background:var(--ui-fill-hover);color:var(--ui-text)}
+.block-document .bn-editor .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after{font-style:normal}
+/* Keep the block handle inside the editor's reserved gutter. */
+.block-document .bn-side-menu{width:24px;gap:0}
+.block-document .bn-side-menu .bn-button{width:24px;min-width:24px;height:24px;padding:0;border-radius:5px}
+.block-document .bn-side-menu .bn-button svg{width:16px;height:16px}
+/* Anchor floating editor controls inside the card's scrolling clip. Without
+   this containing block, table handles are positioned against the outer card
+   and escape its inner overflow boundary when the table is taller than it. */
+.note .card-scroll{position:relative}

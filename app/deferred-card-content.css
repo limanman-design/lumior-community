@@ -1,0 +1,3 @@
+.deferred-card-content { min-width: 0; }
+.deferred-card-content[data-deferred-content='pending'] { overflow: hidden; }
+.deferred-card-content-label { display: block; padding: 12px 0; color: var(--ui-text-muted); font-size: 13px; line-height: 20px; }

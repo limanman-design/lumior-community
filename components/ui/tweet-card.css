@@ -1,0 +1,291 @@
+.observatory-post {
+  display: flex;
+  gap: 12px;
+  padding: 24px;
+  border-bottom: 1px solid var(--ui-line-subtle);
+  position: relative;
+  transition: background 0.18s;
+  animation: observatoryPostIn 0.35s ease-out both;
+}
+.observatory-post:hover {
+  background: var(--ui-fill-hover);
+}
+.post-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ui-line-subtle);
+  background:
+    radial-gradient(circle at 25% 15%, var(--ui-brand-soft), transparent 90%), var(--ui-panel);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ui-brand);
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+}
+.post-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.post-main {
+  min-width: 0;
+  flex: 1;
+}
+.post-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+}
+.post-identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ui-text-muted);
+  line-height: 24px;
+}
+.post-identity strong {
+  font-size: 14px;
+  color: var(--ui-text);
+}
+.post-more {
+  margin: -4px -7px 0 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ui-text-muted);
+}
+.post-more:hover {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}
+.post-kind {
+  display: inline-block;
+  color: var(--ui-brand);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin: 3px 0 12px;
+}
+.post-copy {
+  display: block;
+  text-align: left;
+  width: 100%;
+  color: var(--ui-text);
+  border: 0;
+  background: none !important;
+}
+.post-copy h2 {
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: -0.25px;
+  margin: 0 0 8px;
+  color: var(--ui-text);
+}
+.post-copy p {
+  font-size: 14px;
+  line-height: 1.9;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.post-tag {
+  color: var(--ui-brand);
+  font-size: 12px;
+  margin: 10px 0 0;
+}
+.post-tag:hover {
+  color: var(--ui-brand);
+  text-decoration: underline;
+}
+.post-media {
+  display: block;
+  margin-top: 16px;
+  border: 1px solid var(--ui-line-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  width: 100%;
+  background: var(--ui-surface);
+  cursor: pointer;
+}
+.post-media img {
+  display: block;
+  width: 100%;
+  max-height: 290px;
+  min-height: 120px;
+  object-fit: cover;
+  transition: transform 0.4s;
+}
+.post-media:hover img {
+  transform: scale(1.015);
+}
+.post-source {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid var(--ui-line-subtle);
+  background: var(--ui-fill-subtle);
+  color: var(--ui-text-muted);
+}
+.post-source:hover {
+  border-color: var(--ui-line);
+  background: var(--ui-fill-hover);
+}
+.post-source > div {
+  min-width: 0;
+  flex: 1;
+}
+.post-source small {
+  display: block;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.post-source strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.post-source > svg {
+  flex-shrink: 0;
+}
+.post-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 18px -6px -6px;
+}
+.post-actions button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ui-text-muted);
+  border-radius: 20px;
+  padding: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.post-actions button:hover {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+.post-actions button.is-liked {
+  color: var(--ui-danger);
+}
+.post-actions button.is-liked:hover {
+  background: var(--ui-danger-soft);
+}
+.post-actions button.is-saved {
+  color: var(--ui-brand);
+}
+.post-actions svg {
+  flex-shrink: 0;
+  stroke-width: 1.6;
+}
+.observatory-post button:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 3px;
+}
+@keyframes observatoryPostIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 560px) {
+  .observatory-post {
+    padding: 20px 16px;
+    gap: 10px;
+  }
+  .post-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+  .post-identity span:nth-child(2) {
+    display: none;
+  }
+  .post-actions {
+    gap: 2px;
+  }
+  .post-actions button {
+    gap: 4px;
+    font-size: 10px;
+  }
+  .post-save-label {
+    display: none;
+  }
+  .post-copy h2 {
+    font-size: 17px;
+  }
+  .post-copy p {
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .observatory-post {
+    animation: none;
+  }
+  .post-media img {
+    transition: none;
+  }
+}
+.post-avatar img[src$='.svg'] {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.observatory-post {
+  isolation: isolate;
+}
+.observatory-post::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    420px circle at var(--post-pointer-x, 50%) var(--post-pointer-y, 50%),
+    var(--ui-brand-soft),
+    transparent 80%
+  );
+  transition: opacity 0.2s;
+}
+.observatory-post:hover::before {
+  opacity: 1;
+}
+.post-main,
+.post-avatar {
+  position: relative;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .observatory-post::before {
+    transition: none;
+  }
+}

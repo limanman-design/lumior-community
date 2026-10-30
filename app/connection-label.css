@@ -1,0 +1,9 @@
+.connection-label{position:absolute;z-index:5;transform:translate(-50%,-50%) scale(var(--label-inverse-zoom));transform-origin:center;pointer-events:auto;max-width:264px;user-select:none}
+.connection-label button,.connection-label input{display:block;max-width:264px;min-height:28px;border:1px solid var(--ui-line);border-radius:var(--lumior-control-radius,12px);background:var(--ui-panel);color:var(--ui-text-secondary);font:inherit;font-size:12px;font-weight:500;line-height:18px;box-shadow:0 2px 8px var(--ui-shadow-soft);outline:none}
+.connection-label button{padding:4px 10px;cursor:text;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s,color .15s,background .15s}
+.connection-label button:hover,.connection-label button:focus-visible,.connection-label-selected button{border-color:var(--ui-brand);color:var(--ui-text);background:var(--ui-panel)}
+.connection-label button:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px}
+.connection-label .connection-label-add{display:flex;align-items:center;gap:5px;color:var(--ui-text-secondary);font-weight:400;cursor:pointer}
+.connection-label-add span{font-size:15px;line-height:16px;color:var(--ui-brand)}
+.connection-label input{width:240px;padding:5px 10px;border-color:var(--ui-brand-line);color:var(--ui-white);cursor:text;user-select:text}
+.connection-label input::placeholder{color:var(--ui-text-muted);font-weight:400}

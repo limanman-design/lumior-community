@@ -1,0 +1,10 @@
+PDF.js runtime resources
+
+The bundled pdf.worker.min.mjs identifies pdfjsVersion 6.3.289 and
+pdfjsBuild 1c8020a7d. The dependency lockfile pins pdfjs-dist 6.3.289.
+Source: https://github.com/mozilla/pdf.js
+Package: https://www.npmjs.com/package/pdfjs-dist/v/6.3.289
+
+The PDF.js Apache-2.0 license is in LICENSE in this directory.
+Additional font, character-map and codec notices remain in their respective
+cmaps/, standard_fonts/ and wasm/ subdirectories and must be preserved.

@@ -1,0 +1,106 @@
+.workspace header.board-header{height:64px;padding:0 8px;gap:8px;align-items:flex-start;isolation:isolate}
+/* Preserve the header fade's spatial opacity; palette colors must not flatten
+   the center mask or leave a visible band over cards at its lower edge. */
+.workspace header.board-header::before{content:"";position:absolute;inset:0 0 auto;height:104px;z-index:-1;background:linear-gradient(180deg,color-mix(in srgb,var(--ui-canvas) 82%,transparent) 0%,color-mix(in srgb,var(--ui-canvas) 48%,transparent) 44%,color-mix(in srgb,var(--ui-canvas) 8%,transparent) 72%,transparent 100%);mask-image:linear-gradient(90deg,var(--ui-black) 0%,var(--ui-black) 14%,color-mix(in srgb,var(--ui-black) 16%,transparent) 36%,color-mix(in srgb,var(--ui-black) 16%,transparent) 64%,var(--ui-black) 90%,var(--ui-black) 100%);pointer-events:none}
+.board-heading{display:flex;align-items:center;gap:4px;min-width:0;max-width:calc(100% - 168px);margin-top:12px;pointer-events:auto}
+.board-heading button,.board-name-input{height:32px;border-radius:var(--lumior-control-radius,12px);transition:background-color 150ms var(--control-ease)}
+.board-sidebar-toggle{position:relative;display:grid;place-items:center;flex-shrink:0;width:32px;height:32px;padding:4px;background:transparent}
+.board-heading-logo{width:24px;height:24px;object-fit:cover;transition:opacity 150ms var(--control-ease);pointer-events:none}
+.board-heading-open{position:absolute;left:6px;top:6px;width:20px;height:20px;opacity:0;transition:opacity 150ms var(--control-ease);pointer-events:none}
+.board-sidebar-toggle:hover,.board-sidebar-toggle:focus-visible,.board-name-button:hover,.board-name-button:focus-visible{background:var(--ui-control-raised)}
+.board-sidebar-toggle:hover .board-heading-logo,.board-sidebar-toggle:focus-visible .board-heading-logo{opacity:0}
+.board-sidebar-toggle:hover .board-heading-open,.board-sidebar-toggle:focus-visible .board-heading-open{opacity:1}
+.board-name-button,.board-name-input{min-width:0;padding:6px 4px;color:var(--ui-white);font-size:14px;font-weight:600;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-name-input{max-width:100%;background:var(--ui-control-raised);border:0;outline:1px solid var(--ui-line-strong);text-overflow:clip}
+.board-name-button{text-shadow:0 1px 3px var(--ui-shadow)}
+.workspace .board-header-controls{display:flex;align-items:center;gap:8px;margin-top:8px}
+.workspace .header-actions{flex-shrink:0;height:40px;width:max-content;margin-top:0;margin-left:0;display:flex;align-items:center;gap:8px;padding:4px;border-radius:16px;background:var(--ui-glass)}
+.workspace .header-actions button{display:grid;place-items:center;flex:0 0 32px;height:32px;width:32px;border-radius:var(--lumior-control-radius,12px);padding:6px;transition:background-color 150ms var(--control-ease)}
+.workspace .header-actions button:hover,.workspace .header-actions button:focus-visible,.workspace .header-actions button[aria-expanded=true]{background:var(--ui-control-raised)}
+.workspace .header-actions .icon{flex-shrink:0;width:20px;height:20px;opacity:.6;transition:opacity 150ms var(--control-ease)}
+.workspace .header-actions button:hover .icon,.workspace .header-actions button:focus-visible .icon,.workspace .header-actions button[aria-expanded=true] .icon{opacity:.8}
+/* workspace-shell supplies the shared inset stroke; avoid a second border. */
+.workspace .canvas-tools{left:8px;height:208px;padding:7px 0;border:0;border-radius:24px}
+.workspace .canvas-tools button[data-canvas-action="search"] .icon{width:20px;height:20px;opacity:1}
+.workspace .zoom{left:8px;bottom:8px;height:40px;width:121px;display:flex;align-items:center;gap:4px;padding:4px;border-radius:16px;background:var(--ui-glass);color:var(--ui-text-muted);font-size:14px;line-height:20px}
+.workspace .zoom button{display:grid;place-items:center;flex-shrink:0;width:32px;min-width:0;height:32px;padding:8px;border-radius:var(--lumior-control-radius,12px);font-size:14px;line-height:20px}
+.workspace .zoom .zoom-reset{width:41px;padding:6px 0;color:var(--ui-text-muted);font-weight:400}
+.workspace .zoom img{display:block;width:16px;height:16px;pointer-events:none}
+.workspace .zoom button:hover,.workspace .zoom button:focus-visible{background:var(--ui-control-raised)}
+.workspace .canvas-bottom-controls{position:absolute;left:8px;bottom:8px;z-index:20;display:flex;align-items:center;gap:8px}
+.workspace .canvas-bottom-controls .zoom{position:static}
+.workspace .canvas-right-controls{position:absolute;right:8px;bottom:8px;z-index:22;display:flex;align-items:flex-end;height:40px}
+.workspace .flashlight-toggle[aria-pressed=true]{background:var(--ui-fill-selected);--control-icon-opacity:.8;color:var(--ui-text)}
+.workspace .board-header-controls .workspace-symbol{color:var(--ui-white);opacity:var(--control-icon-opacity);transition:opacity 150ms var(--control-ease)}
+.workspace .tutor-button{right:8px;bottom:8px;width:50px;height:50px;padding:0;border:1px solid var(--ui-line-subtle);background:var(--ui-glass);backdrop-filter:blur(2px)}
+/* Keep the animated field visible at rest; WakeOrb handles reduced motion. */
+.workspace .tutor-button .tutor-reference{position:absolute;left:-1px;top:-1px;width:52px;height:52px;max-width:none;pointer-events:none;opacity:0;transition:opacity 150ms var(--control-ease)}
+.workspace .tutor-button .wake-orb{opacity:1;transition:opacity 150ms var(--control-ease)}
+.workspace .tutor-button:hover,.workspace .tutor-button:focus-visible{background:var(--ui-surface);box-shadow:0 0 24px var(--ui-line-subtle)}
+.workspace .tutor-button:hover .tutor-reference,.workspace .tutor-button:focus-visible .tutor-reference{opacity:0}
+.workspace .tutor-button:hover .wake-orb,.workspace .tutor-button:focus-visible .wake-orb{opacity:1}
+@media(prefers-reduced-motion:reduce){.board-heading button,.board-heading img,.board-name-input,.workspace .header-actions button,.workspace .header-actions .icon,.workspace .header-actions .workspace-symbol,.workspace .tutor-button .tutor-reference,.workspace .tutor-button .wake-orb{transition:none}}
+
+/* Sidebar rows use 8px outer gutters and a shared 16px content edge. */
+[data-sidebar="sidebar"] .brand{height:64px;padding:16px 8px 16px 16px}
+[data-sidebar="sidebar"] .brand>.icon{width:24px;height:24px}
+[data-sidebar="sidebar"] .brand button{width:32px;height:32px}
+[data-sidebar="sidebar"] .new-row{grid-template-columns:minmax(0,1fr) 32px 32px;padding:16px 8px}
+[data-sidebar="sidebar"] .new-row .new-chat{width:100%;min-width:0}
+[data-sidebar="sidebar"] nav{padding:0 8px}
+[data-sidebar="sidebar"] nav button{padding:0 8px}
+[data-sidebar="sidebar"] .recents{margin-left:16px;margin-right:16px}
+[data-sidebar="sidebar"] .profile{padding:4px 0 4px 8px}
+
+/* Apply ink opacity to glyphs only, keeping hit areas and backgrounds solid. */
+:is([data-sidebar="sidebar"] .brand button,[data-sidebar="sidebar"] .new-row>button:not(.new-chat),[data-sidebar="sidebar"] nav button,[data-sidebar="sidebar"] .profile button,.workspace .canvas-tools button:not(.add-button),.workspace .zoom button,.workspace .card-toolbar button:not(.card-new-chat),.workspace .header-actions button){--control-icon-opacity:.6;color:var(--ui-text-muted)}
+:is([data-sidebar="sidebar"] .brand button,[data-sidebar="sidebar"] .new-row>button:not(.new-chat),[data-sidebar="sidebar"] nav button,[data-sidebar="sidebar"] .profile button,.workspace .canvas-tools button:not(.add-button),.workspace .zoom button,.workspace .card-toolbar button:not(.card-new-chat),.workspace .header-actions button):is(:hover,:focus-visible){--control-icon-opacity:.8;color:var(--ui-text)}
+:is([data-sidebar="sidebar"] .brand button,[data-sidebar="sidebar"] .new-row>button:not(.new-chat),[data-sidebar="sidebar"] nav button,[data-sidebar="sidebar"] .profile button,.workspace .canvas-tools button:not(.add-button),.workspace .zoom button,.workspace .card-toolbar button:not(.card-new-chat),.workspace .header-actions button) :is(.icon,.section-symbol img){filter:brightness(0) invert(1);opacity:var(--control-icon-opacity)}
+.workspace .header-actions button[aria-expanded=true]{--control-icon-opacity:.8;color:var(--ui-text)}
+.workspace .zoom button img{filter:brightness(0) invert(1);opacity:var(--control-icon-opacity)}
+
+/* Toolbar SVGs contain opaque ink; apply the shared 60% / 80% level once.
+   Mask icons use opaque currentColor here before the same glyph opacity. */
+.workspace .canvas-tools button:not(.add-button) :is(.icon,.workspace-symbol,.section-symbol img){color:var(--ui-white);opacity:var(--control-icon-opacity);transition:opacity 150ms var(--control-ease)}
+.workspace .canvas-tools button[aria-pressed=true]{--control-icon-opacity:.8;color:var(--ui-text)}
+/* The shared section asset also appears in its tooltip badge. */
+.section-help-badge .section-symbol img{opacity:.8}
+
+/* Sidebar rhythm and per-board controls. */
+[data-sidebar="sidebar"] .brand{height:48px;padding-top:12px;padding-bottom:4px}
+[data-sidebar="sidebar"] .brand button .icon{width:16px;height:16px}
+[data-sidebar="sidebar"] .new-row{height:80px;padding-top:20px;padding-bottom:20px}
+[data-sidebar="sidebar"] .recents{margin-top:32px}
+[data-sidebar="sidebar"] :is(.brand button,.new-row>button,.new-row .new-chat,.profile button,nav button){border-radius:12px}
+[data-sidebar="sidebar"] [data-sidebar="content"]>nav{display:flex;flex-direction:column;gap:2px}
+[data-sidebar="sidebar"] .sidebar-recents{display:flex;flex-direction:column;gap:2px}
+.recent-board-row{position:relative;display:flex;align-items:center;min-width:0;height:36px;flex-shrink:0;border-radius:12px}
+.recent-board-row.active{background:var(--ui-control-raised)}
+.recent-board-row:is(:hover,:focus-within,:has([data-popup-open])){background:var(--control-hover)}
+.recent-board-row.active:is(:hover,:focus-within,:has([data-popup-open])){background:var(--ui-control-hover)}
+[data-sidebar="sidebar"] .recent-board-open{flex:1;min-width:0;height:36px;padding:0 8px;background:transparent}
+.recent-board-row:is(:hover,:focus-within,:has([data-popup-open])) .recent-board-open{padding-right:40px;color:var(--ui-text)}
+[data-sidebar="sidebar"] .recent-board-more{position:absolute;right:4px;top:2px;width:32px;height:32px;padding:6px;justify-content:center;opacity:0;pointer-events:none}
+.recent-board-row:is(:hover,:focus-within,:has([data-popup-open])) .recent-board-more{opacity:1;pointer-events:auto}
+[data-sidebar="sidebar"] .recent-board-more:hover,[data-sidebar="sidebar"] .recent-board-more[data-popup-open]{background:var(--ui-fill-hover);--control-icon-opacity:.8}
+.recent-board-name{width:calc(100% - 40px);min-width:0;height:32px;margin:2px 4px;padding:0 4px;color:var(--ui-white);background:var(--ui-panel);border-radius:8px;outline:1px solid var(--ui-line-strong);font-size:14px}
+.lumior-menu [data-slot=dropdown-menu-item][data-variant=destructive]{color:var(--ui-danger);border-radius:var(--lumior-menu-item-radius)}
+.lumior-menu [data-slot=dropdown-menu-item][data-variant=destructive]:is(:hover,:focus-visible,[data-highlighted]){background:var(--control-hover);color:var(--ui-danger)}
+.lumior-menu [data-slot=dropdown-menu-item] svg{color:inherit}
+
+[data-sidebar="sidebar"] .brand button svg.icon{color:var(--ui-white)}
+
+/* Selected sidebar destinations keep their 80% ink after the pointer leaves. */
+[data-sidebar="sidebar"] [data-sidebar="content"] nav button.active{--control-icon-opacity:.8;color:var(--ui-text)}
+[data-sidebar="sidebar"] .recent-board-row.active .recent-board-open{color:var(--ui-text)}
+[data-sidebar="sidebar"] .recent-board-row.active .recent-board-more{--control-icon-opacity:.8}
+
+.profile-actions{display:flex;align-items:center;gap:4px;margin-left:auto;flex-shrink:0}
+[data-sidebar="sidebar"] .profile-actions button{display:grid;place-items:center;position:relative;width:32px;height:32px;padding:6px;border-radius:var(--lumior-control-radius,12px);transition:background-color 150ms var(--control-ease)}
+[data-sidebar="sidebar"] .profile-actions button:hover,[data-sidebar="sidebar"] .profile-actions button:focus-visible{background:var(--ui-fill-hover)}
+[data-sidebar="sidebar"] .profile-actions button[aria-pressed=true]{--control-icon-opacity:.8;color:var(--ui-text)}
+
+/* A separate flashlight control, 8px to the left of the top-right tool group. */
+.workspace .board-header-controls>.flashlight-toggle{display:grid;place-items:center;width:40px;height:40px;flex:none;padding:10px;border-radius:16px;background:var(--ui-glass);color:var(--ui-text-muted);--control-icon-opacity:.6;transition:background-color 150ms var(--control-ease)}
+.workspace .board-header-controls>.flashlight-toggle:is(:hover,:focus-visible,[aria-pressed=true]){background:var(--ui-control-raised);--control-icon-opacity:.8;color:var(--ui-text)}
+@media(prefers-reduced-motion:reduce){.workspace .board-header-controls>.flashlight-toggle,.workspace .board-header-controls .workspace-symbol{transition:none}}

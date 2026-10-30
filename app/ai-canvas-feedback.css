@@ -1,0 +1,9 @@
+.ai-card-reading{position:absolute;inset:0;z-index:8;pointer-events:none;border-radius:inherit;overflow:hidden;box-shadow:inset 0 0 0 1px var(--ui-line-subtle)}
+.ai-card-reading::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,var(--ui-fill-hover) 47%,var(--ui-fill-pressed) 50%,var(--ui-fill-hover) 53%,transparent 65%);transform:translateX(-100%);animation:ai-card-read-sweep 1800ms ease-in-out infinite}
+@keyframes ai-card-read-sweep{to{transform:translateX(100%)}}
+.section-title .section-ai-reason{display:grid;place-items:center;flex:none;width:24px;height:24px;padding:4px;border-radius:8px;color:var(--ui-text-muted);background:transparent;cursor:help}
+.section-title .section-ai-reason:is(:hover,:focus-visible){background:var(--ui-fill-hover);color:var(--ui-text)}
+.section-ai-reason-tooltip[data-slot=tooltip-content]{display:block;width:260px;max-width:calc(100vw - 24px);max-height:240px;overflow:auto;padding:10px 12px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-panel);color:var(--ui-text);font-size:12px;line-height:18px;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 8px 24px var(--ui-shadow)}
+.section-ai-reason-tooltip strong{display:block;font-weight:500;margin-bottom:6px;color:var(--ui-text)}
+.section-ai-reason-tooltip>[aria-hidden=true]{display:none}
+@media(prefers-reduced-motion:reduce){.ai-card-reading::after{animation:none;transform:none;background:var(--ui-fill-subtle)}}

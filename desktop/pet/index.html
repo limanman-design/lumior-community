@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>Lumior</title>
+  <link rel="stylesheet" href="../assets/ui-colors.css">
+  <link rel="stylesheet" href="pet.css">
+  <script src="pet.js" defer></script>
+</head>
+<body>
+  <main id="pet" hidden>
+    <button id="mascot" type="button" aria-label="点击速记，拖动调整位置" title="点击速记 · 拖动调整位置 · 右键更多"><canvas id="pet-canvas" aria-hidden="true"></canvas></button>
+    <span id="pet-hint">速记</span>
+  </main>
+  <div id="message-wrap" hidden><main id="message" role="status"></main></div>
+  <main id="note" hidden>
+    <header><img src="../assets/icon.png" alt="" draggable="false"><strong id="heading">速记</strong><button id="close" type="button" aria-label="收起并保留草稿" title="收起并保留草稿">×</button></header>
+    <div class="fields"><input id="title" aria-label="标题" placeholder="标题（选填）" maxlength="200" autocomplete="off"><textarea id="body" aria-label="速记内容" placeholder="有什么想记下来的？也可以直接粘贴图片。" maxlength="100000" spellcheck="true"></textarea><div id="images" hidden></div></div>
+    <footer><output id="status" aria-live="polite">草稿自动保留</output><div class="footer-actions"><button id="main" type="button">打开 Lumior ↗</button><button id="save" type="button" disabled>保存笔记</button></div></footer>
+  </main>
+  <dialog id="image-preview" aria-label="图片预览"><img id="preview-image" alt=""><button id="preview-close" type="button">关闭预览</button></dialog>
+</body>
+</html>

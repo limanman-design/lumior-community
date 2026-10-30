@@ -1,0 +1,31 @@
+/* Sidebar PDFs retain selectable source pages, with one horizontal page lane. */
+.pdf-viewer.pdf-page-flow-horizontal .pdf-page-area {
+  padding: 12px;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 12px;
+  overscroll-behavior-x: contain;
+}
+.pdf-page-flow-horizontal .pdf-page-area > .pdf-sheet {
+  flex: none;
+  margin: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.pdf-page-flow-horizontal .pdf-controls button:disabled {
+  opacity: .3;
+  cursor: default;
+}
+.pdf-page-flow-horizontal .pdf-controls {
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pdf-page-flow-horizontal .pdf-controls > :is(button, label, .tool-divider) {
+  flex-shrink: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pdf-page-flow-horizontal .pdf-page-area { scroll-behavior: auto; }
+}

@@ -1,0 +1,30 @@
+.memory-atlas-page { position:fixed; inset:0 0 0 var(--atlas-sidebar-offset,0px); z-index:20; background:#02060f; color:var(--ui-text); font-family:inherit; transition:left 280ms cubic-bezier(.22,1,.36,1); }
+.memory-atlas-header { position:absolute; top:12px; left:16px; max-width:calc(100% - 32px); display:flex; align-items:center; gap:8px; z-index:2; pointer-events:none; }
+.memory-atlas-header .board-sidebar-toggle { pointer-events:auto; }
+.memory-atlas-stage { position:absolute; inset:0; }
+.memory-atlas-host { position:relative; width:100%; height:100%; }
+.memory-atlas-host .ma-root { --ma-f-display:ui-sans-serif,system-ui,sans-serif; --ma-f-mono:ui-monospace,Menlo,Consolas,monospace; }
+.memory-atlas-host .ma-key p { display:none; }
+.memory-atlas-empty { position:absolute; top:45%; left:50%; transform:translate(-50%,-50%); width:min(440px,calc(100% - 40px)); text-align:center; }
+.memory-atlas-empty h2 { font-size:20px; color:var(--ui-text); }
+.memory-atlas-empty p { font-size:13px; line-height:1.7; color:var(--ui-text-muted); overflow-wrap:anywhere; }
+.memory-atlas-empty button { margin-top:16px; padding:10px 18px; border-radius:12px; background:var(--ui-fill-hover); }
+.memory-atlas-detail-overlay { z-index:65!important; }
+.memory-atlas-detail { z-index:70!important; width:min(920px,calc(100vw - 32px))!important; max-width:920px!important; max-height:84dvh; display:flex; flex-direction:column; gap:12px; padding:24px!important; border-radius:20px!important; background:var(--ui-surface); color:var(--ui-text); border:1px solid var(--ui-line); overflow:hidden; }
+.memory-atlas-detail [data-slot=dialog-title] { padding-right:28px; font-size:20px; }
+.memory-atlas-detail [data-slot=dialog-description] { font-size:12px; color:var(--ui-text-muted); }
+.memory-atlas-detail-body { overflow:auto; min-height:0; flex:1; }
+.memory-atlas-detail-body .image-content-sidebar { height:auto; }
+.memory-atlas-detail-body .image-picture { max-height:52dvh; }
+.memory-atlas-detail-body .video-viewer { min-height:360px; height:54dvh; }
+.memory-atlas-detail-body .pdf-viewer { height:54dvh; }
+.memory-atlas-detail-body .bn-container { background:transparent; }
+.memory-atlas-detail-locations { flex-shrink:0; border-top:1px solid var(--ui-line-subtle); padding-top:12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:12px; }
+.memory-atlas-detail-locations>span { color:var(--ui-text-muted); }
+.memory-atlas-detail-locations button { padding:8px 10px; border:1px solid var(--ui-line); border-radius:10px; color:var(--ui-text-muted); text-align:left; }
+.memory-atlas-detail-locations button:hover { color:var(--ui-text); background:var(--ui-fill-hover); }
+@media(max-width:719px) {
+  .memory-atlas-detail { max-height:78dvh; width:calc(100vw - 24px)!important; padding:20px!important; }
+  .memory-atlas-detail-body .video-viewer { min-height:280px; height:45dvh; }
+}
+@media(prefers-reduced-motion:reduce) { .memory-atlas-page { transition:none; } }

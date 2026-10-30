@@ -1,0 +1,103 @@
+.canvas-selection-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  height: 40px;
+  padding: 4px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ui-glass);
+  color: var(--ui-text);
+  box-shadow: inset 0 0 0 1px var(--ui-line), 0 6px 24px var(--ui-shadow);
+  backdrop-filter: blur(16px);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: auto;
+}
+.canvas-selection-count {
+  padding: 0 8px;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.canvas-selection-toolbar button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  height: 32px;
+  padding: 0 8px;
+  border-radius:var(--lumior-control-radius,12px);
+  background: transparent;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: background-color 150ms var(--control-ease), color 150ms var(--control-ease), box-shadow 150ms var(--control-ease);
+}
+.canvas-selection-toolbar .canvas-selection-chat {
+  color: var(--ui-text);
+}
+.canvas-selection-toolbar .canvas-selection-more {
+  width: auto;
+}
+.canvas-selection-toolbar.is-compact {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.canvas-selection-toolbar.is-compact button {
+  width: auto;
+  padding-inline: 6px;
+}
+.canvas-selection-toolbar :is(svg, .wake-orb) {
+  display: block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.canvas-selection-toolbar svg {
+  stroke-width: 1.75;
+  pointer-events: none;
+}
+.canvas-selection-toolbar button:is(:hover, :focus-visible, [data-popup-open]) {
+  outline: none;
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+  box-shadow: inset 0 0 0 1px var(--ui-line);
+}
+.canvas-selection-toolbar button:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--ui-line-strong);
+}
+.canvas-selection-menu {
+  width: 224px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--lumior-menu-radius);
+  padding: var(--lumior-menu-padding);
+}
+.canvas-selection-menu [data-slot='dropdown-menu-item'] {
+  gap: 10px;
+  min-height: 36px;
+  border-radius: var(--lumior-menu-item-radius);
+  font-size: 13px;
+}
+.canvas-selection-menu [data-slot='dropdown-menu-item']:is(:hover, :focus-visible, [data-highlighted]) {
+  background: var(--ui-fill-hover);
+  box-shadow: inset 0 0 0 1px var(--ui-line);
+}
+.canvas-selection-menu [data-slot='dropdown-menu-item'] > svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.75;
+}
+.canvas-selection-menu [data-slot='dropdown-menu-separator'] {
+  margin: 4px 6px;
+  background: var(--ui-fill-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-selection-toolbar button {
+    transition: none;
+  }
+}
