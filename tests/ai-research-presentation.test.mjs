@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { researchActionLabel, researchMilestoneText, researchPresentation, researchStageLabel, safeResearchDisplayText } from '../app/ai-research-presentation.ts';
+import { researchTimeline, researchTimelineLabel, researchActionLabel, researchMilestoneText, researchPresentation, researchStageLabel, safeResearchDisplayText } from '../app/ai-research-presentation.ts';
 import { translateForLanguage } from '../app/i18n-core.ts';
 
 const en = (english, chinese, params) => translateForLanguage('en', english, chinese, params);
@@ -278,4 +278,39 @@ test('position-only operations show layout work without inventing research or ci
  assert.deepEqual(view.groups.map(group=>group.action),['canvas-layout','canvas-checking','canvas-ready']);
  assert.match(researchActionLabel(view.groups[0].action),/画板整理/);
  assert.equal(view.groups.some(group=>group.stage==='reading'),false);
+});
+
+void test('repeated reading and draft cycles become one work phase with persistent factual updates', () => {
+  const records = [step('阅读安排：查找证据并综合分析 · 1 张资料，完成后核对回答与引用。', 0)];
+  for (let i = 1; i <= 8; i++) records.push(
+    step(`已取得原文：《课程材料》 · 1 段；累计读取 ${i} 段。`, i * 10),
+    step(`已准备第 ${i} 张卡片草稿：《第 ${i} 课》；核对后才会保存。`, i * 10 + 2),
+    step('进展摘要：下一步会把例子与练习对应起来。', i * 10 + 3));
+  const original = message(records); const before = JSON.stringify(original);
+  const timeline = researchTimeline(researchPresentation(original));
+  assert.deepEqual(timeline.map(group=>group.phase), ['preparing','working']);
+  assert.equal(timeline[1].active, true);
+  assert.equal(timeline[1].updates.filter(update=>update.kind==='draft').length, 8);
+  assert.equal(timeline[1].updates.filter(update=>update.kind==='evidence').length, 8);
+  assert.equal(timeline[1].updates.filter(update=>update.kind==='update').length, 8);
+  assert.match(researchMilestoneText(timeline[1].updates.find(update=>update.kind==='draft')), /第 1 张.*第 1 课.*核对后才会保存/);
+  assert.equal(researchTimelineLabel(timeline[1]), '查阅与整理资料');
+  assert.equal(JSON.stringify(original), before);
+  const checked = researchTimeline(researchPresentation(message([...records,step('正在核对回答、原文引用和问题覆盖情况…',90)],{status:'stopped',elapsed:110})));
+  assert.deepEqual(checked.map(group=>group.phase),['preparing','working','checking']);
+  assert.equal(checked.some(group=>group.active),false);
+  assert.equal(checked.at(-1).endedElapsed,110);
+  assert.equal(checked[1].updates.length,24);
+});
+
+void test('a genuine return to sources remains visible after checking, without claiming completion', () => {
+ const timeline=researchTimeline(researchPresentation(message([
+  step('正在核对回答、原文引用和问题覆盖情况…',30),
+  step('核对发现需要补充证据，正在继续查找原文…',40),
+  step('正在读取《Paper》原文…',41),
+  step('正在核对回答、原文引用和问题覆盖情况…',50),
+ ])));
+ assert.deepEqual(timeline.map(group=>group.phase),['checking','working','checking']);
+ assert.equal(timeline[1].updates[0].kind,'supplement');
+ assert.equal(timeline.at(-1).updates[0].kind,'checking');
 });

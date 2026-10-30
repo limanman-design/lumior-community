@@ -65,6 +65,8 @@ export function createAiModelCatalog(fetcher: typeof fetch = fetch, { now = Date
       const models: AiCatalogModel[] = [];
       for (const value of data.data) {
         if (!value || typeof value !== 'object' || typeof value.id !== 'string' || !isResearchModel(provider, value.id) || seen.has(value.id)) continue;
+        if (provider === 'openai' && typeof value.shutdown_date === 'string'
+          && /^\d{4}-\d{2}-\d{2}$/.test(value.shutdown_date) && Date.parse(value.shutdown_date) <= now()) continue;
         seen.add(value.id);
         const name = typeof value.display_name === 'string' ? value.display_name : typeof value.name === 'string' ? value.name : value.id;
         models.push(modelEntry(value.id, true, name.slice(0, 160)));

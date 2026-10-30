@@ -11,6 +11,8 @@ export type ResearchMilestone = MilestoneBase & (
   | { kind: 'coverage'; title: string; read: number; total: number }
   | { kind: 'search'; method: 'keyword' | 'semantic'; found: number; cards?: number; read?: number; total?: number }
   | { kind: 'evidence'; text: string; titles: string[]; read: number; added?: number; remaining?: number }
+  | { kind: 'draft'; title: string; count: number }
+  | { kind: 'update'; text: string }
   | { kind: 'synthesizing'; merged: boolean }
   | { kind: 'checking' }
   | { kind: 'supplement' }
@@ -102,6 +104,8 @@ export function researchMilestoneText(milestone: ResearchMilestone, t: AiTransla
         : t('I’ll find and read evidence from {count} sources for your question, then check the answer and citations.', '我会围绕你的问题，从 {count} 份资料中查找并阅读原文证据，再核对回答与引用。', { count });
     }
     case 'focus': return t('I’m focusing on: {focus}', '这次会重点围绕：{focus}', { focus: milestone.text });
+    case 'update': return milestone.text;
+    case 'draft': return t('Draft {count} is ready: “{title}”. It will be saved after checking.', '第 {count} 张卡片草稿已准备：《{title}》。核对后才会保存。', { count: milestone.count, title: milestone.title });
     case 'coverage': return t('I’ve covered {read} of {total} passages while reading “{title}”.', '正在阅读《{title}》，已覆盖 {read} / {total} 段。', { title: milestone.title, read: milestone.read, total: milestone.total });
     case 'search': return milestone.method === 'semantic'
       ? t('I’ve checked {read} of {total} passages by meaning and found {found} candidates. They still need to be read and checked.', '已按含义检查 {read} / {total} 段，找到 {found} 段候选原文；接下来还需要读取核对。', { read: milestone.read ?? 0, total: milestone.total ?? 0, found: milestone.found })
@@ -139,6 +143,7 @@ export function safeResearchDisplayText(text: string, cardIds: readonly string[]
 }
 
 function actionFor(text: string): ResearchAction | undefined {
+  if (/^已准备第 \d+ 张卡片草稿：/.test(text)) return 'canvas-layout';
   if (/^(?:正在按卡片尺寸准备排布|正在准备卡片排布|正在准备画板操作|Preparing (?:the (?:card )?layout|canvas changes))/.test(text)) return 'canvas-layout';
   if (/^(?:正在核对画板排布|画板操作核对尚未通过|Checking layout and scope|Canvas changes have not passed verification)/.test(text)) return 'canvas-checking';
   if (/^(?:画板(?:排布|操作)已核对|本次画板排布已完成|Canvas (?:layout|changes) verified|Canvas layout complete)/.test(text)) return 'canvas-ready';
@@ -175,6 +180,9 @@ function taskFor(text: string): ResearchTask | undefined {
 function milestoneFor(step: PresentedResearchStep): ResearchMilestone | undefined {
   const base = { id: step.id, elapsed: step.elapsed, stage: step.stage };
   const text = step.displayMessage;
+  if (text.startsWith('进展摘要：')) return { ...base, kind: 'update', text: text.slice('进展摘要：'.length) };
+  const draft = text.match(/^已准备第 (\d+) 张卡片草稿：《(.+)》；核对后才会保存。$/);
+  if (draft) return { ...base, kind: 'draft', count: Number(draft[1]), title: draft[2] };
   let match = text.match(/^阅读安排：(针对问题查证|完整阅读并总结|完整阅读并比较|查找证据并综合分析)(?: · (\d+) 张资料)?，完成后核对回答与引用。$/);
   if (match) {
     const tasks = { '针对问题查证': 'question', '完整阅读并总结': 'summary', '完整阅读并比较': 'comparison', '查找证据并综合分析': 'synthesis' } as const;
@@ -204,6 +212,53 @@ function milestoneFor(step: PresentedResearchStep): ResearchMilestone | undefine
   if (text === '回答与原文引用核对完成，正在逐段呈现结果…' || text === 'Answer and source citations checked. Presenting the results in parts…') return { ...base, kind: 'presenting' };
   if (text === '回答与原文引用核对完成，正在呈现结果…' || text === '已核对回答与引用，研究完成。' || text === 'Answer and source citations checked. Presenting the results…' || text === 'The answer and citations have been checked. Research is complete.') return { ...base, kind: 'verified' };
   return undefined;
+}
+
+export type ResearchTimelineGroup = {
+  id: string;
+  phase: 'preparing' | 'working' | 'checking' | 'presenting';
+  startedElapsed: number;
+  endedElapsed?: number;
+  active: boolean;
+  steps: PresentedResearchStep[];
+  updates: ResearchMilestone[];
+};
+
+/** Read/tool/draft cycles belong to one visible work phase. Keep the exact
+ * chronological log and earlier updates, including cancelled work, underneath. */
+export function researchTimeline(presentation: ResearchPresentation): ResearchTimelineGroup[] {
+  const timeline: ResearchTimelineGroup[] = [];
+  for (const group of presentation.groups) {
+    const phase = group.action === 'answering' || group.action === 'canvas-ready' ? 'presenting'
+      : group.action === 'checking' || group.action === 'canvas-checking' ? 'checking'
+      : group.stage === 'preparing' ? 'preparing' : 'working';
+    let current = timeline.at(-1);
+    if (!current || current.phase !== phase) {
+      current = { id: group.id, phase, startedElapsed: group.startedElapsed, active: false, steps: [], updates: [] };
+      timeline.push(current);
+    }
+    current.active = group.active;
+    current.endedElapsed = group.endedElapsed;
+    current.steps.push(...group.steps);
+    for (const step of group.steps) {
+      const update = milestoneFor(step);
+      if (!update) continue;
+      const previous = current.updates.at(-1);
+      // Identical boilerplate need not repeat; distinct counts/titles persist.
+      if (previous && researchMilestoneText(previous) === researchMilestoneText(update)) continue;
+      current.updates.push(update);
+    }
+  }
+  return timeline;
+}
+
+export function researchTimelineLabel(group: ResearchTimelineGroup, task?: ResearchTask, t: AiTranslate = chinese): string {
+  if (group.phase === 'preparing') return t('Understanding the request', '理解任务与安排');
+  if (group.phase === 'presenting') return researchActionLabel(group.steps.at(-1)?.action || 'answering', task, t);
+  if (group.phase === 'checking') return researchActionLabel(group.steps[0]?.action || 'checking', task, t);
+  const actions = new Set(group.steps.map(step => step.action));
+  if (group.steps.some(step => step.stage === 'reading')) return t('Reviewing and organizing sources', '查阅与整理资料');
+  return researchActionLabel(actions.has('canvas-layout') ? 'canvas-layout' : group.steps[0]?.action || 'synthesizing', task, t);
 }
 
 function milestoneKey(value: ResearchMilestone) {
