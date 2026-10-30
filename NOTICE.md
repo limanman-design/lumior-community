@@ -8,6 +8,7 @@ Third-party code and assets retain their own licenses. The project license does 
 
 | Component | Applicable notice |
 | --- | --- |
+| BlockNote `@blocknote/core`, `@blocknote/react`, `@blocknote/shadcn` 0.54.0 | [Upstream source](https://github.com/TypeCellOS/BlockNote), MPL-2.0; full text in [`licenses/MPL-2.0.txt`](licenses/MPL-2.0.txt) |
 | Ocean DataView and local modifications | `app/vendor/ocean-dataview/LICENSE` and `NOTICE.txt` (MIT) |
 | LobeHub provider icons | `public/assets/ai-providers/ATTRIBUTION.txt` (MIT; provider trademarks belong to their owners) |
 | Google Material Symbols | Apache-2.0; the full license is under `licenses/` and replacement provenance under `docs/ASSET-PROVENANCE.json` |
@@ -17,7 +18,15 @@ Third-party code and assets retain their own licenses. The project license does 
 | ASCII rest artwork | `public/assets/third-party/ascii-rest-LICENSE.txt` |
 | npm dependencies | Their package licenses; installed dependency inventory is a separate review artifact, not a claim that all packages are shipped |
 
-BlockNote packages use MPL-2.0. Native image tooling may bring LGPL-covered libvips components; actual distributed binaries and corresponding source obligations need release-specific review. Optional BabelDOC/PyMuPDF translation engines are not bundled by the community desktop build. This inventory is not a substitute for inspecting the built distribution.
+### Note editor and database provenance
+
+BlockNote provides the block-based rich-text editor inside note cards; it is not the canvas or card-connection engine. The three packages above are installed from npm at the versions pinned in `pnpm-lock.yaml`, without repository-managed package patches. Their readable source and license are included in the npm packages; versioned packages are [`core@0.54.0`](https://www.npmjs.com/package/@blocknote/core/v/0.54.0), [`react@0.54.0`](https://www.npmjs.com/package/@blocknote/react/v/0.54.0) and [`shadcn@0.54.0`](https://www.npmjs.com/package/@blocknote/shadcn/v/0.54.0). This project does not depend on `@blocknote/xl-*` packages. Lumior's editor integration is in `app/block-editor.tsx` and `app/document-schema.ts`.
+
+MPL-covered source remains under MPL-2.0. Distributions containing the compiled editor must inform recipients how to obtain the corresponding covered source; modifications to covered files must retain the applicable MPL terms and notices. This does not relicense Lumior's separate original files. See the [Mozilla MPL FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/).
+
+Ocean DataView is Copyright (c) 2025 Ocean DataView, MIT. Selected view components were imported from [revision `3ac6c4e716d5f66fd2ac44366c44d558f4b260bb`](https://github.com/jingerpie/ocean-dataview/tree/3ac6c4e716d5f66fd2ac44366c44d558f4b260bb). The exact files and local adaptations are recorded in [`app/vendor/ocean-dataview/NOTICE.txt`](app/vendor/ocean-dataview/NOTICE.txt); its full [MIT license](app/vendor/ocean-dataview/LICENSE), copyright and permission notice are retained. Lumior's database adapter, local persistence, editing and view management live outside that vendor directory.
+
+Native image tooling may bring LGPL-covered libvips components; actual distributed binaries and corresponding source obligations need release-specific review. Optional BabelDOC/PyMuPDF translation engines are not bundled by the community desktop build. This inventory is not a substitute for inspecting the built distribution.
 
 Unverified legacy icon exports are replaced in this repository with attributed Material Symbols. Downloaded rain recordings, their covers, demo papers, lecture transcripts, game screenshots and private report screenshots are excluded. Original onboarding practice content remains available.
 

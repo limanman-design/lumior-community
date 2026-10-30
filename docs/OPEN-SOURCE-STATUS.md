@@ -11,3 +11,7 @@ Initial source release: 2026-10-30. Repository: [limanman-design/lumior-communit
 Public source and official desktop releases are maintained separately. Community builds use their own data directory and do not receive official automatic updates.
 
 Clean-source dependency installation, public tests, production builds and an isolated macOS community-package smoke test have passed. Windows native large-library import/backup acceptance has not been performed. Binary releases require review of the notices for the actual packaged dependencies. Report security issues privately using [SECURITY.md](../SECURITY.md).
+
+## Known feature limitations
+
+New Obsidian libraries support title/path search; full-text indexing, backlink lists and graph views are not implemented. Windows large-library imports and directory backup/restore still need native acceptance testing. PDF layout-preserving translation engines are optional experiments and are not bundled with the desktop build.
