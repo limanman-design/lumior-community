@@ -7,8 +7,8 @@ type Section = NonNullable<Board['sections']>[number];
 type Geometry = Pick<Card, 'x' | 'y' | 'width' | 'height'>;
 type Move = { id: string; before: Geometry; after: Geometry };
 type SectionChange = { id: string; before?: Section; after?: Section; beforeMembers: string[]; afterMembers: string[] };
-export type AiOperationRecord = AiOperationDetails & { version: 1 | 2; id: string; boardId: string; createdAt: number; cards: Proof[]; edges: Proof[]; moves?: Move[]; sections?: SectionChange[] };
-export type AiOperationStatus = 'applied' | 'undone' | 'conflict';
+export type AiOperationRecord = AiOperationDetails & { version: 1 | 2 | 3; suggestions?: string[]; id: string; boardId: string; createdAt: number; cards: Proof[]; edges: Proof[]; moves?: Move[]; sections?: SectionChange[] };
+export type AiOperationStatus = 'applied' | 'undone' | 'conflict' | 'reviewed';
 
 // Ignore system timestamps and the workspace's empty-tag normalization. Geometry, formatting and content
 // all participate: removing an edited card is never a safe automatic undo.
@@ -29,7 +29,8 @@ export function createAiOperationRecord(before: Board, after: Board, id: string,
     const old = before.sections?.find(item => item.id === id), next = after.sections?.find(item => item.id === id);
     return same(old, next) ? [] : [{ id, ...(old ? { before: { ...old } } : {}), ...(next ? { after: { ...next } } : {}), beforeMembers: sectionMembers(old, before.cards), afterMembers: sectionMembers(next, after.cards) }];
   });
-  return { ...details, process: details.process.map(step => ({ ...step })), version: moves.length || sections.length ? 2 : 1, id, boardId: before.id, createdAt: now,
+  const suggestions = after.cards.filter(card => card.aiNoteChange?.id === id && before.cards.find(old => old.id === card.id)?.aiNoteChange?.id !== id).map(card => card.id);
+  return { ...details, ...(suggestions.length ? { suggestions } : {}), process: details.process.map(step => ({ ...step })), version: suggestions.length ? 3 : moves.length || sections.length ? 2 : 1, id, boardId: before.id, createdAt: now,
     cards: after.cards.filter(card => !previousCards.has(card.id)).map(proof), edges: after.edges.filter(edge => !previousEdges.has(edge.id)).map(proof),
     ...(moves.length || sections.length ? { moves, sections } : {}) };
 }
@@ -38,12 +39,16 @@ export function validAiOperationRecords(value: unknown): value is AiOperationRec
   const ids = new Set<string>();
   const text = (value: unknown, max: number) => typeof value === 'string' && value.length <= max;
   return value.every(item => {
-    if (!item || ![1, 2].includes(item.version) || !text(item.id, 200) || !item.id || ids.has(item.id) || !text(item.boardId, 200) || !text(item.chatId, 200) || !text(item.messageId, 200)
+    if (!item || ![1, 2, 3].includes(item.version) || !text(item.id, 200) || !item.id || ids.has(item.id) || !text(item.boardId, 200) || !text(item.chatId, 200) || !text(item.messageId, 200)
       || !text(item.request, 6000) || !text(item.answer, 1_000_000) || !Number.isSafeInteger(item.createdAt) || item.createdAt < 0
       || !Array.isArray(item.process) || !item.process.every((step: AiProcessStep) => step && text(step.message, 10000) && Number.isFinite(step.elapsed) && step.elapsed >= 0)) return false;
     ids.add(item.id);
     const proofs = (list: unknown, kind: string, max: number) => Array.isArray(list) && list.length <= max && new Set(list.map(proof => proof?.id)).size === list.length && list.every(proof => proof && text(proof.id, 200) && proof.id.startsWith(`${kind}:${item.id}:`) && text(proof.fingerprint, 1_000_000));
     if (!proofs(item.cards, 'ai-note', 12) || !proofs(item.edges, 'ai-edge', 24)) return false;
+    if (item.version === 3) return Array.isArray(item.suggestions) && item.suggestions.length > 0 && item.suggestions.length <= 12
+      && item.suggestions.every((id: unknown) => text(id, 200) && !!id) && new Set(item.suggestions).size === item.suggestions.length
+      && !item.cards.length && !item.edges.length && item.moves === undefined && item.sections === undefined;
+    if (item.suggestions !== undefined) return false;
     if (item.version === 1) return item.moves === undefined && item.sections === undefined && item.cards.length + item.edges.length > 0;
     const uniqueList = (values: unknown, max: number) => Array.isArray(values) && values.length <= max && values.every(value => value && text(value.id, 200) && value.id.length) && new Set(values.map(value => value.id)).size === values.length;
     const validGeometry = (value: Geometry) => value && Number.isFinite(value.x) && Number.isFinite(value.y) && Number.isFinite(value.width) && value.width > 0 && (value.height === undefined || Number.isFinite(value.height) && value.height > 0);
@@ -58,6 +63,12 @@ export function validAiOperationRecords(value: unknown): value is AiOperationRec
 export function aiOperationStatus(board: Board, operation: AiOperationRecord, otherBoards: readonly Board[] = []): AiOperationStatus {
   if (operation.boardId !== board.id) return 'conflict';
   const cards = new Map(board.cards.map(card => [card.id, card])), edges = new Map(board.edges.map(edge => [edge.id, edge]));
+  if (operation.version === 3) {
+    const pending = (operation.suggestions || []).map(id => cards.get(id)?.aiNoteChange);
+    if (pending.every(change => !change)) return 'undone';
+    if (pending.every(change => change?.id === operation.id && !change.accepted)) return 'applied';
+    return 'reviewed'; // Some suggestions were accepted, dismissed or superseded; never undo their content as a batch.
+  }
   const present = operation.cards.filter(proof => cards.has(proof.id)).length + operation.edges.filter(proof => edges.has(proof.id)).length;
   if (operation.version === 1 && !present) return 'undone';
   const matches = (proofs: Proof[], items: Map<string, Card> | Map<string, Edge>) => proofs.every(proof => {
@@ -85,6 +96,8 @@ export function undoAiOperation(board: Board, id: string, otherBoards: readonly 
   if (!operation) throw new Error('找不到这条画板操作记录。');
   const status = aiOperationStatus(board, operation, otherBoards);
   if (status === 'undone') return board;
+  if (status === 'reviewed') throw new Error('请在每张笔记旁查看或撤销已接受的修改。');
+  if (operation.version === 3 && status === 'applied') return { ...board, cards: board.cards.map(card => operation.suggestions?.includes(card.id) ? { ...card, aiNoteChange: undefined } : card) };
   if (status === 'conflict') throw new Error('相关卡片、连线或分区已有后续修改、关联或同步引用，未撤销，以保留这些改动。');
   const cards = new Set(operation.cards.map(item => item.id)), edges = new Set(operation.edges.map(item => item.id));
   const moves = new Map((operation.moves || []).map(move => [move.id, move.before]));

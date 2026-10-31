@@ -2,7 +2,7 @@ import type { Card } from './canvas-model';
 
 // Shared, user-authored content. Canvas geometry and reading state are local.
 export const cardContentKeys = [
-  'title', 'body', 'blocks', 'storedDocument', 'obsidianSource', 'image', 'detail', 'sourceName',
+  'title', 'body', 'blocks', 'aiNoteChange', 'storedDocument', 'obsidianSource', 'image', 'detail', 'sourceName',
   'pdf', 'pdfExcerpt', 'video', 'kind', 'tags', 'contentRole', 'sourceContentId', 'authors', 'year', 'bibliography',
 ] as const satisfies readonly (keyof Card)[];
 

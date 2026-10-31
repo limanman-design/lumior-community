@@ -1,3 +1,4 @@
+import { validNoteAiChange } from './note-ai-change.ts';
 import {validBibliography} from '../lib/bibliography.ts';
 import type { Board, Card } from './canvas-model';
 import type { WorkspaceSnapshot } from './workspace-store';
@@ -44,7 +45,7 @@ const knownSummaries = new Map<string, string>();
 // Workspace records are immutable snapshots. A normalized pair can be reused
 // until either the files or the committed board array changes.
 const synchronizedBoards = new WeakMap<WorkspaceFiles, readonly Board[]>();
-const documentEditKeys = new Set<keyof Card>(['title', 'body', 'blocks', 'storedDocument', 'updatedAt']);
+const documentEditKeys = new Set<keyof Card>(['title', 'body', 'blocks', 'storedDocument', 'aiNoteChange', 'updatedAt']);
 
 export function workspaceCardRole(card: Card): WorkspaceContentRole {
   if (card.kind === 'database') throw new Error('Database links are not knowledge content.');
@@ -151,6 +152,7 @@ export function validWorkspaceFiles(value: unknown): value is WorkspaceFiles {
   if (files.version !== 1 || !Array.isArray(files.contents) || !Array.isArray(files.folders) || !Array.isArray(files.entries)) return false;
   const string = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
   const card = (value: Card) => value && string(value.id) && typeof value.title === 'string' && typeof value.body === 'string' && ['note', 'text', 'pdf', 'video', 'image'].includes(value.kind) && [value.x, value.y, value.width].every(Number.isFinite) && value.width > 0 && (value.height === undefined || Number.isFinite(value.height)) && (value.bibliography === undefined || validBibliography(value.bibliography)) && (value.kind !== 'video' || validVideoProviderMetadata(value.video))
+    && (value.aiNoteChange === undefined || value.kind === 'note' && validNoteAiChange(value.aiNoteChange))
     && (value.obsidianSource === undefined || validObsidianSource(value.obsidianSource))
     && (value.storedDocument === undefined || (value.kind === 'note' && validStoredDocument(value.storedDocument) && value.body === '' && value.blocks === undefined
       && (!value.obsidianSource || value.obsidianSource.libraryId === value.storedDocument.libraryId && value.obsidianSource.path === value.storedDocument.path)));

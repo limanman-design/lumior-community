@@ -380,7 +380,7 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
           if (!operationBoard || event.actions.id !== questionId || event.actions.boardId !== operationBoard.boardId) throw new Error('画板操作范围已变化，尚未保存，请重新提问。');
           if (run.actions && JSON.stringify(run.actions) !== JSON.stringify(event.actions)) throw new Error('收到不一致的画板操作，尚未保存，请重试。');
           const localIds = new Set(event.actions.notes.map(note => note.id));
-          if ([...aiLayoutTargets(event.actions), ...event.actions.connections.flatMap(edge => [edge.from, edge.to])].some(target => !allowedCards.has(target) && !localIds.has(target))) throw new Error('画板操作超出本次引用范围，尚未保存，请重新选择卡片。');
+          if ([...(event.actions.updates || []).map(update => update.cardId), ...aiLayoutTargets(event.actions), ...event.actions.connections.flatMap(edge => [edge.from, edge.to])].some(target => !allowedCards.has(target) && !localIds.has(target))) throw new Error('画板操作超出本次引用范围，尚未保存，请重新选择卡片。');
           run.actions = event.actions;
           run.operationOnly = event.operationOnly ?? run.operationOnly;
         }
@@ -397,7 +397,7 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
       if (run.actions) {
         const target = liveTarget.current;
         if (!run.verified || run.doneReason !== 'stop' || !target.board || target.board.boardId !== operationBoard?.boardId || !target.onApplyBoardActions) throw new Error('画板已切换或操作尚未核对，未保存卡片与连线。');
-        const citationTexts = [...run.actions.notes.flatMap(note => [note.title, note.body]), ...run.actions.connections.map(edge => edge.label || ''), ...(run.actions.groups || []).flatMap(group => [group.title, group.reason || ''])];
+        const citationTexts = [...(run.actions.updates || []).map(update => update.body), ...run.actions.notes.flatMap(note => [note.title, note.body]), ...run.actions.connections.map(edge => edge.label || ''), ...(run.actions.groups || []).flatMap(group => [group.title, group.reason || ''])];
         for (const text of citationTexts) for (const number of citationNumbers(text)) {
           const source = evidenceContext.sources[number - 1], current = source && target.cards.find(card => card.id === source.id);
           if (!current || source.fileKey && source.fileKey !== readingKey(current)) throw new Error('引用资料已移除或被替换，未保存卡片，请重新提问。');

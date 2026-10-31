@@ -1,4 +1,5 @@
 import type { Card } from './canvas-model';
+import { noteMarkdown } from './note-markdown.ts';
 import { documentText } from './card-document.ts';
 import { pageChunks, type ReadingState } from './document-reading.ts';
 import { videoTimestamp } from './video-transcript.ts';
@@ -17,7 +18,7 @@ export function aiResearchRefs(context: AiContext | undefined, fallback: string[
   return context?.cardIds ?? (context?.scope === 'selected' ? [...new Set(context.sources.map(source => source.id))] : fallback);
 }
 function cardSource(card: Card): AiSource {
-  const body = card.blocks?.length ? documentText(card.blocks) : card.body;
+  const body = card.kind === 'note' ? noteMarkdown(card) : card.blocks?.length ? documentText(card.blocks) : card.body;
   const text = [...new Set([card.title, body, card.pdfExcerpt?.mark.text || ''].filter(Boolean))].join('\n');
   const page = card.pdfExcerpt?.mark.fragments?.[0]?.page;
   return { id: card.id, title: card.title, kind: card.kind, text, truncated: false,

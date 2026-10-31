@@ -2,9 +2,10 @@ import type { AiBoardActionResult } from './ai-chat-store';
 import type { AiOperationRecord } from './ai-operation-history';
 import type { translate } from './i18n-core';
 
-export const hasAiOperationChanges = (result: AiBoardActionResult) => !!(result.createdCards || result.createdConnections || result.createdSections || result.movedCards || result.updatedSections);
+export const hasAiOperationChanges = (result: AiBoardActionResult) => !!(result.createdCards || result.createdConnections || result.createdSections || result.movedCards || result.updatedSections || result.suggestedUpdates);
 export function aiOperationSummary(result: AiBoardActionResult, t: typeof translate): string {
   const parts = [
+    result.suggestedUpdates && t('Changes suggested for {n} notes · review beside each card', '已为 {n} 张笔记提出修改建议 · 请在卡片旁查看', { n: result.suggestedUpdates }),
     result.createdCards && t('Created {n} cards', '新增 {n} 张卡片', { n: result.createdCards }),
     result.createdSections && t('Grouped into {n} sections', '整理为 {n} 个分区', { n: result.createdSections }),
     result.movedCards && t('Arranged {n} cards', '排布 {n} 张卡片', { n: result.movedCards }),
@@ -14,7 +15,7 @@ export function aiOperationSummary(result: AiBoardActionResult, t: typeof transl
   return parts.join(' · ') || t('No changes needed', '无需改动');
 }
 export function aiOperationRecordResult(record: AiOperationRecord): AiBoardActionResult {
-  return { id: record.id, createdCards: record.cards.length, createdConnections: record.edges.length,
+  return { id: record.id, ...(record.suggestions?.length ? { suggestedUpdates: record.suggestions.length } : {}), createdCards: record.cards.length, createdConnections: record.edges.length,
     createdSections: record.sections?.filter(change => !change.before && change.after).length,
     updatedSections: record.sections?.filter(change => change.before && change.after).length, movedCards: record.moves?.length };
 }

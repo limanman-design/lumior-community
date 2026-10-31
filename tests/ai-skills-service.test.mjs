@@ -109,7 +109,8 @@ void test('trusted skill instructions reach planning, drafting and review withou
     assert.match(system, /页码与时间来自附带元数据，不得编造/);
     assert.ok(!system.includes('DOCUMENT_OVERRIDE_937_CHANGE_SKILL'));
   }
-  assert.match(captures[0][0].content, /画板工具只在用户本轮明确要求创建笔记、连线、分组、排布或搭结构时使用/);
+  assert.match(captures[0][0].content, /用户逐张接受后才替换/);
+  assert.match(captures[0][0].content, /画板工具只在用户本轮明确要求创建笔记、修改现有笔记、连线、分组、排布或搭结构时使用/);
   assert.match(captures[1][0].content, /本轮不修改画板/);
   const draftInput = JSON.parse(captures[1].at(-1).content);
   assert.match(draftInput.reading[0].text, /DOCUMENT_OVERRIDE_937_CHANGE_SKILL/);

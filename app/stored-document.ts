@@ -17,6 +17,8 @@ export type StoredDocumentDependencies = {
   targets?: ReadonlyMap<string, Target>;
   signal?: AbortSignal;
   writer?: object;
+  /** An AI proposal must never appear as an unsaved editor draft on failure. */
+  isolated?: boolean;
   commit?: (patch: Partial<Card>) => void | Promise<void>;
 };
 const reference = (value: unknown): value is string => typeof value === 'string' && /^lumior-file:[a-zA-Z0-9_-]{1,128}$/.test(value);
@@ -68,7 +70,7 @@ async function getFile(ref: string, dependencies: StoredDocumentDependencies) {
   if (!file) throw new Error(translate('The note file is missing. Restore it from a backup.', '笔记文件缺失，请从备份恢复。'));
   return file;
 }
-async function parseMarkdown(markdown: string): Promise<PartialBlock[]> {
+export async function parseNoteMarkdown(markdown: string): Promise<PartialBlock[]> {
   const [{ BlockNoteEditor }, { documentSchema }] = await Promise.all([import('@blocknote/core'), import('./document-schema.ts')]);
   const editor = BlockNoteEditor.create({ schema: documentSchema });
   try { return editor.tryParseMarkdownToBlocks(markdown); }
@@ -107,7 +109,7 @@ export async function readStoredDocument(card: Card, dependencies: StoredDocumen
     let index = targetIndexes.get(targets);
     if (!index) { index = createVaultTargetIndex(targets); targetIndexes.set(targets, index); }
     const converted = convertObsidianMarkdown(text, stored.path, index, []);
-    const blocks = await (dependencies.parseMarkdown || parseMarkdown)(converted);
+    const blocks = await (dependencies.parseMarkdown || parseNoteMarkdown)(converted);
     check(dependencies.signal);
     blocks.push({ type: 'file', props: { url: stored.source, name: `Obsidian · ${stored.path.split('/').at(-1)}` } });
     body = { version: 1, blocks, body: documentText(blocks) };
@@ -127,7 +129,7 @@ function writeStoredDocument(card: Card, patch: Partial<Card>, dependencies: Sto
   if (!card.storedDocument || !validStoredDocument(card.storedDocument) || !Array.isArray(patch.blocks) || typeof patch.body !== 'string')
     return Promise.reject(new Error(translate('The note must finish loading before it can be saved.', '笔记加载完成后才能保存。')));
   const draft = { card, patch: structuredClone(patch) };
-  drafts.set(key, draft);
+  if (!dependencies.isolated) drafts.set(key, draft);
   const operation = (writes.get(key) || Promise.resolve()).catch(() => {}).then(async () => {
     const expected = revision(card);
     const priorWriter = writerLatest.get(key);
@@ -145,16 +147,17 @@ function writeStoredDocument(card: Card, patch: Partial<Card>, dependencies: Sto
     const first = draft.patch.blocks?.[0];
     const title = first?.type === 'heading' ? documentText([first]).trim() : patch.title;
     const metadata = { storedDocument: ref, body: '', blocks: undefined, ...(title ? { title } : {}) };
+    if (dependencies.isolated && drafts.has(key)) throw new Error('笔记有正在保存的编辑，原文已保留，请稍后再接受建议。');
     await dependencies.commit?.(metadata);
     latest.set(key, ref.document);
     writerLatest.set(key, { writer: dependencies.writer, ref });
     if (drafts.get(key) === draft) drafts.delete(key);
-    failures.delete(key);
+    if (!dependencies.isolated) failures.delete(key);
     return metadata;
   });
   writes.set(key, operation);
   void operation.then(() => { if (writes.get(key) === operation) writes.delete(key); }, error => {
-    failures.set(key, error instanceof Error ? error : new Error('Note save failed.'));
+    if (!dependencies.isolated) failures.set(key, error instanceof Error ? error : new Error('Note save failed.'));
     if (writes.get(key) === operation) writes.delete(key);
   });
   return operation;

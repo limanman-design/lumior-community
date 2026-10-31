@@ -22,7 +22,7 @@ export function AiOperationReceipt({ result, status, onUndo, onDetails }: {
     finally { setPending(false); }
   };
   return <div className="ai-operation-receipt" data-operation-id={result.id}>
-    <output><MaterialIcon name="check" size={16}/><span>{status === 'undone' ? t('This operation was undone', '这条操作已撤销') : aiOperationSummary(result, t)}</span></output>
+    <output><MaterialIcon name="check" size={16}/><span>{status === 'reviewed' ? t('Review each note to see or undo accepted changes', '请在笔记旁查看或撤销已接受的修改') : status === 'undone' ? t('This operation was undone', '这条操作已撤销') : aiOperationSummary(result, t)}</span></output>
     <div className="ai-operation-receipt-actions">
       <button disabled={!onUndo || pending || status !== 'applied'} onClick={() => void undo()}><MaterialIcon name="undo" size={16}/>{pending ? t('Undoing…', '正在撤销…') : t('Undo', '撤销')}</button>
       <button onClick={onDetails}>{t('View process', '查看过程')}</button>
