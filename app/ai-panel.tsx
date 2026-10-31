@@ -50,7 +50,6 @@ import './ai-canvas.css';
 import { appendAiReferences, canvasRunningActivity, readAiCanvasView, type AiCanvasView } from './ai-canvas-presentation';
 
 type Props = {
-  thesisToolbarTarget?: HTMLElement | null; onThesisToolbarChange?: (boardId: string | null) => void;
   thesisBoard?: Board; onThesisChange?: ChangeThesisBoard; onOpenThesisCard?: (id: string) => void;
   onReadingCards?: (ids: string[]) => void;
   onGenerationChange?: (requestId: string, generation: AiBoardGeneration | null, cancel?: () => void) => void;
@@ -92,7 +91,7 @@ function AiEvidence({ context, onSource }: { context: AiContext; onSource: (inde
   </details>;
 }
 
-export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoard, onThesisChange, onOpenThesisCard, mode: readerMode, onMode, canvas = false, visible = true, selectedCardIds = [], onImport, recordsRequest = 0, operations = [], operationStatuses = {}, onUndoOperation, onCanvasDockChange, onHoverSource, request, cards, boardId, board, layoutSections, onApplyBoardActions, onGenerationChange, onReadingCards, onCreateCard, onDropSelection, onCitation, onResearchFocus, expandedVideo = false, expandedPdf = false, expandedNote = false, expandedImage = false, portalTarget }: Props) {
+export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: readerMode, onMode, canvas = false, visible = true, selectedCardIds = [], onImport, recordsRequest = 0, operations = [], operationStatuses = {}, onUndoOperation, onCanvasDockChange, onHoverSource, request, cards, boardId, board, layoutSections, onApplyBoardActions, onGenerationChange, onReadingCards, onCreateCard, onDropSelection, onCitation, onResearchFocus, expandedVideo = false, expandedPdf = false, expandedNote = false, expandedImage = false, portalTarget }: Props) {
   const { t, locale, language } = useI18n();
   const saved = useAiHistory(boardId);
   const chat = presentedAiChat(saved.state.chats, saved.state.activeId);
@@ -117,11 +116,6 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
   const thesisModel = defaultThesisModel;
   const skill = skillForChat(chat);
   const availableSkill = !!getAiSkill(skill);
-  const thesisToolbarBoardId = canvas && visible && saved.ready && thesisBoard?.thesis && isThesisSkill(skill) ? thesisBoard.id : null;
-  useLayoutEffect(() => {
-    onThesisToolbarChange?.(thesisToolbarBoardId);
-    return () => onThesisToolbarChange?.(null);
-  }, [thesisToolbarBoardId, onThesisToolbarChange]);
   const skillName = (id: string) => getAiSkill(id) ? aiSkillLabel(id, language) : t('Assistant unavailable', '助手暂不可用');
   const messages = visibleAiMessages(chat?.messages || []);
   const histories = visibleAiChats(saved.state.chats);
@@ -251,7 +245,7 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
     if (!source.thesis) source = await onThesisChange(enableBoardThesis);
     if (!hasThesisConsent(source.thesis, selected.provider)) { patchChat(chat.id, item => ({ ...item, draft: question, canvasView: { ...readAiCanvasView(item.canvasView), collapsed: false } }), true); setNotice(`请先勾选对话中的 ${thesisProviderName(selected.provider)} 资料处理说明，再发送。`); return; }
     if (chat.refs.some(id => source.cards.some(c => c.id === id && c.pdf) && !source.thesis!.sources[id])) {
-      setNotice('引用的 PDF 尚未指定论文用途。请在“论文项目 → 资料用途”中选择论文文献、模板、评审要求或背景资料后再发送。'); return;
+      setThesisOpen(true); setNotice('引用的 PDF 尚未指定论文用途。请在“资料与历史 → 资料用途”中选择论文文献、模板、评审要求或背景资料后再发送。'); return;
     }
     const expected = thesisInputSignature(source), now = eventTime(), id = crypto.randomUUID(), questionId = crypto.randomUUID();
     const user: AiMessage = { id: questionId, role: 'user', text: question.trim(), createdAt: now, live: true, references: chat.refs.flatMap(id => { const c = source.cards.find(c => c.id === id); return c ? [{ id, title: c.title, kind: c.kind }] : []; }) };
@@ -273,7 +267,7 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
       const next = await target.onThesisChange(current => applyThesisResult(current, expected, result, chat.id));
       if (running.current !== run) return;
       const pending = Object.keys(next.thesis!.proposals).length;
-      if (pending) run.text += `\n\n有 ${pending} 项修改建议等待采纳；原卡片保持不变。可在「论文项目」中对照并决定。`;
+      if (pending) run.text += `\n\n有 ${pending} 项修改建议等待采纳；原卡片保持不变。请点击对应卡片旁的修改气泡，预览后决定是否接受。`;
       patchMessage(run.chatId, id, { text: run.text, thesisQuestion: result.session.pending, status: result.error ? 'error' : 'complete', error: result.error, progress: undefined, process: run.process, elapsed: Math.round((eventTime() - now) / 1000) }, true);
       patchChat(run.chatId, item => ({ ...item, canvasView: { ...readAiCanvasView(item.canvasView), collapsed: false } }), true);
     } catch (error) {
@@ -588,7 +582,7 @@ export function AiPanel({ thesisToolbarTarget, onThesisToolbarChange, thesisBoar
     <div className="ai-compose-slot" hidden={!canvas && historyOpen}>
       {canvas && operationToast && !responseExpanded && <AiOperationToast key={operationToast.id} result={operationToast} onClose={() => setOperationToast(null)} onUndo={() => { const id = operationToast.id; setOperationToast(null); void onUndoOperation?.(id).catch(error => setNotice(error.message)); }}/>}
       {canvas && !messages.length && !isThesisSkill(skill) && !busy && suggestions()}
-      {isThesisSkill(skill) && thesisBoard?.thesis && onThesisChange && <ThesisBoardControls provider={thesisModel.provider} toolbarTarget={thesisToolbarTarget} chats={histories} activeStage={skill} board={thesisBoard} onChange={onThesisChange} onStage={selectSkill} onOpen={id => onOpenThesisCard?.(id)} open={thesisOpen} onOpenChange={setThesisOpen} busy={busy}/>}
+      {thesisBoard?.thesis && onThesisChange && <ThesisBoardControls provider={thesisModel.provider} chats={histories} activeStage={isThesisSkill(skill) ? skill : undefined} board={thesisBoard} onChange={onThesisChange} onStage={selectSkill} onOpen={id => onOpenThesisCard?.(id)} open={thesisOpen} onOpenChange={setThesisOpen} busy={busy}/>}
 
 
       <AiComposer fixedModelLabel={isThesisSkill(skill) ? thesisModel.name : undefined} key={isThesisSkill(skill) ? 'thesis' : 'research'} modelScope={isThesisSkill(skill) ? 'thesis' : 'research'} canvas={canvas} focusRequest={canvas ? focusRequest : 0} placeholder={canvas ? (messages.length ? t('Continue the conversation…', '继续追问，或回答 AI 的问题…') : t('Ask AI, or organize this canvas…', '问 AI，或让它帮你整理这块画板…')) : undefined}
