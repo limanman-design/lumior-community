@@ -1,3 +1,4 @@
+import { proposeNoteChange } from './note-ai-change.ts';
 import type { Board, Card, Edge, Point } from './canvas-model';
 import { layoutImportedMedia } from './imported-media-layout.ts';
 import { aiLayoutTargets, readAiBoardActions, type AiBoardActions } from '../lib/ai-board-tools.ts';
@@ -21,6 +22,7 @@ export type AiBoardActionResult = {
   movedCards: number;
   updatedSections: number;
   sectionIds: string[];
+  suggestedUpdates: number;
   alreadyApplied: boolean;
 };
 
@@ -49,19 +51,25 @@ export function applyAiBoardActions(
     throw new Error('生成的卡片或连线标识过长，未作修改，请重新提问。');
   }
   const output = (next: Board, edgeIds: string[], alreadyApplied: boolean): AiBoardActionResult => ({
-    board: next, actionId: batch.id, cardIds: [...new Set([...cardIds, ...aiLayoutTargets(batch).map(id => localIds.get(id) || id)])], edgeIds,
+    board: next, actionId: batch.id, cardIds: [...new Set([...cardIds, ...(batch.updates || []).map(update => update.cardId), ...aiLayoutTargets(batch).map(id => localIds.get(id) || id)])], edgeIds,
     createdCards: alreadyApplied ? 0 : next.cards.length - board.cards.length,
     createdConnections: alreadyApplied ? 0 : next.edges.length - board.edges.length,
     createdSections: alreadyApplied ? 0 : (next.sections || []).filter(section => !board.sections?.some(old => old.id === section.id)).length,
     updatedSections: alreadyApplied ? 0 : (next.sections || []).filter(section => { const old = board.sections?.find(old => old.id === section.id); return old && JSON.stringify(old) !== JSON.stringify(section); }).length,
     movedCards: alreadyApplied ? 0 : next.cards.filter(card => { const old = board.cards.find(old => old.id === card.id); return old && (old.x !== card.x || old.y !== card.y); }).length,
     sectionIds: (next.sections || []).filter(section => { const old = board.sections?.find(old => old.id === section.id); return !old || JSON.stringify(old) !== JSON.stringify(section); }).map(section => section.id),
+    suggestedUpdates: alreadyApplied ? 0 : (batch.updates?.length || 0),
     alreadyApplied,
   });
   const localIds = new Map(batch.notes.map((note, index) => [note.id, cardIds[index]]));
   if (options.appliedActionIds?.has(batch.id) || board.aiOperations?.some(operation => operation.id === batch.id)) {
     const existingIds = new Set(board.edges.map(edge => edge.id));
     return output(board, plannedEdgeIds.filter(id => existingIds.has(id)), true);
+  }
+  const existingSuggestions = (batch.updates || []).filter(update => board.cards.find(card => card.id === update.cardId)?.aiNoteChange?.id === batch.id).length;
+  if (existingSuggestions) {
+    if (existingSuggestions !== batch.updates?.length) throw new Error('本轮建议已有部分保存或处理，请逐张查看，未重复执行。');
+    return output(board, [], true);
   }
   assertAiLayoutSnapshot(board, batch, options.layoutSnapshot);
   const existingCards = new Map(board.cards.map(card => [card.id, card]));
@@ -118,6 +126,16 @@ export function applyAiBoardActions(
     }
     return output(board, ownEdges.map(edge => edge.id), true);
   }
+  const updates = new Map<string, Card>();
+  const identities = new Set<string>();
+  for (const update of batch.updates || []) {
+    const card = existingCards.get(update.cardId);
+    if (!card) throw new Error('需要修改的笔记已移除，未保存建议。');
+    const identity = card.sharedId || card.id;
+    if (identities.has(identity)) throw new Error('同一笔记的多个共享引用不能生成不同建议，请只引用其中一张。');
+    identities.add(identity);
+    updates.set(card.id, proposeNoteChange(card, options.layoutSnapshot?.cards.find(item => item.id === card.id), batch.id, update.body));
+  }
   const point = options.point ?? { x: 0, y: 0 };
   if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) throw new Error('新卡片的位置无效，未作修改。');
   const imports = batch.notes.map(note => ({ kind: 'note' as const, title: note.title, body: note.body }));
@@ -129,5 +147,6 @@ export function applyAiBoardActions(
   }));
   const candidate = !cards.length && !newEdges.length ? board : { ...board, cards: cards.length ? [...board.cards, ...cards] : board.cards,
     edges: newEdges.length ? [...board.edges, ...newEdges] : board.edges };
-  return output(applyAiBoardLayout(board, candidate, batch, resolve, point, options.measuredHeights), newEdges.map(edge => edge.id), false);
+  const suggested = updates.size ? { ...candidate, cards: candidate.cards.map(card => updates.get(card.id) || card) } : candidate;
+  return output(applyAiBoardLayout(board, suggested, batch, resolve, point, options.measuredHeights), newEdges.map(edge => edge.id), false);
 }

@@ -190,7 +190,7 @@ void test('staging stops at 24 new connections while duplicate calls remain harm
 
 void test('tool schemas expose bounded object arguments and describe staging and current-user authorization', () => {
   const staged = session();
-  assert.deepEqual(staged.tools.map(tool => tool.function.name), ['create_note', 'connect_cards', 'group_cards', 'arrange_cards']);
+  assert.deepEqual(staged.tools.map(tool => tool.function.name), ['propose_note_update', 'create_note', 'connect_cards', 'group_cards', 'arrange_cards']);
   assert.equal(staged.reviewTool.function.name, 'replace_board_actions');
   for (const tool of [...staged.tools, staged.reviewTool]) {
     assert.equal(tool.function.parameters.additionalProperties, false);

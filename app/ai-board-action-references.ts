@@ -19,6 +19,10 @@ export function boardActionReferences(actions: AiBoardActions, context: AiContex
   return {
     ...actions,
     ...(actions.groups ? { groups: actions.groups.map(group => ({ ...group, title: readable(group.title), ...(group.reason ? { reason: readable(group.reason) + (citationNumbers(group.reason).length ? '\n' + citationNumbers(group.reason).map(sourceDescription).join('\n') : '') } : {}) })) } : {}),
+    ...(actions.updates ? { updates: actions.updates.map(update => {
+      const sources = citationNumbers(update.body).map(number => `- ${sourceDescription(number)}`);
+      return { ...update, body: readable(update.body) + (sources.length ? `\n\n---\n\n${heading}\n\n${sources.join('\n')}` : '') };
+    }) } : {}),
     notes: actions.notes.map(note => {
       const numbers = citationNumbers(note.title + '\n' + note.body);
       const sources = numbers.map(number => `- ${sourceDescription(number)}`);

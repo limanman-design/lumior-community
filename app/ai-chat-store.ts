@@ -9,7 +9,7 @@ import { readThesisQuestion, type ThesisQuestion } from '../lib/thesis/model.ts'
 
 export type AiReference = { id: string; title: string; kind: Card['kind']; excerpt?: boolean; fileKey?: string };
 export type AiProcessStep = { message: string; elapsed: number };
-export type AiBoardActionResult = { id: string; createdCards: number; createdConnections: number; createdSections?: number; movedCards?: number; updatedSections?: number };
+export type AiBoardActionResult = { id: string; createdCards: number; createdConnections: number; createdSections?: number; movedCards?: number; updatedSections?: number; suggestedUpdates?: number };
 
 /** A receipt describes completed work. It never contains actions to replay. */
 export function readAiBoardActionResult(value: unknown): AiBoardActionResult {
@@ -19,12 +19,12 @@ export function readAiBoardActionResult(value: unknown): AiBoardActionResult {
   if (prototype !== Object.prototype && prototype !== null) throw invalid();
   const item = value as Record<string, unknown>;
   const keys = Reflect.ownKeys(item);
-  if (keys.some(key => !['id', 'createdCards', 'createdConnections', 'createdSections', 'movedCards', 'updatedSections'].includes(String(key)))) throw invalid();
+  if (keys.some(key => !['id', 'createdCards', 'createdConnections', 'createdSections', 'movedCards', 'updatedSections', 'suggestedUpdates'].includes(String(key)))) throw invalid();
   if (typeof item.id !== 'string' || !item.id.trim() || item.id.length > 200) throw invalid();
   if (!Number.isInteger(item.createdCards) || Number(item.createdCards) < 0 || Number(item.createdCards) > 12) throw invalid();
   if (!Number.isInteger(item.createdConnections) || Number(item.createdConnections) < 0 || Number(item.createdConnections) > 24) throw invalid();
   const layout: Partial<AiBoardActionResult> = {};
-  for (const [key, max] of [['createdSections', 12], ['movedCards', 300], ['updatedSections', 300]] as const) {
+  for (const [key, max] of [['createdSections', 12], ['movedCards', 300], ['updatedSections', 300], ['suggestedUpdates', 12]] as const) {
     if (Object.hasOwn(item, key)) {
       if (!Number.isInteger(item[key]) || Number(item[key]) < 0 || Number(item[key]) > max) throw invalid();
       layout[key] = Number(item[key]);
