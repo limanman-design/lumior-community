@@ -158,7 +158,7 @@ export function boardThesisSnapshot(board: Board, workingSkill?: ThesisSkillId):
   if (workingSkill === 'mba-lit' && proposal) {
     const card = board.cards.find(item => item.id === board.thesis!.artifacts[matrixPath]?.cardId);
     if (!card || cardText(card) !== proposal.base || board.thesis.topicVersion !== proposal.topicVersion)
-      throw new Error('文献矩阵建议生成后，原卡片或选题已修改。请先在“论文项目”中处理这条旧建议，再继续读文献；你的修改已保留。');
+      throw new Error('文献矩阵建议生成后，原卡片或选题已修改。请先在“资料与历史”中处理这条旧建议，再继续读文献；你的修改已保留。');
     files[matrixPath] = { path: matrixPath, text: proposal.text, modifiedAt: proposal.at };
   }
   return { files, directories: [...thesisDirectories, 'thesis/materials'], literatureSequence: board.thesis.literatureSequence,
@@ -193,7 +193,7 @@ function newArtifact(board: Board, path: string, text: string, now: number) {
 export function createThesisArtifact(board: Board, path: string, text = '') {
   if (!thesisArtifactLabels[path]) throw new Error('不支持的论文成果。');
   const next = structuredClone(enableBoardThesis(board));
-  if (next.thesis!.artifacts[path]) throw new Error('这项成果已经存在；若已移除，请在论文项目中恢复。');
+  if (next.thesis!.artifacts[path]) throw new Error('这项成果已经存在；若已移除，请在对话的“资料与历史”中恢复。');
   newArtifact(next, path, text, Date.now());
   return next;
 }
