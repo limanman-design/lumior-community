@@ -31,3 +31,5 @@
 .thesis-chat-tools button:disabled{cursor:default}
 .thesis-progress-list{display:grid;gap:8px;margin:12px 0}
 .thesis-progress-list p{margin:4px 0;color:var(--ui-text-muted);font-size:12px}
+
+.thesis-progress-list button[aria-pressed=true]{background:var(--ui-fill-selected);color:var(--ui-text)}

@@ -290,12 +290,12 @@
   {
     "key": "fill-hover",
     "scene": "stage",
-    "location": "论文阶段导航",
-    "target": "鼠标悬停的阶段按钮",
+    "location": "对话资料入口",
+    "target": "鼠标悬停的资料与历史按钮",
     "source": {
       "file": "app/thesis-board.css",
-      "line": 3,
-      "selector": ".thesis-canvas-controls button:is(:hover,:focus-visible)",
+      "line": 29,
+      "selector": ".thesis-chat-tools button:is(:hover,:focus-visible)",
       "property": "background",
       "value": "var(--ui-fill-hover)"
     },
@@ -306,12 +306,12 @@
   {
     "key": "fill-selected",
     "scene": "stage",
-    "location": "论文阶段导航",
+    "location": "资料与历史中的流程进度",
     "target": "当前选中的阶段",
     "source": {
       "file": "app/thesis-board.css",
-      "line": 4,
-      "selector": ".thesis-canvas-controls button[aria-pressed=true]",
+      "line": 36,
+      "selector": ".thesis-progress-list button[aria-pressed=true]",
       "property": "background",
       "value": "var(--ui-fill-selected)"
     },
@@ -530,16 +530,16 @@
   {
     "key": "success",
     "scene": "stage",
-    "location": "论文阶段导航",
-    "target": "进行中的绿色状态点",
+    "location": "数据设置",
+    "target": "保存状态点",
     "source": {
-      "file": "app/thesis-board.css",
-      "line": 10,
-      "selector": ".thesis-stage-dot[data-status=progress]",
+      "file": "app/data-settings.css",
+      "line": 80,
+      "selector": ".save-dot",
       "property": "background",
       "value": "var(--ui-success)"
     },
-    "note": "",
+    "note": "颜色示意使用状态点；产品实际位置为数据设置。",
     "state": "static",
     "kind": "prototype"
   },
@@ -556,16 +556,16 @@
   {
     "key": "warning",
     "scene": "stage",
-    "location": "论文阶段导航",
-    "target": "需要关注的黄色状态点",
+    "location": "画板成果卡",
+    "target": "需复核的卡片标签",
     "source": {
       "file": "app/thesis-board.css",
-      "line": 11,
-      "selector": ".thesis-stage-dot[data-status=attention]",
-      "property": "background",
+      "line": 21,
+      "selector": ".note.thesis-needs-review .thesis-card-badge",
+      "property": "color",
       "value": "var(--ui-warning)"
     },
-    "note": "",
+    "note": "颜色示意使用状态点；产品实际用于需复核标签文字。",
     "state": "static",
     "kind": "prototype"
   },
