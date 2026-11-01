@@ -1,0 +1,9 @@
+.pdf-evidence { flex: 0 0 auto; min-width: 0; padding: 8px 12px; border-bottom: 1px solid var(--ui-line); background: var(--ui-surface); color: var(--ui-text); font-size: 12px; }
+.pdf-evidence-toolbar { display: flex; align-items: center; gap: 4px; }
+.pdf-evidence-toolbar > output { flex: 1; }
+.pdf-evidence-toolbar button { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border: 0; border-radius: var(--lumior-control-radius, 12px); background: transparent; color: inherit; }
+.pdf-evidence-toolbar button:hover { background: var(--ui-fill-hover); }
+.pdf-evidence-toolbar button:disabled { color: var(--ui-text-disabled); }
+.pdf-evidence summary { cursor: pointer; color: var(--ui-text-muted); }
+.pdf-evidence pre { max-height: 160px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; user-select: text; margin: 8px 0 0; }
+.pdf-evidence-highlight { position: absolute; pointer-events: none; z-index: 3; background: var(--ui-brand-line); mix-blend-mode: multiply; }

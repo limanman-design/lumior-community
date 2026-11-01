@@ -440,7 +440,7 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
     const card = cards.find(item => item.id === source.id);
     if (!card) { setNotice('来源卡片已移除；当时提供的文字仍保留在回答的引用记录中。'); return; }
     if (source.fileKey && source.fileKey !== readingKey(card)) { setNotice('来源文件已被替换，无法在新文件中定位旧引用；当时提供的文字仍保留在引用记录中。'); return; }
-    onCitation({ id: index, origin: 'live', cardId: card.id, label: source.title, location: source.location || '卡片文字', summary: source.text.slice(0, 200), page: source.page, time: source.time });
+    onCitation({ id: index, origin: 'live', cardId: card.id, label: source.title, location: source.location || '卡片文字', summary: source.text.slice(0, 200), evidenceText: source.text, fileKey: source.fileKey, page: source.page, time: source.time });
   };
   const copy = (text: string) => { void navigator.clipboard.writeText(text).then(() => setNotice('已复制答案')).catch(() => setNotice('复制失败，请手动选择文字复制。')); };
   const openReference = (reference: AiReference) => {

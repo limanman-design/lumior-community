@@ -15,12 +15,6 @@ import type { PdfMark, PdfRect } from './pdf-annotations';
 import { getPdfText, preparePdfPage } from './pdf-page-paint';
 export { getPdfText } from './pdf-page-paint';
 export type MarkGesture = (e: React.PointerEvent, mark: PdfMark) => void;
-function urlForPage(pdf: PDFDocumentProxy, number: number) {
-  return (pdf as PDFDocumentProxy & { __lumiorUrl?: string }).__lumiorUrl ===
-    '/research/bloch-review.pdf'
-    ? `/research/bloch-pages/page-${String(number).padStart(2, '0')}.jpg`
-    : null;
-}
 export type SearchHit = { page: number; start: number; end: number };
 export const PdfPage = memo(
   function PdfPage({
@@ -35,6 +29,7 @@ export const PdfPage = memo(
     activeHit,
     root,
     highlight,
+    evidenceRects,
     marks,
     onMarkDown,
     onMarkMove,
@@ -54,6 +49,7 @@ export const PdfPage = memo(
     activeHit?: SearchHit;
     root: React.RefObject<HTMLDivElement | null>;
     highlight?: PdfRect;
+    evidenceRects?: PdfRect[];
     marks: PdfMark[];
     onMarkDown: MarkGesture;
     onMarkMove: MarkGesture;
@@ -126,7 +122,6 @@ export const PdfPage = memo(
       });
     }, [marks]);
     const pageWidth = Math.max(80, width - 24) * zoom;
-    const preRendered = urlForPage(pdf, number);
     useEffect(() => {
       const observer = new IntersectionObserver(
         ([entry]) => setNear(entry.isIntersecting),
@@ -142,129 +137,42 @@ export const PdfPage = memo(
       let live = true;
       const controller = new AbortController();
       setError('');
-      if (!preRendered) {
-        void preparePdfPage(pdf, number, renderWidth, rasterZoom, {
-          signal: controller.signal,
-          priority: () => {
-            const sheet = holder.current?.getBoundingClientRect(),
-              viewport = root.current?.getBoundingClientRect();
-            return sheet &&
-              viewport &&
-              sheet.bottom > viewport.top &&
-              sheet.top < viewport.bottom
-              ? 0
-              : 1;
-          },
+      void preparePdfPage(pdf, number, renderWidth, rasterZoom, {
+        signal: controller.signal,
+        priority: () => {
+          const sheet = holder.current?.getBoundingClientRect(),
+            viewport = root.current?.getBoundingClientRect();
+          return sheet &&
+            viewport &&
+            sheet.bottom > viewport.top &&
+            sheet.top < viewport.bottom
+            ? 0
+            : 1;
+        },
+      })
+        .then((paint) => {
+          if (!live || !canvas.current || !text.current) return;
+          setRatio(paint.ratio);
+          canvas.current.width = paint.bitmap.width;
+          canvas.current.height = paint.bitmap.height;
+          canvas.current.getContext('2d')?.drawImage(paint.bitmap, 0, 0);
+          const staged = paint.text.cloneNode(true) as HTMLElement;
+          text.current.style.setProperty(
+            '--total-scale-factor',
+            String(paint.scale),
+          );
+          text.current.style.setProperty(
+            '--min-font-size',
+            staged.style.getPropertyValue('--min-font-size'),
+          );
+          text.current.replaceChildren(...Array.from(staged.childNodes));
         })
-          .then((paint) => {
-            if (!live || !canvas.current || !text.current) return;
-            setRatio(paint.ratio);
-            canvas.current.width = paint.bitmap.width;
-            canvas.current.height = paint.bitmap.height;
-            canvas.current.getContext('2d')?.drawImage(paint.bitmap, 0, 0);
-            const staged = paint.text.cloneNode(true) as HTMLElement;
-            text.current.style.setProperty(
-              '--total-scale-factor',
-              String(paint.scale),
-            );
-            text.current.style.setProperty(
-              '--min-font-size',
-              staged.style.getPropertyValue('--min-font-size'),
-            );
-            text.current.replaceChildren(...Array.from(staged.childNodes));
-          })
-          .catch((error) => {
-            if (
-              live &&
-              error.name !== 'RenderingCancelledException' &&
-              error.name !== 'AbortException' &&
-              error.name !== 'AbortError'
-            )
-              setError(
-                tr(
-                  'This page cannot be displayed right now.',
-                  '此页暂时无法显示',
-                ),
-              );
-          });
-        return () => {
-          live = false;
-          controller.abort();
-        };
-      }
-      pdf
-        .getPage(number)
-        .then(async (page) => {
-          if (!live || (!canvas.current && !preRendered) || !text.current)
-            return;
-          const base = page.getViewport({ scale: 1 });
-          setRatio(base.height / base.width);
-          const viewport = page.getViewport({
-            scale: (Math.max(80, renderWidth - 24) * rasterZoom) / base.width,
-          });
-          if (preRendered) {
-            const content = await getPdfText(pdf, number);
-            if (!live || !text.current) return;
-            const container = text.current;
-            container.replaceChildren();
-            container.classList.add('pdf-light-text');
-            const chunks: {
-              x: number;
-              y: number;
-              width: number;
-              height: number;
-              value: string;
-            }[] = [];
-            for (const item of content.items) {
-              if (!('str' in item) || !item.str) continue;
-              const pt = viewport.convertToViewportPoint(
-                item.transform[4],
-                item.transform[5],
-              );
-              const x = pt[0],
-                y = pt[1] - item.height * viewport.scale,
-                w = item.width * viewport.scale,
-                h = Math.max(3, item.height * viewport.scale);
-              const last = chunks.at(-1);
-              if (
-                last &&
-                Math.abs(last.y - y) < h * 0.32 &&
-                x >= last.x + last.width - 3 &&
-                x - last.x - last.width < Math.max(8, h * 0.8)
-              ) {
-                last.value +=
-                  (x - last.x - last.width > h * 0.2 ? ' ' : '') + item.str;
-                last.width = Math.max(last.width, x + w - last.x);
-                last.height = Math.max(last.height, h);
-              } else
-                chunks.push({ x, y, width: w, height: h, value: item.str });
-            }
-            const fragment = document.createDocumentFragment();
-            const measure = document.createElement('canvas').getContext('2d');
-            for (const chunk of chunks) {
-              const span = document.createElement('span');
-              span.textContent = chunk.value;
-              span.style.left = `${chunk.x}px`;
-              span.style.top = `${chunk.y}px`;
-              span.style.fontSize = `${chunk.height}px`;
-              span.style.lineHeight = `${chunk.height}px`;
-              if (measure) {
-                measure.font = `${chunk.height}px Arial`;
-                const width = measure.measureText(chunk.value).width;
-                if (width > 0)
-                  span.style.transform = `scaleX(${chunk.width / width})`;
-              }
-              fragment.append(span);
-            }
-            if (live) container.appendChild(fragment);
-            return;
-          }
-        })
-        .catch((e) => {
+        .catch((error) => {
           if (
             live &&
-            e.name !== 'RenderingCancelledException' &&
-            e.name !== 'AbortException'
+            error.name !== 'RenderingCancelledException' &&
+            error.name !== 'AbortException' &&
+            error.name !== 'AbortError'
           )
             setError(
               tr(
@@ -353,22 +261,11 @@ export const PdfPage = memo(
       >
         {near && (
           <>
-            {preRendered ? (
-              <img
-                className="pdf-prerendered-page"
-                src={preRendered}
-                alt={t('PDF page {page}', 'PDF 第 {page} 页', { page: number })}
-                draggable={false}
-              />
-            ) : (
-              <canvas
-                ref={canvas}
-                aria-label={t('PDF page {page}', 'PDF 第 {page} 页', {
-                  page: number,
-                })}
-                style={{ width: '100%', height: '100%' }}
-              />
-            )}
+            <canvas
+              ref={canvas}
+              aria-label={t('PDF page {page}', 'PDF 第 {page} 页', { page: number })}
+              style={{ width: '100%', height: '100%' }}
+            />
             <div
               ref={text}
               className="pdf-selectable-text"
@@ -458,6 +355,7 @@ export const PdfPage = memo(
             }}
           />
         )}
+        {evidenceRects?.map((rect, index) => <div key={`evidence:${index}`} className="pdf-evidence-highlight" aria-hidden="true" style={{ left: `${rect.x}%`, top: `${rect.y}%`, width: `${rect.width}%`, height: `${rect.height}%` }} />)}
         {marks.flatMap((mark) =>
           (mark.fragments.find((f) => f.page === number)?.rects || []).map(
             (rect, i) => (
@@ -523,6 +421,7 @@ export const PdfPage = memo(
     a.hits === b.hits &&
     a.activeHit === b.activeHit &&
     a.highlight === b.highlight &&
+    a.evidenceRects === b.evidenceRects &&
     a.hoverRects === b.hoverRects &&
     a.hoverId === b.hoverId &&
     a.onHover === b.onHover,

@@ -2,6 +2,9 @@
 import { useI18n } from './i18n';
 import { translate as tr } from './i18n-core';
 import { pdfSystemMessage } from './pdf-system-messages';
+import { usePdfCitation } from './use-pdf-citation';
+import { PdfCitationBanner } from './pdf-citation-banner';
+import { readingKey } from './document-reading-store';
 import {
   selectionToolbarPosition,
   selectionToolbarVisibility,
@@ -262,6 +265,9 @@ export default function PdfViewer({
     [renderWidth, setRenderWidth] = useState(0),
     [pageRatio, setPageRatio] = useState(1.3),
     [error, setError] = useState('');
+  const evidence = usePdfCitation(pdf, focusRequest, readingKey(card), !!error);
+  const evidenceTarget = evidence?.location?.stops[evidence.index];
+  const evidencePage = evidence?.page;
   const [rasterZoom, setRasterZoom] = useState(initialReading.zoom),
     [searchOpen, setSearchOpen] = useState(false),
     [query, setQuery] = useState(''),
@@ -880,6 +886,22 @@ export default function PdfViewer({
     return () => cancelAnimationFrame(id);
   }, [pdf, initialPage, focusMark, focusRequest, horizontalPages]);
   useEffect(() => {
+    if (!evidenceTarget || !evidencePage) return;
+    const id = requestAnimationFrame(() => {
+      const root = area.current;
+      const sheet = root?.querySelector<HTMLElement>(`[data-pdf-page="${evidencePage}"]`);
+      if (!root || !sheet) return;
+      requestedPage.current = evidencePage;
+      const bounds = sheet.getBoundingClientRect(), viewport = root.getBoundingClientRect();
+      root.scrollTo({
+        top: root.scrollTop + bounds.top - viewport.top + evidenceTarget.y / 100 * bounds.height - 64,
+        left: Math.max(0, root.scrollLeft + bounds.left - viewport.left + evidenceTarget.x / 100 * bounds.width - 32),
+      });
+      setPage(evidencePage);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [evidenceTarget, evidencePage, focusRequest, horizontalPages]);
+  useEffect(() => {
     const close = (e: PointerEvent) => {
       if (
         !(e.target as HTMLElement).closest(
@@ -1118,6 +1140,7 @@ export default function PdfViewer({
         <PdfNavigation pdf={pdf} page={page} onPage={jumpPage} />
       )}
       <div className="pdf-paper-column">
+        {evidence && <PdfCitationBanner key={`${evidence.page}:${evidence.quote}`} citation={evidence} />}
         {searchOpen && (
           <div className="pdf-search-bar">
             <Search size={15} />
@@ -1224,6 +1247,7 @@ export default function PdfViewer({
                 activeHit={hits[hitIndex]}
                 root={area}
                 highlight={i + 1 === initialPage ? highlight : undefined}
+                evidenceRects={i + 1 === evidencePage ? evidence?.location?.rects : undefined}
                 marks={displayed}
                 onMarkDown={handleDown}
                 onMarkMove={handleMove}
