@@ -1,9 +1,11 @@
 import { readAiBoardGeneration, type AiBoardGeneration } from './ai-board-generation.ts';
 import { readAiBoardActions, type AiBoardActions } from './ai-board-tools.ts';
+import { readAiQuestion, type AiQuestion } from './ai-question.ts';
 
 export type AiStreamEvent =
   | { type: 'start'; model: string }
   | { type: 'delta'; text: string }
+  | { type: 'question'; question: AiQuestion }
   | { type: 'progress'; message: string }
   | { type: 'task_mode'; mode: 'operation' | 'conversation' }
   | { type: 'card_activity'; cardIds: string[] }
@@ -71,6 +73,11 @@ export async function readAiStream(response: Response, onEvent: (event: AiStream
     else if (event.type === 'card_activity' && Array.isArray(event.cardIds) && event.cardIds.length <= 3000 && event.cardIds.every(id => typeof id === 'string' && id.length > 0 && id.length <= 200) && new Set(event.cardIds).size === event.cardIds.length) onEvent(event);
     else if (event.type === 'evidence' && Array.isArray(event.indices) && event.indices.every(index => Number.isInteger(index) && index >= 0) && (event.citationFormat === undefined || event.citationFormat === 'lumior-v1')) onEvent(event);
     else if (event.type === 'coverage' && typeof event.task === 'string' && ['availableCards', 'targetCards', 'readCards', 'readPassages', 'totalPassages'].every(key => Number.isInteger(event[key as keyof typeof event]) && Number(event[key as keyof typeof event]) >= 0) && typeof event.complete === 'boolean') onEvent(event);
+    else if (event.type === 'question') {
+      const question = readAiQuestion(event.question);
+      if (!question) throw new Error('提问选项格式不正确，请重试。');
+      onEvent({ type: 'question', question });
+    }
     else if (event.type === 'board_generation') onEvent({ type: 'board_generation', generation: readAiBoardGeneration(event.generation) });
     else if (event.type === 'board_actions') onEvent({ type: 'board_actions', actions: readAiBoardActions(event.actions), ...(event.operationOnly === true ? { operationOnly: true } : {}) });
     else if (event.type === 'done' && typeof event.reason === 'string') { onEvent(event); return; }

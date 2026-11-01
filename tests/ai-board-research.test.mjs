@@ -30,7 +30,7 @@ void test('a missing board or a none plan never exposes mutation tools or publis
     const execution = run(async (messages, tools) => {
       step++;
       if (step === 1) {
-        assert.deepEqual(toolsNamed(tools), ['plan_research']);
+        assert.deepEqual(toolsNamed(tools), ['plan_research', 'ask_user_question']);
         assert.equal(Object.hasOwn(tools[0].function.parameters.properties, 'board_action'), !Object.hasOwn(extra, 'board') || !!extra.board);
         return plan('none');
       }

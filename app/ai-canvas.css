@@ -37,7 +37,7 @@
 .ai-canvas .ai-composer-wrap{margin:0}
 .ai-suggestion-chips{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;padding-bottom:4px}
 .ai-suggestion-chips:empty{display:none}
-.ai-suggestion-chips button{padding:7px 11px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-glass);color:var(--ui-text-secondary);font-size:11px;line-height:16px;backdrop-filter:blur(12px)}
+.ai-suggestion-chips button{padding:7px 11px;border:1px solid var(--ui-line);border-radius:12px;background:var(--lumior-glass-surface);color:var(--ui-text-secondary);font-size:11px;line-height:16px;-webkit-backdrop-filter:var(--lumior-glass-blur);backdrop-filter:var(--lumior-glass-blur)}
 .ai-suggestion-chips button:hover{background:var(--ui-control-raised);color:var(--ui-text)}
 .ai-suggestion-chips button:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px}
 .ai-canvas .redesigned-composer{

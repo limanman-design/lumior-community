@@ -58,11 +58,7 @@ export type ThesisFile = {
   pages?: number;
   blob?: Blob;
 };
-export type ThesisQuestion = {
-  id: string;
-  question: string;
-  options: string[];
-};
+export type ThesisQuestion = import('../ai-question').AiQuestion;
 export function readThesisQuestion(value: unknown): ThesisQuestion | undefined {
   if (!value || typeof value !== 'object') return;
   const item = value as ThesisQuestion;

@@ -1,0 +1,7 @@
+.ai-question-options{margin:12px 0}
+.ai-question-choices{display:flex;gap:8px;flex-wrap:wrap}
+.ai-question-options button{border:1px solid var(--ui-line-strong);border-radius:12px;padding:8px 12px;background:var(--ui-fill-hover);font:inherit;color:inherit}
+.ai-question-options button:hover:enabled{background:var(--ui-fill-hover)}
+.ai-question-options button[aria-pressed=true]{background:var(--ui-fill-selected);border-color:var(--ui-line-strong)}
+.ai-question-options button:disabled{cursor:default}
+.ai-question-hint{display:block;margin:8px 0 0;color:var(--ui-text-muted);font-size:12px;line-height:1.6}

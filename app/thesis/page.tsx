@@ -1,4 +1,5 @@
 'use client';
+import { AiQuestionOptions } from '../ai-question-options';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
@@ -675,18 +676,8 @@ export default function ThesisPage() {
                   {turn.question &&
                     index === session.turns.length - 1 &&
                     session.pending && (
-                      <div className="thesis-options">
-                        {turn.question.options.map((option) => (
-                          <button
-                            key={option}
-                            disabled={controlsDisabled}
-                            onClick={() => void send(option)}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                        <span>也可以在下方输入其他回答</span>
-                      </div>
+                      <AiQuestionOptions question={turn.question} disabled={controlsDisabled}
+                        onAnswer={option => void send(option)} />
                     )}
                 </div>
               ))}
