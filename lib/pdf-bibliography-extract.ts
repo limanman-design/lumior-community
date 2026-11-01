@@ -13,7 +13,7 @@ export type PdfBibliographyExtraction = {
 };
 
 const software = /(?:microsoft|libreoffice|openoffice|adobe|acrobat|distiller|windows|macintosh|latex|texmaker|publisher|springer|elsevier|administrator|anonymous|unknown|default user|username|user name|未命名|管理员)/i;
-const genericTitle = /^(?:untitled|document\d*|title|full\s*text|article|manuscript|摘要|正文|未命名|无标题)$/i;
+const genericTitle = /^(?:untitled|document\d*|title|full\s*text|article|manuscript|摘要|正文|案例正文|案例使用说明|未命名|无标题)$/i;
 const referenceHeading = /^(?:(?:\d+|[IVX]+)[.\s]+)?(?:references|bibliography|literature cited|参考文献|参考资料)\s*[:：]?$/i;
 
 function cleanText(value: unknown, max = 2000): string | undefined {
@@ -27,10 +27,13 @@ function strings(value: unknown): string[] {
     .flatMap(item => typeof item === 'string' ? [item.slice(0, 16000)] : []);
 }
 
+// Match formatting instructions, not isolated subject words such as “字体设计”.
+const titleTemplate = /(?:段前|段后|行距)\s*(?:与段后|[为：:=])?\s*\d|(?:[（(][^）)]{0,80}(?:宋体|黑体|楷体|仿宋|幼圆|小[一二三四五六]|[一二三四五六]号)[^）)]{0,80}(?:加粗|居中|字号)|(?:标题|题目|正文|案例正文)\s*[：:]\s*[（(].*(?:加粗|居中|字号|字体))|^(?:请(?:在此)?(?:输入|填写)|在此(?:输入|填写))|^(?:insert|enter|type)\s+(?:(?:your|the|article|paper)\s+)*title\b/i;
+
 function title(value: unknown): string | undefined {
   const candidate = cleanText(value);
   const hanLength = candidate?.match(/\p{Script=Han}/gu)?.length || 0;
-  if (!candidate || (candidate.length < 12 && hanLength < 6) || genericTitle.test(candidate) || software.test(candidate)
+  if (!candidate || (candidate.length < 12 && hanLength < 6) || genericTitle.test(candidate) || titleTemplate.test(candidate) || software.test(candidate)
     || /\.(?:docx?|pdf|tex)$/i.test(candidate) || /^(?:doi|https?|www)[\s:/.]/i.test(candidate)
     || /^[A-Z]:\\|^\/(?:Users|home|tmp)\//.test(candidate)) return undefined;
   return candidate;

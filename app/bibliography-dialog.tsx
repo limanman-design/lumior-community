@@ -119,6 +119,7 @@ export function BibliographyDialog(props: BibliographyDialogProps) {
 
 function BibliographyDialogForm({ card, onSave, onClose, onRecognize }: BibliographyDialogProps) {
   const { t } = useI18n();
+  const filenameTitle = (card.sourceName || card.pdf?.name || '').replace(/\.pdf$/i, '').trim();
   const [draft, setDraft] = useState(() => bibliographyDraft(card));
   const [status, setStatus] = useState<Bibliography['status']>(card.bibliography?.status ?? 'unavailable');
   const [reason, setReason] = useState<Bibliography['reason']>(card.bibliography?.reason);
@@ -280,6 +281,7 @@ function BibliographyDialogForm({ card, onSave, onClose, onRecognize }: Bibliogr
           {notice && <output className="bibliography-feedback">{notice}</output>}
           <div className="bibliography-fields">
             {textField('title', t('Title', '题名'), 2000, true)}
+            {filenameTitle && <div className="bibliography-field-wide"><button type="button" className="bibliography-secondary" disabled={replaced || draft.title === filenameTitle} onClick={() => edit('title', filenameTitle)} title={filenameTitle}>{t('Use filename as title', '使用文件名作为题名')}</button></div>}
             <label className="bibliography-field bibliography-field-wide">{fieldLabel('authors', t('Authors · one per line', '作者 · 每行一位'))}<textarea rows={3} value={draft.authors} onChange={event => edit('authors', event.currentTarget.value)} placeholder={t('Not recorded', '未记录')} /></label>
             {textField('year', t('Publication year', '发表年份'), 4)}
             <label className="bibliography-field">{fieldLabel('type', t('Publication type', '文献类型'))}<select value={draft.type} onChange={event => edit('type', event.currentTarget.value)}><option value="">{t('Not recorded', '未记录')}</option>{draft.type && !types.some(([value]) => value === draft.type) && <option value={draft.type}>{t('Other publication type', '其他文献类型')}</option>}{types.map(([value, name]) => <option key={value} value={value}>{name}</option>)}</select></label>

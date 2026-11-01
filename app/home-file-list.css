@@ -811,3 +811,30 @@
     display: none;
   }
 }
+
+.home-file-referencing-boards {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.home-file-referencing-boards button {
+  max-width: 100%;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text-secondary);
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.home-file-referencing-boards button:hover {
+  background: var(--ui-fill-hover);
+  color: var(--ui-text);
+}

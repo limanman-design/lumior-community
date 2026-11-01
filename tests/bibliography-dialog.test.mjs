@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'vite';
+import { automaticBibliographyPatch } from '../app/bibliography-model.ts';
 import { bibliographyFields, validBibliography } from '../lib/bibliography.ts';
 import { readWorkspace } from '../app/workspace-store.ts';
 import { patchWorkspaceContent, syncWorkspaceFiles, validWorkspaceFiles } from '../app/workspace-files.ts';
@@ -200,4 +201,19 @@ void test('saving a manually changed DOI retains review status and clears the pr
   assert.equal(patch.bibliography.doi, '10.1234/paper-b');
   assert.equal(patch.bibliography.reason, undefined);
   assert.equal(patch.bibliography.title, 'Previous title');
+});
+
+void test('choosing the filename is a protected manual title and preserves the attachment and other metadata', () => {
+  const filename = '01-2创业企业控制权：君安公司到底谁说了算';
+  const original = card({ title: '案例正文：（幼圆、小三、加粗）', sourceName: filename + '.pdf', bibliography: {
+    status: 'review', title: '案例正文：（幼圆、小三、加粗）', year: 2020, origins: { title: 'pdf' },
+  } });
+  const patch = ui.bibliographyDraftPatch(original, { ...ui.bibliographyDraft(original), title: filename }, new Set(['title']), new Set(['title']), { title: 'manual' });
+  assert.equal(patch.title, filename);
+  assert.equal(patch.bibliography.year, 2020);
+  assert.equal(patch.pdf, undefined);
+  assert.equal(patch.bibliography.origins.title, 'manual');
+  const later = automaticBibliographyPatch({ ...original, ...patch }, { status: 'resolved', title: 'A different automatic title' });
+  assert.equal(later.title, undefined);
+  assert.equal(later.bibliography.title, filename);
 });

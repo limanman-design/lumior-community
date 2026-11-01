@@ -502,20 +502,20 @@ export function DataSettings({
                         '把文件夹、全部知识内容（含独立笔记与摘要）、画板、多维表、回收站、附件和 PDF 批注一并备份，保留内容引用关系、已保存的 AI 对话与界面偏好。',
                       )}
                     </p>
-                    <button
-                      disabled={busy || importing}
-                      onClick={() => void download()}
-                    >
-                      {t('Export full backup', '导出完整备份')}
-                    </button>
-                    {onExportDirectory && <>
-                      <button disabled={busy || importing} onClick={() => void run(async () => {
-                        const directory = await pickWorkspaceBackupDirectory('readwrite');
-                        await onExportDirectory(directory, setProgress);
-                        setResult('exported-directory');
-                      })}>{t('Back up to a folder', '备份到文件夹')}</button>
-                      <p>{t('For large libraries, save a complete backup folder. Keep the entire folder together when moving it to another device.', '大型资料库可保存为完整备份文件夹；转移到其他设备时，请保留整个文件夹。')}</p>
-                    </>}
+                    <div className="settings-action-row">
+                      <button
+                        disabled={busy || importing}
+                        onClick={() => void download()}
+                      >
+                        {t('Export full backup', '导出完整备份')}
+                      </button>
+                      {onExportDirectory && <button disabled={busy || importing} onClick={() => void run(async () => {
+                          const directory = await pickWorkspaceBackupDirectory('readwrite');
+                          await onExportDirectory(directory, setProgress);
+                          setResult('exported-directory');
+                        })}>{t('Back up to a folder', '备份到文件夹')}</button>}
+                    </div>
+                    {onExportDirectory && <p>{t('For large libraries, save a complete backup folder. Keep the entire folder together when moving it to another device.', '大型资料库可保存为完整备份文件夹；转移到其他设备时，请保留整个文件夹。')}</p>}
                   </section>
                   <section>
                     <h3>{t('Restore from backup', '从备份恢复')}</h3>
@@ -546,17 +546,19 @@ export function DataSettings({
                           });
                       }}
                     />
-                    <button
-                      disabled={busy || importing}
-                      onClick={() => input.current?.click()}
-                    >
-                      {t('Choose backup file', '选择备份文件')}
-                    </button>
-                    {onRestoreDirectory && <button disabled={busy || importing} onClick={() => void run(async () => {
-                      const directory = await pickWorkspaceBackupDirectory('read');
-                      setPrepared(null);
-                      setPrepared(await readWorkspaceDirectoryBackup(directory, setProgress));
-                    })}>{t('Choose backup folder', '选择备份文件夹')}</button>}
+                    <div className="settings-action-row">
+                      <button
+                        disabled={busy || importing}
+                        onClick={() => input.current?.click()}
+                      >
+                        {t('Choose backup file', '选择备份文件')}
+                      </button>
+                      {onRestoreDirectory && <button disabled={busy || importing} onClick={() => void run(async () => {
+                        const directory = await pickWorkspaceBackupDirectory('read');
+                        setPrepared(null);
+                        setPrepared(await readWorkspaceDirectoryBackup(directory, setProgress));
+                      })}>{t('Choose backup folder', '选择备份文件夹')}</button>}
+                    </div>
                     {prepared && (
                       <div className="backup-preview">
                         <strong>

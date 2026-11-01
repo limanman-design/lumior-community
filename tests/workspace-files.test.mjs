@@ -327,3 +327,20 @@ test('invalid files are rejected rather than silently dropped on load', () => {
     assert.equal(readWorkspace(JSON.stringify({ ...snapshot([]), files: invalid })), null);
   }
 });
+
+
+test('Home reference boards use current content identity, deduplicate placements and update without changing stored data', () => {
+  const paper = { ...note('paper'), kind: 'pdf', title: 'Same title', pdf: { name: 'Paper.pdf', url: 'lumior-file:paper', size: 10, pages: 1, thumbnail: '' } };
+  const a = board('a', [paper, { ...paper, id: 'second-placement', sharedId: 'paper' }]);
+  const b = { ...board('b', [{ ...paper, id: 'third-placement', sharedId: 'paper' }]), title: 'Another board' };
+  const unrelated = board('unrelated', [{ ...paper, id: 'independent-copy' }]);
+  const boards = [a, b, unrelated];
+  const files = syncWorkspaceFiles(undefined, boards);
+  const before = structuredClone({ files, boards });
+  const references = current => projectWorkspaceFiles(files, current).find(item => item.id === contentEntryId('paper')).referencingBoards;
+  assert.deepEqual(references(boards), [{ id: 'a', title: 'a' }, { id: 'b', title: 'Another board' }]);
+  assert.deepEqual(references([{ ...a, title: 'Renamed', cards: [paper] }, unrelated]), [{ id: 'a', title: 'Renamed' }]);
+  assert.deepEqual(references([unrelated]), []);
+  assert.equal(projectWorkspaceFiles(files, boards).find(item => item.id === boardEntryId('a')).referencingBoards, undefined);
+  assert.deepEqual({ files, boards }, before);
+});
