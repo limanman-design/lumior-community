@@ -74,6 +74,15 @@ void test('the actual Home list scans 100 papers without summary rows or per-row
         React.createElement(HomeFileList, { ...props, ...patch }),
       );
 
+    await context.test('Delete and Mac Backspace route the focused row to deletion without treating missing rows as targets', () => {
+      const rows = [{ kind: 'file', id: papers[0].id, item: papers[0] }, { kind: 'folder', id: 'folder:a', folderId: 'a' }];
+      for (const key of ['Delete', 'Backspace']) {
+        assert.deepEqual(homeFileListKeyAction(rows, papers[0].id, key), { delete: true });
+        assert.deepEqual(homeFileListKeyAction(rows, 'folder:a', key), { delete: true });
+        assert.equal(homeFileListKeyAction(rows, 'missing', key), null);
+      }
+    });
+
     await context.test('mixed rows expose name, file type, tags and last opened while bibliography stays in the preview', () => {
       const html = render();
       const table = html.match(/<table\b[\s\S]*?<\/table>/)[0];

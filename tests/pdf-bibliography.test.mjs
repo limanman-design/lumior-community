@@ -251,3 +251,20 @@ void test('invalid DOI and already cancelled lookup do not initiate any network 
     await assert.rejects(lookupDoiBibliography(doi, controller.signal), error => error.name === 'AbortError');
   } finally { globalThis.fetch = previous; }
 });
+
+void test('formatting-template metadata cannot replace a useful filename; a real first-page title remains eligible', () => {
+  const garbage = '案例正文：（幼圆、小三、加粗）（全文段前与段后0行）';
+  const actual = '创业企业控制权：君安公司到底谁说了算？';
+  for (const metadataTitle of [garbage, '正文：宋体，段前0行，段后0行', '请输入论文题目', 'Insert your title here']) {
+    assert.equal(extractPdfBibliography({ info: { Title: metadataTitle } }).fields.title, undefined);
+    const extracted = extractPdfBibliography({ xmp: { 'dc:title': metadataTitle }, pages: [[
+      line('案例正文', 18), line(actual, 14), line('摘要', 10), line('本案例研究控制权问题。', 10),
+    ]] });
+    assert.equal(extracted.fields.title, actual);
+  }
+  assert.equal(extractPdfBibliography({ info: { Title: garbage }, xmp: { 'dc:title': 'Enter the article title' } }).fields.title, undefined);
+  assert.equal(extractPdfBibliography({ info: { Title: '字体设计对阅读理解的影响研究' } }).fields.title, '字体设计对阅读理解的影响研究');
+  const good = 'Scaffolding in Teacher–Student Interaction: A Decade of Research';
+  assert.equal(extractPdfBibliography({ info: { Title: good } }).fields.title, good);
+  assert.equal(extractPdfBibliography({ pages: [[line(good, 16), line('Abstract', 10)]] }).fields.title, good);
+});

@@ -90,6 +90,7 @@ export type HomeFileListProps = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onOpen: (item: HomeFileListItem) => void;
+  onDeleteRow?: (row: HomeDirectoryRow<HomeFileListItem>) => void;
   previewOpen: boolean;
   onPreviewOpenChange: (open: boolean) => void;
   /** The parent can retain an offset per folder/filter and restore it on return. */
@@ -130,6 +131,7 @@ type DirectoryKeyAction = {
   open?: boolean;
   select?: boolean;
   parentScope?: boolean;
+  delete?: boolean;
 };
 
 /** Visible-row keyboard navigation also works when search temporarily opens ancestors. */
@@ -146,6 +148,7 @@ export function homeFileListKeyAction(
   if (key === 'ArrowUp') return { focusId: rows[Math.max(0, index - 1)].id };
   if (key === 'Home') return { focusId: rows[0].id };
   if (key === 'End') return { focusId: rows[rows.length - 1].id };
+  if (key === 'Delete' || key === 'Backspace') return { delete: true };
   if (key === 'Enter') return { open: true };
   if (key === ' ') return { select: true };
   if (key === 'ArrowRight') {
@@ -226,6 +229,7 @@ export function HomeFileList({
   selectedId,
   onSelect,
   onOpen,
+  onDeleteRow,
   previewOpen,
   onPreviewOpenChange,
   scopeKey,
@@ -516,6 +520,7 @@ export function HomeFileList({
     row: HomeDirectoryRow<HomeFileListItem>,
   ) => {
     if (
+      event.defaultPrevented ||
       event.target !== event.currentTarget ||
       event.nativeEvent.isComposing ||
       event.altKey ||
@@ -524,8 +529,11 @@ export function HomeFileList({
     )
       return;
     const action = homeFileListKeyAction(rows, row.id, event.key);
-    if (!action) return;
+    if (!action || (action.delete && (!onDeleteRow || event.shiftKey))) return;
     event.preventDefault();
+    event.stopPropagation();
+    // Holding Delete must never cascade through the rows that receive focus next.
+    if (action.delete && !event.repeat) onDeleteRow?.(row);
     if (action.focusId) focusRow(action.focusId);
     if (action.toggle)
       onToggleFolder?.(action.toggle.folderId, action.toggle.expanded);

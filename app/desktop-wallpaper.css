@@ -2,10 +2,10 @@
 .wallpaper-status-row{display:flex;align-items:center;justify-content:space-between;gap:24px}
 .desktop-wallpaper-panel h3{font-size:16px;font-weight:600;color:var(--ui-text)}
 .desktop-wallpaper-panel p{font-size:13px;line-height:1.65;color:var(--ui-text-muted);margin:6px 0 0}
-.wallpaper-status-row>button{flex:none;padding:10px 16px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-fill-hover);color:var(--ui-text);font-size:13px}
+.data-settings .wallpaper-status-row>button{flex:none;min-height:32px;padding:5px 12px;border:1px solid var(--lumior-secondary-border);border-radius:var(--lumior-control-radius);background:var(--lumior-secondary-surface);color:var(--ui-text);font-size:14px}
 .wallpaper-status-row>button[aria-pressed=true]{background:var(--ui-fill-selected)}
 .wallpaper-scenes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border:0;min-width:0;padding:0}
-.wallpaper-scenes>button{padding:8px;border:1px solid var(--ui-line);border-radius:16px;text-align:left;background:var(--ui-fill-subtle);color:var(--ui-text-secondary)}
+.data-settings .wallpaper-scenes>button{display:block;padding:8px;border:1px solid var(--ui-line);border-radius:16px;text-align:left;background:var(--ui-fill-subtle);color:var(--ui-text-secondary)}
 .wallpaper-scenes>button[aria-pressed=true]{border-color:var(--ui-line-strong);background:var(--ui-fill-selected);color:var(--ui-white)}
 .wallpaper-scenes strong{display:block;padding:10px 6px 4px;font-size:14px;font-weight:500}
 .wallpaper-swatch{display:block;height:110px;border-radius:10px;background-color:#020713;overflow:hidden}
@@ -19,3 +19,4 @@
 .desktop-wallpaper-panel button[aria-pressed=true]:not(:disabled):hover{background-color:var(--ui-fill-selected)}
 .desktop-wallpaper-panel button:focus-visible{outline:2px solid var(--ui-brand);outline-offset:3px}
 @media(max-width:600px){.wallpaper-status-row{align-items:flex-start;flex-direction:column;gap:12px}.wallpaper-swatch{height:84px}}
+.data-settings .wallpaper-status-row>button:not(:disabled):not([aria-pressed=true]):hover{background:var(--lumior-secondary-hover)}

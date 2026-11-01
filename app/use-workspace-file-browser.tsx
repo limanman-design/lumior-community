@@ -58,7 +58,6 @@ import {
   type WorkspaceFilesNavigation,
   type WorkspaceHomeItem,
 } from './workspace-files';
-import { recycleRetentionDays } from './recycle-policy';
 import { useI18n } from './i18n';
 import type { LocalImportProgress } from './local-file-import';
 import { BibliographyDialog } from './bibliography-dialog';
@@ -98,7 +97,6 @@ type BrowserDialog = {
     | 'reference'
     | 'metadata'
     | 'summary'
-    | 'recycle'
     | 'deleteFolder';
   target: 'folder' | 'entry';
   id: string;
@@ -310,6 +308,8 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
   const actOnEntry = (item: WorkspaceHomeItem, action: HomeFileTreeAction) => {
     if (action === 'delete' && item.entry.kind === 'board' && item.entry.boardId) {
       onDeleteBoard(item.entry.boardId);
+    } else if (action === 'delete' && item.entry.contentId) {
+      onRecycleContent(item.entry.contentId);
     } else if (action === 'pin' || action === 'unpin') {
       changeFiles(
         setWorkspaceEntryPinned(latestFiles.current, item.id, action === 'pin'),
@@ -527,17 +527,10 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
                 <Separator />
                 <Item
                   className="workspace-file-danger"
-                  onClick={() =>
-                    openDialog(
-                      makeDialog('recycle', {
-                        id: content.id,
-                        name: original.title,
-                      }),
-                    )
-                  }
+                  onClick={() => actOnEntry(original, 'delete')}
                 >
                   <Trash2 size={15} aria-hidden="true" />
-                  {t('Move to Trash…', '移入回收站…')}
+                  {t('Move to Trash', '移入回收站')}
                 </Item>
               </>
             )}
@@ -616,6 +609,15 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
       )}
       <HomeFileList
         items={listItems}
+        onDeleteRow={row => {
+          if (row.kind === 'folder') {
+            const folder = folderById.get(row.folderId);
+            if (folder) openDialog(makeDialog('deleteFolder', { target: 'folder', id: folder.id, name: folder.title }));
+          } else {
+            const item = scopedItems.find(item => item.id === row.item.id);
+            if (item) actOnEntry(item, 'delete');
+          }
+        }}
         scopeTitle={currentFolder?.title}
         query={navigation.search || ''}
         onQueryChange={(search) => patchNavigation({ search, scrollTop: 0 })}
@@ -881,8 +883,7 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
           contentRole: 'summary',
           sourceContentId: dialog.sourceId,
         });
-      } else if (dialog.kind === 'recycle') onRecycleContent(dialog.id);
-      else if (dialog.kind === 'deleteFolder') changeFiles(deleteWorkspaceFolder(current, dialog.id));
+      } else if (dialog.kind === 'deleteFolder') changeFiles(deleteWorkspaceFolder(current, dialog.id));
       setDialog(null);
       setError('');
     } catch {
@@ -907,10 +908,8 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
               ? t('Edit information', '编辑信息')
               : dialog?.kind === 'summary'
                 ? t('Set source literature', '设置来源文献')
-                : dialog?.kind === 'recycle'
-                  ? t('Move to Trash', '移入回收站')
-                  : dialog?.kind === 'deleteFolder'
-                    ? t('Delete folder', '删除文件夹')
+                : dialog?.kind === 'deleteFolder'
+                  ? t('Delete folder', '删除文件夹')
                   : t('New', '新建');
   const metadataContent =
     dialog?.kind === 'metadata'
@@ -944,12 +943,6 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
         <DialogDescription>
           {dialog?.kind === 'import'
             ? t('Import files, or migrate an Obsidian vault into a new folder. Existing content is kept.', '导入文件，或将 Obsidian 笔记库迁入一个新文件夹，已有内容会保留。')
-            : dialog?.kind === 'recycle'
-            ? t(
-                'Move “{title}” and its whiteboard references to the trash for {days} days. Restoring brings back the file and references on whiteboards that still exist. Whiteboards are kept.',
-                '将“{title}”及其画板引用移入回收站，保留 {days} 天。恢复时会找回文件和仍存在画板中的引用，画板本身保留。',
-                { title: dialog.name, days: recycleRetentionDays },
-              )
             : dialog?.kind === 'deleteFolder'
               ? t('Delete the folder “{title}”? Its files and subfolders will move to the root. No content will be deleted, and the structure inside subfolders will be kept.', '删除文件夹“{title}”？其中的文件和子文件夹会移到根目录。内容不会被删除，子文件夹内部结构保持不变。', { title: dialog.name })
             : dialog?.kind === 'summary'
@@ -1183,14 +1176,12 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
               <button
                 type="submit"
                 className={
-                  dialog?.kind === 'recycle' || dialog?.kind === 'deleteFolder'
+                  dialog?.kind === 'deleteFolder'
                     ? 'workspace-file-danger'
                     : 'workspace-file-primary'
                 }
               >
-                {dialog?.kind === 'recycle'
-                  ? t('Move to Trash', '移入回收站')
-                  : dialog?.kind === 'deleteFolder'
+                {dialog?.kind === 'deleteFolder'
                     ? t('Delete folder', '删除文件夹')
                   : dialog?.kind === 'newFolder'
                     ? t('Create folder', '创建文件夹')

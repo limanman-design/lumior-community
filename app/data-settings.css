@@ -34,6 +34,11 @@
   padding-top: 20px;
 }
 .data-settings :where(button:not([data-slot='dialog-close'])) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
   border: 1px solid var(--lumior-secondary-border);
   border-radius: var(--lumior-control-radius);
   background: var(--lumior-secondary-surface);
@@ -43,21 +48,33 @@
   cursor: pointer;
   font-size: 14px;
   line-height: 20px;
+  font-weight: 500;
+  vertical-align: middle;
 }
 .data-settings :where(button:not(:disabled):hover) {
-  background: var(--ui-control-hover);
+  background: var(--lumior-secondary-hover);
+}
+.data-settings button:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 3px;
 }
 .data-settings button svg {
   color: inherit;
 }
 .data-settings button:disabled {
   opacity: 0.45;
-  cursor: wait;
+  cursor: not-allowed;
 }
 .data-settings button.primary {
   background: var(--action-primary);
   color: var(--action-primary-foreground);
   border-color: var(--action-primary);
+}
+.settings-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 .data-settings-status {
   display: flex;

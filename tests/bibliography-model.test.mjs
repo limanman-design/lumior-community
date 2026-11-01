@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { extractPdfBibliography } from '../lib/pdf-bibliography-extract.ts';
 import { normalizeDoi, validBibliography, validBibliographyFields } from '../lib/bibliography.ts';
 import { automaticBibliographyPatch, rebaseBibliographyMetadata } from '../app/bibliography-model.ts';
 import { syncWorkspaceFiles, patchWorkspaceContent, validWorkspaceFiles } from '../app/workspace-files.ts';
@@ -141,4 +142,14 @@ void test('history rebasing preserves explicit clearing without changing omitted
   assert.equal(rebased.cards[0].title, source.title);
   assert.deepEqual(rebased.cards[0].bibliography, bibliography);
   assert.equal(source.year, 2020);
+});
+
+void test('unusable PDF metadata leaves a descriptive filename intact and still allows good titles for opaque filenames', () => {
+  const filename = '01-2创业企业控制权：君安公司到底谁说了算';
+  const source = card({ title: filename, sourceName: filename + '.pdf', bibliography: { status: 'pending' } });
+  const fields = extractPdfBibliography({ info: { Title: '案例正文：（幼圆、小三、加粗）（全文段前与段后0行）' } }).fields;
+  assert.equal(automaticBibliographyPatch(source, { ...fields, status: 'unavailable' }).title, undefined);
+  const good = 'Scaffolding in Teacher–Student Interaction: A Decade of Research';
+  const opaque = card({ title: 's10648-010-9127-6', sourceName: 's10648-010-9127-6.pdf' });
+  assert.equal(automaticBibliographyPatch(opaque, { ...extractPdfBibliography({ info: { Title: good } }).fields, status: 'review' }).title, good);
 });
