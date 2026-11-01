@@ -2,14 +2,15 @@ import { defaultThesisModel, findThesisModel, hasThesisConsent } from '../lib/th
 import type { Board } from './canvas-model';
 import type { ThesisRunResult } from '../lib/thesis/run';
 import type { ThesisSkillId } from '../lib/thesis/model';
-import { boardThesisSnapshot, boardThesisSession, thesisSourcePath, thesisCardMarkdown } from './thesis-board';
+import { boardThesisSession, thesisSourcePath } from './thesis-board';
+import { prepareThesisNotes } from './prepare-thesis-notes';
 import { waitForReading } from './document-reading-store';
 
 export async function runBoardThesis(board: Board, chatId: string, skill: ThesisSkillId, question: string, signal: AbortSignal, progress: (message: string, cardId?: string) => void, model = defaultThesisModel.id as string): Promise<ThesisRunResult> {
   const selected = findThesisModel(model);
   if (!selected) throw new Error('请选择论文助手支持的模型。');
   if (!hasThesisConsent(board.thesis, selected.provider)) throw new Error('请先确认当前模型服务商的资料处理说明。');
-  const snapshot = boardThesisSnapshot(board, skill);
+  const { snapshot, texts } = await prepareThesisNotes(board, skill, signal, progress);
   if (skill === 'mba-lit' && board.thesis?.proposals['thesis/lit-matrix.md'])
     snapshot.boardContext += ' 本次读文献沿用文献矩阵的待采纳工作稿，防止重复处理；它尚未替换用户卡片，继续更新仍是待采纳建议，不能宣称已采纳。';
   for (const [id, role] of Object.entries(board.thesis!.sources)) {
@@ -17,7 +18,7 @@ export async function runBoardThesis(board: Board, chatId: string, skill: Thesis
     const card = board.cards.find(item => item.id === id);
     if (!card) continue;
     progress(`正在本地读取${card.pdf ? ' PDF' : ''}：${card.title}`, id);
-    let text = thesisCardMarkdown(card), pages: number | undefined;
+    let text = texts.get(card.id) ?? '', pages: number | undefined;
     if (card.pdf) {
       const document = await waitForReading(card, signal);
       if (!document.characters || document.characters < 30) throw new Error(`${card.title} 没有可读取文字，请先 OCR 后重新导入。`);

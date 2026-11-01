@@ -6,7 +6,8 @@ import type { Board, Card } from './canvas-model';
 import { applyThesisResult, enableBoardThesis, thesisInputSignature } from './thesis-board';
 import { thesisChat, thesisMessageQuestions } from './thesis-chat';
 import { defaultThesisModel, hasThesisConsent, updateThesisConsent, thesisProviderName } from '../lib/thesis/providers';
-import { ThesisQuestionOptions } from './thesis-question-options';
+import { AiQuestionOptions } from './ai-question-options';
+import { aiMessageQuestions } from './ai-question-state';
 import { runBoardThesis } from './thesis-board-client';
 import { ThesisBoardControls, type ChangeThesisBoard } from './thesis-board-controls';
 import { AiMarkdown } from './ai-markdown';
@@ -375,6 +376,7 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
           evidenceContext = { ...evidenceContext, sources, characters: sources.reduce((sum, source) => sum + source.text.length, 0) };
           patchMessage(run.chatId, run.id, { context: evidenceContext, citationFormat: event.citationFormat });
         }
+        if (event.type === 'question') patchMessage(run.chatId, run.id, { question: event.question }, true);
         if (event.type === 'delta') run.text += event.text;
         if (event.type === 'board_actions') {
           if (!operationBoard || event.actions.id !== questionId || event.actions.boardId !== operationBoard.boardId) throw new Error('画板操作范围已变化，尚未保存，请重新提问。');
@@ -418,7 +420,7 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
         onFrame: text => { if (running.current === run) setAnswerPresentation({ id: run.id, text }); },
       });
       if (running.current !== run) return;
-      recordProgress(simpleLayout ? '本次画板排布已完成。' : evidenceContext.coverage?.verified ? '已核对回答与引用，研究完成。' : '本次回答已整理完成。');
+      recordProgress(run.doneReason === 'question' ? '等待你的回答，也可以直接在输入框补充。' : simpleLayout ? '本次画板排布已完成。' : evidenceContext.coverage?.verified ? '已核对回答与引用，研究完成。' : '本次回答已整理完成。');
       setAnswerPresentation(null);
       patchMessage(run.chatId, run.id, { status: 'complete', progress: undefined, process: run.process, elapsed: Math.round((eventTime() - now) / 1000) }, true);
     } catch (error) {
@@ -450,6 +452,7 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
   const updateCanvasView = (patch: Partial<AiCanvasView>) => {
     if (chat) patchChat(chat.id, current => ({ ...current, canvasView: { ...readAiCanvasView(current.canvasView), ...patch } }), true);
   };
+  const questions = aiMessageQuestions(messages);
   const thesisQuestions = thesisMessageQuestions(messages, chat ? thesisBoard?.thesis?.sessions[chat.id] : undefined);
   const latestAnswer = messages.filter(message => message.role === 'assistant').at(-1);
   const thesisPending = chat && thesisBoard?.thesis && thesisBoard.thesis.sessionContexts[chat.id] === thesisInputSignature(thesisBoard) ? thesisBoard?.thesis?.sessions[chat.id]?.pending : undefined;
@@ -541,7 +544,8 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
         </div> : <div key={message.id} className="ai-message ai-message-assistant">
           {!message.id.startsWith('thesis-intro:') && <AiResearchProcess message={message}>{message.context && <AiEvidence context={message.context} onSource={index => openSource(message, index)} />}</AiResearchProcess>}
           {message.text && <AiAnswerSelection portalContainer={portalTarget} onCreateCard={onCreateCard} onDropSelection={onDropSelection}><AiMarkdown text={answerPresentation?.id === message.id ? answerPresentation.text : message.text} citationFormat={message.citationFormat} sources={message.context?.sources} onCitation={index => openSource(message, index)} onCitationHover={canvas ? index => onHoverSource?.(index === null ? null : message.context?.sources[index - 1]?.id || null) : undefined} /></AiAnswerSelection>}
-          {thesisQuestions.has(message.id) && <ThesisQuestionOptions {...thesisQuestions.get(message.id)!} disabled={busy || thesisPending?.id !== thesisQuestions.get(message.id)!.question.id} onAnswer={option => void send(option)} />}
+          {questions.has(message.id) && <AiQuestionOptions {...questions.get(message.id)!} disabled={busy || questions.get(message.id)!.disabled} onAnswer={option => void send(option)} />}
+          {thesisQuestions.has(message.id) && <AiQuestionOptions {...thesisQuestions.get(message.id)!} disabled={busy || thesisPending?.id !== thesisQuestions.get(message.id)!.question.id} onAnswer={option => void send(option)} />}
           {message.reason === 'length' && <p className="ai-partial-note">{t('This answer reached its length limit. You can ask a follow-up question.', '已达到本次回答长度限制，可继续提问。')}</p>}
           {message.error && <p className="ai-request-error" role="alert">{localizeAiSystemText(message.error, t)}</p>}
           {!canvas && message.boardActionResult && <output className="ai-board-result">{operationStatuses[message.boardActionResult.id] === 'undone' ? t('This operation was undone', '这条操作已撤销') : aiOperationSummary(message.boardActionResult, t)}</output>}

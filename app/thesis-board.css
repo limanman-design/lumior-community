@@ -19,7 +19,6 @@
 .thesis-delete-actions .destructive{background:var(--ui-danger-soft);color:var(--ui-danger);box-shadow:inset 0 0 0 1px var(--ui-danger-line)}
 .thesis-delete-actions .destructive:is(:hover,:focus-visible){background:var(--ui-danger-fill);color:var(--ui-white);box-shadow:none}
 .thesis-card-badge{display:inline-flex;gap:6px;align-items:center;margin-right:8px;font-size:11px;white-space:nowrap}.note.thesis-needs-review .thesis-card-badge{color:var(--ui-warning)}
-.thesis-question-options{margin:12px 0}.thesis-question-choices{display:flex;gap:8px;flex-wrap:wrap}.thesis-question-options button{border:1px solid var(--ui-line-strong);border-radius:12px;padding:8px 12px;background:var(--ui-fill-hover);font:inherit}.thesis-question-options button:hover:enabled{background:var(--ui-fill-hover)}.thesis-question-options button[aria-pressed=true]{background:var(--ui-fill-selected);border-color:var(--ui-line-strong)}.thesis-question-options button:disabled{cursor:default}.thesis-question-hint{display:block;margin:8px 0 0;color:var(--ui-text-muted);font-size:12px;line-height:1.6}
 @media(max-width:600px){.thesis-compare{grid-template-columns:1fr}}
 .thesis-chat-consent{display:flex;align-items:flex-start;gap:8px;margin:12px 0;padding:12px;border-radius:12px;background:var(--ui-fill-subtle);color:var(--muted-foreground,var(--ui-text-secondary));font-size:12px;line-height:1.6}
 .thesis-chat-consent input{flex:none;margin-top:3px;accent-color:var(--primary,var(--ui-brand))}

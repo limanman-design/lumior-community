@@ -1,3 +1,4 @@
+import { readAiQuestion, type AiQuestion } from '../lib/ai-question.ts';
 import { readAiCanvasView, type AiCanvasView } from './ai-canvas-presentation.ts';
 import type { AiContext } from './ai-context';
 import type { Card } from './canvas-model';
@@ -39,6 +40,7 @@ export type AiMessage = {
   context?: AiContext; model?: string; error?: string; reason?: string; elapsed?: number;
   feedback?: 'like' | 'dislike'; progress?: string; process?: AiProcessStep[]; references?: AiReference[];
   thesisQuestion?: ThesisQuestion;
+  question?: AiQuestion;
   citationFormat?: AiCitationFormat;
   boardActionResult?: AiBoardActionResult;
   operationOnly?: boolean;
@@ -88,7 +90,8 @@ export function restoredAiHistory(value: unknown, boardId: string): AiBoardHisto
       // A checked full answer may have finished on the server while its local
       // presentation was still running. Restoring it shows the saved full text
       // immediately; interrupted network research remains interrupted.
-      const receivedComplete = active && message.context?.coverage?.verified === true && message.reason === 'stop';
+      const receivedComplete = active && (message.context?.coverage?.verified === true && message.reason === 'stop'
+        || message.reason === 'question' && !!readAiQuestion(message.question) && message.text === message.question?.question);
       const process = Array.isArray(message.process) ? message.process.filter(step => step && typeof step.message === 'string' && Number.isFinite(step.elapsed) && step.elapsed >= 0) : undefined;
       const references = Array.isArray(message.references) ? message.references.filter(reference => reference && typeof reference.id === 'string' && typeof reference.title === 'string' && ['note', 'text', 'pdf', 'video', 'image'].includes(reference.kind)) : undefined;
       const boardActionResult = message.boardActionResult === undefined ? undefined : readAiBoardActionResult(message.boardActionResult);
@@ -99,7 +102,7 @@ export function restoredAiHistory(value: unknown, boardId: string): AiBoardHisto
       if (boardActionResult === undefined) delete restoredMessage.boardActionResult;
       if (message.operationOnly !== true || !boardActionResult) delete restoredMessage.operationOnly;
       if (!['operation', 'conversation'].includes(message.presentationMode || '')) delete restoredMessage.presentationMode;
-      return { ...restoredMessage, thesisQuestion: readThesisQuestion(message.thesisQuestion), process, references, ...(boardActionResult ? { boardActionResult } : {}),
+      return { ...restoredMessage, thesisQuestion: readThesisQuestion(message.thesisQuestion), question: readAiQuestion(message.question), process, references, ...(boardActionResult ? { boardActionResult } : {}),
         elapsed: active ? process?.at(-1)?.elapsed ?? message.elapsed : message.elapsed, status: receivedComplete ? 'complete' as const : active ? 'interrupted' as const : message.status };
     });
     return { ...chat, ...(chat.canvasView === undefined ? {} : { canvasView: readAiCanvasView(chat.canvasView) }), messages, draft: typeof chat.draft === 'string' ? chat.draft : '', refs: Array.isArray(chat.refs) ? chat.refs.filter(id => typeof id === 'string') : [], model: typeof chat.model === 'string' ? chat.model : 'auto', thesisModel: typeof chat.thesisModel === 'string' ? chat.thesisModel : undefined, live: chat.live !== false, reasoningEffort: ['low', 'high', 'max'].includes(chat.reasoningEffort || '') ? chat.reasoningEffort : undefined };
@@ -117,7 +120,7 @@ export function aiConversationHistory(chat: AiChat, beforeQuestion?: string) {
     if (message.role !== 'user' || !message.live) continue;
     turns.push({ role: 'user', content: message.text });
     const answer = messages.filter(candidate => candidate.role === 'assistant' && candidate.live && candidate.replyTo === message.id && candidate.status === 'complete').at(-1);
-    if (answer) turns.push({ role: 'assistant', content: historicalCitationText(answer.text, answer.citationFormat) });
+    if (answer) turns.push({ role: 'assistant', content: historicalCitationText(answer.text, answer.citationFormat) + (answer.question ? '\n问题：' + answer.question.question + '\n选项：\n' + answer.question.options.join('\n') : '') });
   }
   return turns;
 }

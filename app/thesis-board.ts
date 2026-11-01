@@ -1,3 +1,5 @@
+import { noteMarkdown } from './note-markdown.ts';
+import { noteSnapshot, sameNote, noteChangePatch, validNoteAiChange, type NoteSnapshot, type NoteAiChange } from './note-ai-change.ts';
 import type { Board, Card } from './canvas-model';
 import { thesisDirectories, newThesisSession, type ThesisFile, type ThesisSession, type ThesisSkillId, type ThesisSnapshot } from '../lib/thesis/model.ts';
 import { thesisSettingsTemplate } from '../lib/thesis/skill-content.generated.ts';
@@ -12,7 +14,7 @@ export const thesisSourceLabels = { refs: '论文文献', template: '学院模�
 export type ThesisSourceRole = keyof typeof thesisSourceLabels;
 export type ThesisArtifact = { cardId: string; revision: number; modifiedAt: number; needsReview?: string; lastEditAt?: number; lastDecisionEditAt?: number };
 export type ThesisRevision = { id: string; path: string; title: string; body: string; blocks?: Card['blocks']; revision: number; at: number };
-export type ThesisProposal = { path: string; text: string; base: string; topicVersion: number; at: number };
+export type ThesisProposal = { path: string; text: string; base: string; baseNote?: NoteSnapshot; topicVersion: number; at: number };
 export type BoardThesis = {
   version: 1; topicVersion: number; consentAt?: number; consentProviders?: import('../lib/thesis/providers').ThesisProvider[]; importedProjectId?: string;
   artifacts: Record<string, ThesisArtifact>;
@@ -24,7 +26,7 @@ export type BoardThesis = {
   proposals: Record<string, ThesisProposal>;
   history: ThesisRevision[];
 };
-/** Preserve headings, quotes and tables when the normal note editor emits plain body text. */
+/** Legacy proposal/version snapshot format. Keep stable for saved proposals; AI reads use noteMarkdown. */
 export function thesisCardMarkdown(card: Card): string {
   if (!card.blocks?.length) return card.body;
   const inline = (value: unknown): string => {
@@ -135,6 +137,11 @@ export function thesisInputSignature(board: Board) {
     artifacts: Object.entries(board.thesis.artifacts).map(([path, value]) => [path, value.cardId, board.cards.find(card => card.id === value.cardId) && cardText(board.cards.find(card => card.id === value.cardId)!)]),
     sources: Object.entries(board.thesis.sources).map(([id, role]) => { const card = board.cards.find(item => item.id === id); return [id, role, card?.title, card?.body, card?.pdf?.url, card?.pdf?.size]; }),
     files: board.thesis.files, proposals: board.thesis.proposals,
+    ...(() => {
+      const ids = new Set([...Object.keys(board.thesis.sources), ...Object.values(board.thesis.artifacts).map(item => item.cardId)]);
+      const notes = board.cards.filter(card => ids.has(card.id) && (card.blocks?.length || card.storedDocument));
+      return notes.length ? { noteInputs: notes.map(card => [card.id, card.blocks, card.storedDocument]) } : {};
+    })(),
   });
 }
 function topicForRuntime(body: string, version: number) {
@@ -143,13 +150,16 @@ function topicForRuntime(body: string, version: number) {
 function bodyFromRuntime(path: string, text: string) {
   return path === topicPath ? text.replace(/^#\s+选题卡\s+v\d+[^\n]*\n?/m, '').trim() : text;
 }
-export function boardThesisSnapshot(board: Board, workingSkill?: ThesisSkillId): ThesisSnapshot {
+export function boardThesisSnapshot(board: Board, workingSkill?: ThesisSkillId, noteTexts: ReadonlyMap<string, string> = new Map()): ThesisSnapshot {
   if (!board.thesis) throw new Error('请先在当前画板启用论文助手。');
   const files = structuredClone(board.thesis.files);
   // Export live card content, not cached model output or previous versions.
   for (const [path, value] of Object.entries(board.thesis.artifacts)) {
     const card = board.cards.find(item => item.id === value.cardId);
-    if (card) files[path] = { path, text: path === topicPath ? topicForRuntime(thesisCardMarkdown(card), board.thesis.topicVersion) : thesisCardMarkdown(card), modifiedAt: value.modifiedAt };
+    if (card) {
+      const text = noteTexts.get(card.id) ?? noteMarkdown(card);
+      files[path] = { path, text: path === topicPath ? topicForRuntime(text, board.thesis.topicVersion) : text, modifiedAt: value.modifiedAt };
+    }
     else delete files[path];
   }
   // Continue the literature working copy without silently accepting it. Other
@@ -157,7 +167,7 @@ export function boardThesisSnapshot(board: Board, workingSkill?: ThesisSkillId):
   const matrixPath = 'thesis/lit-matrix.md', proposal = board.thesis.proposals[matrixPath];
   if (workingSkill === 'mba-lit' && proposal) {
     const card = board.cards.find(item => item.id === board.thesis!.artifacts[matrixPath]?.cardId);
-    if (!card || cardText(card) !== proposal.base || board.thesis.topicVersion !== proposal.topicVersion)
+    if (!card || !thesisProposalMatches(card, proposal) || board.thesis.topicVersion !== proposal.topicVersion)
       throw new Error('文献矩阵建议生成后，原卡片或选题已修改。请先在“资料与历史”中处理这条旧建议，再继续读文献；你的修改已保留。');
     files[matrixPath] = { path: matrixPath, text: proposal.text, modifiedAt: proposal.at };
   }
@@ -206,8 +216,8 @@ export function applyThesisResult(board: Board, expected: string, result: Thesis
     if (thesisArtifactLabels[path]) {
       const binding = state.artifacts[path], card = next.cards.find(item => item.id === binding?.cardId);
       if (!binding) newArtifact(next, path, file.text, now);
-      else if (card && thesisCardMarkdown(card) === bodyFromRuntime(path, file.text)) continue;
-      else state.proposals[path] = { path, text: file.text, base: card ? cardText(card) : '', topicVersion: state.topicVersion, at: now };
+      else if (card && noteMarkdown(card) === bodyFromRuntime(path, file.text)) continue;
+      else state.proposals[path] = { path, text: file.text, base: card ? cardText(card) : '', ...(card ? { baseNote: noteSnapshot(card) } : {}), topicVersion: state.topicVersion, at: now };
     } else state.files[path] = { ...file, blob: undefined };
   }
   state.literatureSequence = result.snapshot.literatureSequence;
@@ -220,16 +230,31 @@ export function applyThesisResult(board: Board, expected: string, result: Thesis
   state.sessionContexts[chatId] = thesisInputSignature(next);
   return next;
 }
-export function resolveThesisProposal(board: Board, path: string, accept: boolean): Board {
+function thesisProposalMatches(card: Card, proposal: ThesisProposal) {
+  return proposal.baseNote ? sameNote(card, proposal.baseNote) : cardText(card) === proposal.base;
+}
+/** Adapt old saved proposals without migrating their storage or comparison format. */
+export function thesisNoteChange(board: Board, path: string): NoteAiChange {
+  const state = board.thesis!, proposal = state.proposals[path];
+  const card = board.cards.find(item => item.id === state.artifacts[path]?.cardId);
+  if (!proposal || !card) throw new Error('原卡片或建议已移除，请返回原画板检查。');
+  if (!thesisProposalMatches(card, proposal) || state.topicVersion !== proposal.topicVersion) throw new Error('这条建议生成后内容又有变化。请保留当前内容，并重新生成建议。');
+  if (card.aiNoteChange && !card.aiNoteChange.accepted) throw new Error('这张笔记还有待处理的 AI 建议，请先接受或保留原文。');
+  if (card.storedDocument || card.sharedId) throw new Error('这张论文成果是导入或共享笔记，当前不支持通过论文建议替换；请保留原文，复制为独立普通笔记后处理。');
+  const change = { id: `mba:${path}:${proposal.at}`, text: bodyFromRuntime(path, proposal.text), at: proposal.at, base: proposal.baseNote || noteSnapshot(card) };
+  if (!validNoteAiChange(change)) throw new Error('这条建议为空或超过可保存的长度，请保留原文并重新生成较短的建议。');
+  return change;
+}
+export function resolveThesisProposal(board: Board, path: string, accept: boolean, prepared?: Partial<Card>): Board {
   const next = structuredClone(board), state = next.thesis!, proposal = state.proposals[path];
   if (!proposal) throw new Error('这条建议已处理。');
   if (accept) {
     const artifact = state.artifacts[path], card = next.cards.find(item => item.id === artifact?.cardId);
     if (!card) throw new Error('原卡片已移除，请先恢复原卡片，再重新生成建议。');
-    if (cardText(card) !== proposal.base || state.topicVersion !== proposal.topicVersion) throw new Error('这条建议生成后内容又有变化。请保留当前内容，并重新生成建议。');
+    const change = thesisNoteChange(board, path);
     const decisionChanged = path === topicPath && topicDecisions(thesisCardMarkdown(card)) !== topicDecisions(bodyFromRuntime(path, proposal.text));
     archive(state, path, card, artifact.revision, Date.now());
-    card.body = bodyFromRuntime(path, proposal.text); delete card.blocks;
+    Object.assign(card, prepared || noteChangePatch({ ...card, aiNoteChange: change }, change, 'accept', { body: change.text, blocks: undefined }));
     card.updatedAt = new Date().toISOString();
     state.artifacts[path] = { ...artifact, revision: artifact.revision + 1, modifiedAt: Date.now(), lastEditAt: undefined };
     if (decisionChanged) { state.topicVersion++; markDependent(state, `已采纳选题卡 v${state.topicVersion}，请复核相关成果。`); }
@@ -286,6 +311,6 @@ export function validBoardThesis(value: unknown): value is BoardThesis {
     && record(s.files) && Object.entries(s.files).every(([path, f]) => path.startsWith('thesis/') && !path.includes('..') && f?.path === path && typeof f.text === 'string' && Number.isFinite(f.modifiedAt))
     && record(s.sessions) && Object.values(s.sessions).every(session => session && typeof session.id === 'string' && Array.isArray(session.turns) && Array.isArray(session.modelMessages) && Array.isArray(session.litReadIds) && Array.isArray(session.litAddedIds))
     && record(s.sessionContexts) && Object.values(s.sessionContexts).every(v => typeof v === 'string')
-    && record(s.proposals) && Object.entries(s.proposals).every(([path, p]) => !!thesisArtifactLabels[path] && p?.path === path && typeof p.text === 'string' && typeof p.base === 'string' && integer(p.topicVersion) && Number.isFinite(p.at))
+    && record(s.proposals) && Object.entries(s.proposals).every(([path, p]) => !!thesisArtifactLabels[path] && p?.path === path && typeof p.text === 'string' && typeof p.base === 'string' && integer(p.topicVersion) && Number.isFinite(p.at) && (p.baseNote === undefined || validNoteAiChange({ id: 'check', text: 'check', at: 0, base: p.baseNote })))
     && Array.isArray(s.history) && s.history.every(h => h && typeof h.id === 'string' && !!thesisArtifactLabels[h.path] && typeof h.body === 'string' && typeof h.title === 'string' && integer(h.revision) && Number.isFinite(h.at));
 }
