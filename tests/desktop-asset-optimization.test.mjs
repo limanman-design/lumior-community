@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { optimizeDesktopPngs } from '../desktop/scripts/optimize-assets.mjs';
 const require = createRequire(new URL('../desktop/package.json', import.meta.url));
 const sharp = require('sharp');
 
 test('package PNG optimization is pixel-exact, preserves paths and leaves other assets byte-identical', async t => {
-  const dir = await mkdtemp('/private/tmp/lumior-png-');
+  const dir = await mkdtemp(path.join(tmpdir(), 'lumior-png-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const png = await sharp({ create: { width: 300, height: 300, channels: 4, background: { r: 45, g: 100, b: 70, alpha: .6 } } }).png({ compressionLevel: 0 }).toBuffer();
   await writeFile(`${dir}/keep-name.png`, png);
