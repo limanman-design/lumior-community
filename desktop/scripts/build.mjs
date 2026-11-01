@@ -3,10 +3,11 @@ import { cp, mkdir, readdir, rm, writeFile, readFile, lstat } from 'node:fs/prom
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
-import { includeDesktopAsset, omittedDesktopAssets } from './asset-policy.mjs';
+import { includeDesktopAsset, omittedDesktopAssets, retainedDesktopAssets } from './asset-policy.mjs';
 import { resolveTrialServiceBuild, writeTrialServiceBuild } from './trial-service-build.mjs';
 import { generateIcon } from './icon.mjs';
 import { preparePetAssets } from './pet-assets.mjs';
+import { optimizeDesktopPngs } from './optimize-assets.mjs';
 import { resolveDesktopBuildDistribution, writeDistributionBuild } from './distribution-build.mjs';
 
 const desktop = fileURLToPath(new URL('..', import.meta.url));
@@ -33,6 +34,7 @@ await mkdir(path.join(generated, 'web'), { recursive: true });
 const forbidden = new Set(['.DS_Store', '.openai', 'wrangler.json', '_headers', '.assetsignore']);
 const clientRoot = path.join(root, 'dist/client');
 await cp(clientRoot, path.join(generated, 'web/client'), { recursive: true, filter: source => !forbidden.has(path.basename(source)) && includeDesktopAsset(source, clientRoot) });
+const losslessAssetOptimization = await optimizeDesktopPngs(path.join(generated, 'web/client'));
 await cp(path.join(root, 'dist/server'), path.join(generated, 'web/server'), { recursive: true, filter: source => !forbidden.has(path.basename(source)) });
 for (const name of ['backend.mjs', 'security.cjs', 'ai-settings.cjs', 'trial-access.cjs', 'network.cjs']) await cp(path.join(desktop, 'runtime', name), path.join(generated, name));
 if (distribution === 'official') await writeTrialServiceBuild(generated, trialGatewayUrl);
@@ -52,5 +54,5 @@ async function verify(directory) {
 await verify(generated);
 const externals = JSON.parse(await readFile(path.join(root, 'dist/server/vinext-externals.json'), 'utf8'));
 if (!Array.isArray(externals) || externals.length) throw new Error('The web build has external dependencies. Bundle them before packaging.');
-await writeFile(path.join(generated, 'verification.json'), JSON.stringify({ distribution, files: count, bytes, omittedDesktopAssets, privateConfigurationCopied: false, includesUserBrowserData: false, pdfLayoutEngineBundled: false, createdAt: new Date().toISOString() }, null, 2));
+await writeFile(path.join(generated, 'verification.json'), JSON.stringify({ distribution, files: count, bytes, omittedDesktopAssets, retainedDesktopAssets, losslessAssetOptimization, privateConfigurationCopied: false, includesUserBrowserData: false, pdfLayoutEngineBundled: false, createdAt: new Date().toISOString() }, null, 2));
 console.log(`Desktop runtime prepared: ${count} files, ${bytes} bytes. No developer configuration or browser data copied.`);

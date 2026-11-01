@@ -129,3 +129,40 @@ void test('retiring the first-board guide preserves saved practice edits, annota
   assert.deepEqual(saved.edges, practice.edges);
   assert.equal(saved.pinnedAt, practice.pinnedAt);
 });
+
+void test('restored legacy media and PDF annotations survive without bundled example URLs', async () => {
+  const pdf = { url: '/research/old.pdf', thumbnail: '/research/cover.jpg', name: 'Old.pdf', size: 100, pages: 1 };
+  const mark = { id: 'saved-mark', text: 'My annotation', color: '#e6c85c', note: 'Keep this', fragments: [] };
+  const board = { ...english, cards: [
+    ...english.cards,
+    { id: 'pdf', kind: 'pdf', title: 'Original', body: '', x: 0, y: 0, width: 300, pdf },
+    { id: 'image', kind: 'image', title: 'Image', body: '', x: 0, y: 0, width: 300, image: '/open-world/old.jpg' },
+    { id: 'video', kind: 'video', title: 'Video', body: '', x: 0, y: 0, width: 300,
+      video: { duration: 10, url: 'https://www.youtube.com/watch?v=example', localUrl: '/game-research/trailer.mp4', poster: '/game-research/poster.jpg', subtitleUrl: '/game-research/captions.json' } },
+  ] };
+  const current = { ...snapshot([board], board.id), pdfMarks: { [pdf.url]: [mark] } };
+  const original = JSON.stringify(current);
+  const media = new Map([pdf.url, pdf.thumbnail, '/open-world/old.jpg', '/game-research/trailer.mp4', '/game-research/poster.jpg', '/game-research/captions.json'].map(url => [url, new TextEncoder().encode(`fixture bytes for ${url}`)]));
+  const fetched = [];
+  const backup = await readWorkspaceBackup(await createWorkspaceBackup(current, {
+    getFile: async () => undefined,
+    fetch: async url => { fetched.push(url); assert.ok(media.has(url)); return new Response(media.get(url)); },
+  }, () => {}), () => {});
+  assert.equal(JSON.stringify(current), original, 'export does not convert the live original');
+  assert.deepEqual(new Set(fetched), new Set(media.keys()));
+  const restored = mergeRestoredWorkspace(current, backup.snapshot, new Map());
+  assert.deepEqual(restored.boards[0], current.boards[0]);
+  assert.equal(restored.boards.length, 2);
+  const saved = backup.snapshot.boards[0];
+  assert.match(saved.cards[1].pdf.url, /^lumior-file:/);
+  assert.deepEqual(backup.snapshot.pdfMarks[saved.cards[1].pdf.url], [mark]);
+  assert.equal(saved.cards[0].body, board.cards[0].body);
+  assert.equal(saved.cards[3].video.url, board.cards[3].video.url);
+  const files = new Map(backup.files.map(file => [file.id, file]));
+  const second = await readWorkspaceBackup(await createWorkspaceBackup(backup.snapshot, {
+    getFile: async id => files.get(id),
+    fetch: async () => { throw new Error('Removed bundled resources must not be needed'); },
+  }, () => {}), () => {});
+  assert.equal(second.files.length, media.size);
+  for (const file of second.files) assert.deepEqual(new Uint8Array(await file.blob.arrayBuffer()), new Uint8Array(await files.get(file.id).blob.arrayBuffer()));
+});

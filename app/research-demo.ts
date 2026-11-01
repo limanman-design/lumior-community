@@ -6,6 +6,8 @@ export type Citation = {
   label: string;
   location: string;
   summary: string;
+  evidenceText?: string;
+  fileKey?: string;
   page?: number;
   time?: number;
   paragraph?: number;
