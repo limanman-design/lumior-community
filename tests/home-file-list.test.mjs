@@ -83,6 +83,17 @@ void test('the actual Home list scans 100 papers without summary rows or per-row
       }
     });
 
+    await context.test('reference boards appear as preview actions, with an empty state and no list-column changes', () => {
+      const item = { ...papers[0], referencingBoards: [{ id: 'a', title: 'Research board' }, { id: 'b', title: 'Reading board' }] };
+      const html = render({ items: [item], selectedId: item.id, onOpenReferencedBoard: noop });
+      assert.match(html, /<dt>Referenced by<\/dt>/);
+      assert.match(html, /<button[^>]*title="Research board"[^>]*>Research board<\/button>/);
+      assert.match(html, /<button[^>]*title="Reading board"[^>]*>Reading board<\/button>/);
+      const table = html.match(/<table\b[\s\S]*?<\/table>/)[0];
+      assert.doesNotMatch(table, /Research board|Reading board|Referenced by/);
+      assert.match(render({ items: [{ ...item, referencingBoards: [] }], selectedId: item.id }), /No board references/);
+    });
+
     await context.test('mixed rows expose name, file type, tags and last opened while bibliography stays in the preview', () => {
       const html = render();
       const table = html.match(/<table\b[\s\S]*?<\/table>/)[0];

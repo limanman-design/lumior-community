@@ -46,6 +46,7 @@ import {
   type WorkspaceFileSidebarLeaf,
 } from './workspace-file-sidebar';
 import {
+  boardEntryId,
   createWorkspaceFolder,
   deleteWorkspaceFolder,
   markWorkspaceEntryOpened,
@@ -526,7 +527,7 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
                 )}
                 <Separator />
                 <Item
-                  className="workspace-file-danger"
+                  variant="destructive"
                   onClick={() => actOnEntry(original, 'delete')}
                 >
                   <Trash2 size={15} aria-hidden="true" />
@@ -635,6 +636,7 @@ export function useWorkspaceFileBrowser(options: WorkspaceFileBrowserOptions): {
           patchNavigation({ selectedEntryId, selectedFolderRowId: undefined, previewOpen: true })
         }
         onOpen={(item) => openEntry(item.id)}
+        onOpenReferencedBoard={id => openEntry(boardEntryId(id))}
         previewOpen={navigation.previewOpen === true}
         onPreviewOpenChange={(previewOpen) => patchNavigation({ previewOpen })}
         scopeKey={selectedFolderId || 'all'}

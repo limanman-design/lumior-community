@@ -75,6 +75,7 @@ export type HomeFileListItem = {
   folderId?: string | null;
   thumbnailUrl?: string;
   excerpt?: string;
+  referencingBoards?: readonly { id: string; title: string }[];
   details?: readonly { label: string; value: string }[];
 };
 
@@ -90,6 +91,7 @@ export type HomeFileListProps = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onOpen: (item: HomeFileListItem) => void;
+  onOpenReferencedBoard?: (boardId: string) => void;
   onDeleteRow?: (row: HomeDirectoryRow<HomeFileListItem>) => void;
   previewOpen: boolean;
   onPreviewOpenChange: (open: boolean) => void;
@@ -229,6 +231,7 @@ export function HomeFileList({
   selectedId,
   onSelect,
   onOpen,
+  onOpenReferencedBoard,
   onDeleteRow,
   previewOpen,
   onPreviewOpenChange,
@@ -1302,6 +1305,17 @@ export function HomeFileList({
                     <div>
                       <dt>{t('Folder', '文件夹')}</dt>
                       <dd>{selected.location}</dd>
+                    </div>
+                  )}
+                  {selected.referencingBoards !== undefined && (
+                    <div>
+                      <dt>{t('Referenced by', '引用画板')}</dt>
+                      <dd className="home-file-referencing-boards">
+                        {selected.referencingBoards.length ? selected.referencingBoards.map(board => (
+                          onOpenReferencedBoard ? <button key={board.id} type="button" title={board.title || t('Untitled', '未命名')} onClick={() => onOpenReferencedBoard(board.id)}>{board.title || t('Untitled', '未命名')}</button>
+                            : <span key={board.id}>{board.title || t('Untitled', '未命名')}</span>
+                        )) : t('No board references', '暂无引用')}
+                      </dd>
                     </div>
                   )}
                   <div>

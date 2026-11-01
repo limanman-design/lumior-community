@@ -25,7 +25,7 @@ export type RecycledContent = {
 };
 export type WorkspaceFiles = { version: 1; contents: WorkspaceContent[]; folders: WorkspaceFolder[]; entries: WorkspaceFileEntry[]; navigation?: WorkspaceFilesNavigation; deletedContentIds?: string[]; recycledContents?: RecycledContent[] };
 export type WorkspaceHomeKind = 'literature' | 'board' | 'notePage' | 'video' | 'image';
-export type WorkspaceHomeItem = { id: string; kind: WorkspaceHomeKind; title: string; entry: WorkspaceFileEntry; content?: WorkspaceContent; board?: Board; authors?: string[]; year?: number; tags: string[]; lastOpenedAt?: number; updatedAt?: number };
+export type WorkspaceHomeItem = { referencingBoards?: { id: string; title: string }[]; id: string; kind: WorkspaceHomeKind; title: string; entry: WorkspaceFileEntry; content?: WorkspaceContent; board?: Board; authors?: string[]; year?: number; tags: string[]; lastOpenedAt?: number; updatedAt?: number };
 
 export const contentIdentity = (card: Card) => card.sharedId || card.id;
 export const contentEntryId = (id: string) => `content:${id}`;
@@ -191,6 +191,16 @@ export function validWorkspaceFiles(value: unknown): value is WorkspaceFiles {
 export function projectWorkspaceFiles(files: WorkspaceFiles, boards: readonly Board[]): WorkspaceHomeItem[] {
   const contents = new Map(files.contents.map(content => [content.id, content]));
   const boardMap = new Map(boards.map(board => [board.id, board]));
+  // Derive from live cards, not titles or historical variants. One board may
+  // contain several placements of the same content; show that board only once.
+  const referencingBoards = new Map<string, { id: string; title: string }[]>();
+  for (const board of boardMap.values()) {
+    for (const id of new Set(board.cards.map(contentIdentity))) {
+      const references = referencingBoards.get(id) || [];
+      references.push({ id: board.id, title: board.title });
+      referencingBoards.set(id, references);
+    }
+  }
   return files.entries.flatMap<WorkspaceHomeItem>(entry => {
     if (entry.kind === 'board') {
       const board = boardMap.get(entry.boardId!);
@@ -204,7 +214,7 @@ export function projectWorkspaceFiles(files: WorkspaceFiles, boards: readonly Bo
     // Adding a file is a recent action even before its first open. Legacy files
     // use their real creation date; simulated seed dates never become history.
     const addedAt = entry.addedAt ?? (cardCreatedTime(content.card) || undefined);
-    return [{ id: entry.id, kind: content.role, title: content.card.title, entry, content, authors: content.authors, year: content.year, tags: content.card.tags || [], lastOpenedAt: latestFileTime(entry.lastOpenedAt, addedAt), updatedAt: latestFileTime(addedAt, cardUpdatedTime(content.card) || undefined) }];
+    return [{ id: entry.id, kind: content.role, title: content.card.title, entry, content, referencingBoards: referencingBoards.get(content.id) || [], authors: content.authors, year: content.year, tags: content.card.tags || [], lastOpenedAt: latestFileTime(entry.lastOpenedAt, addedAt), updatedAt: latestFileTime(addedAt, cardUpdatedTime(content.card) || undefined) }];
   });
 }
 
