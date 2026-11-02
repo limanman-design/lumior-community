@@ -9,6 +9,13 @@ export type BibliographyFields = {
   issue?: string;
   pages?: string;
   url?: string;
+  publisher?: string;
+  publisherPlace?: string;
+  edition?: string;
+  containerTitle?: string;
+  containerAuthors?: string;
+  publishedDate?: string;
+  accessedDate?: string;
 };
 export type BibliographyField = keyof BibliographyFields;
 export type BibliographyOrigin = 'pdf' | 'doi' | 'manual';
@@ -19,7 +26,14 @@ export type Bibliography = BibliographyFields & {
   updatedAt?: string;
   reason?: 'no-match' | 'ambiguous' | 'network' | 'no-text' | 'mismatch';
 };
-export const bibliographyFields: readonly BibliographyField[] = ['title', 'authors', 'year', 'journal', 'doi', 'type', 'volume', 'issue', 'pages', 'url'];
+export const bibliographyFields: readonly BibliographyField[] = ['title', 'authors', 'year', 'journal', 'doi', 'type', 'volume', 'issue', 'pages', 'url', 'publisher', 'publisherPlace', 'edition', 'containerTitle', 'containerAuthors', 'publishedDate', 'accessedDate'];
+
+export function validBibliographyDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const date = new Date(value + 'T00:00:00Z');
+  return year > 0 && year < 3000 && Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 
 /** Normalize identifiers, never resolve a caller-provided URL. */
 export function normalizeDoi(value: unknown): string | undefined {
@@ -44,6 +58,7 @@ function validFields(value: Record<string, unknown>) {
     if (item === undefined) return true;
     if (key === 'authors') return Array.isArray(item) && item.length <= 500 && item.every(author => typeof author === 'string' && author.length <= 300);
     if (key === 'year') return Number.isInteger(item) && Number(item) > 0 && Number(item) < 3000;
+    if (key === 'publishedDate' || key === 'accessedDate') return typeof item === 'string' && validBibliographyDate(item);
     const limit = key === 'title' ? 2000 : key === 'journal' ? 500 : key === 'url' ? 2048 : key === 'doi' ? 256 : 300;
     if (typeof item !== 'string' || item.length > limit || /\p{Cc}/u.test(item)) return false;
     if (key === 'doi') return normalizeDoi(item) === item;

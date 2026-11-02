@@ -116,3 +116,14 @@ SHA-256: `58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd`.
 Card AI change bubble: Google Material Symbols Outlined `comment`, 20px, weight 400.
 Source: https://github.com/google/material-design-icons/blob/master/symbols/web/comment/materialsymbolsoutlined/comment_20px.svg
 License: Apache-2.0 (see LICENSE). Unchanged upstream SVG, bundled locally.
+
+Reference menu: Google Material Symbols Outlined, format_quote, 20px optical size, weight 400; displayed at 16px to match menu icons.
+File: format-quote-outlined.svg.
+Google Fonts: https://fonts.google.com/icons?selected=Material+Symbols+Outlined:format_quote:FILL@0;wght@400;GRAD@0;opsz@20
+Source: https://github.com/google/material-design-icons/blob/master/symbols/web/format_quote/materialsymbolsoutlined/format_quote_20px.svg
+License: Apache-2.0 (same Google Material Design Icons license above).
+
+Reference explanation: Google Material Symbols Outlined, info, 20px optical size, weight 400.
+File: info-outlined.svg.
+Source: https://github.com/google/material-design-icons/blob/master/symbols/web/info/materialsymbolsoutlined/info_20px.svg
+License: Apache-2.0.

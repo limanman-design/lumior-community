@@ -140,6 +140,24 @@ void test('same-editor reordering remains a normal native move and cleans up aft
   dispose();
 });
 
+void test('provenance is copied only to a different document and before its drop dispatch', async () => {
+  const { owner, transfer, source, target, dispose } = setup();
+  // Registrations are mutable fixtures; install an extra pair with callbacks.
+  dispose();
+  const provenance = { version: 1, contentId: 'pdf', title: 'PDF', kind: 'pdf', pages: [2] };
+  let copies = 0, identity = 'target';
+  const unregisterSource = registerDocumentBlockDrag({ ...source, identity: () => 'source', source: () => provenance });
+  const unregisterTarget = registerDocumentBlockDrag({ ...target, identity: () => identity, onCopyFrom: data => { assert.deepEqual(data, provenance); copies++; } });
+  const receive = target.view.dom.dispatchEvent;
+  target.view.dom.dispatchEvent = event => { assert.equal(copies, 1); return receive(event); };
+  owner.emit('dragstart', source.element, transfer); owner.emit('drop', target.element, transfer); await Promise.resolve();
+  assert.equal(copies, 1);
+  identity = 'source'; source.view.dragging = { slice: {} };
+  owner.emit('dragstart', source.element, transfer); owner.emit('drop', target.element, transfer); await Promise.resolve();
+  assert.equal(copies, 1, 'two views of the same document must not cite themselves');
+  unregisterSource(); unregisterTarget();
+});
+
 void test('a native dragend clears all editor drag state even if the handle no longer exists', async () => {
   const { owner, transfer, source, target, dispose } = setup();
   owner.emit('dragstart', source.element, transfer);

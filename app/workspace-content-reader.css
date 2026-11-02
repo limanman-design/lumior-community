@@ -114,6 +114,47 @@
 .workspace-content-more-menu [role='menuitem'] > svg {
   flex: none;
 }
+.workspace-content-more-menu .workspace-content-references {
+  gap: 10px;
+  padding: 6px 48px 6px 10px;
+}
+.workspace-content-references > [data-slot='dropdown-menu-checkbox-item-indicator'] {
+  right: 10px;
+}
+.workspace-content-references > span:not([data-slot]) {
+  min-width: 0;
+}
+.workspace-content-reference-switch {
+  display: block;
+  width: 32px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 99px;
+  background: var(--ui-fill-pressed);
+  transition: background-color 0.15s;
+}
+.workspace-content-reference-switch::after {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ui-white);
+  transition: transform 0.15s;
+}
+.workspace-content-reference-switch[data-checked='true'] {
+  background: var(--ui-brand);
+}
+.workspace-content-reference-switch[data-checked='true']::after {
+  transform: translateX(14px);
+  background: var(--ui-white);
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-content-reference-switch,
+  .workspace-content-reference-switch::after {
+    transition: none;
+  }
+}
 .workspace-content-related-menu {
   min-width: 200px;
   max-width: 320px;

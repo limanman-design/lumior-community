@@ -37,6 +37,8 @@ export type MaterialIconName =
   | 'search_outlined'
   | 'add'
   | 'comment'
+  | 'format_quote'
+  | 'info'
   | 'pinboard'
   | 'library_add'
   | 'atlas'
@@ -75,6 +77,8 @@ const outlinedSymbols = new Set<MaterialIconName>([
   'add',
   'library_add',
   'comment',
+  'format_quote',
+  'info',
   'pinboard',
   'progress_activity',
   'history',

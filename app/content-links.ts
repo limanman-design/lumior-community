@@ -1,3 +1,4 @@
+import { remapNoteSourceLink } from './note-source.ts';
 /** Hash links stay inside the current workspace and survive offline use. */
 export const contentLinkPrefix = '#lumior-content=';
 export const contentLink = (id: string) =>
@@ -15,7 +16,7 @@ export function remapContentLink(
   ids: ReadonlyMap<string, string>,
 ): string {
   const id = contentLinkId(href);
-  return id && ids.has(id) ? contentLink(ids.get(id)!) : href;
+  return id && ids.has(id) ? contentLink(ids.get(id)!) : remapNoteSourceLink(href, ids);
 }
 
 export const openContentLinkEvent = 'lumior-open-content-link';

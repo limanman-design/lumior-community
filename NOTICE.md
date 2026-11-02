@@ -35,3 +35,7 @@ The Lumior name and logo identify the project. Trademark permissions are governe
 ### MBA Skills / gstack
 
 The MBA research skills were adapted from [garrytan/gstack](https://github.com/garrytan/gstack). Upstream copyright (c) 2026 Garry Tan. The full MIT copyright, permission and warranty notice is retained in [licenses/MIT-gstack.txt](licenses/MIT-gstack.txt). Lumior additions and modifications are licensed under Apache-2.0; this does not remove the upstream MIT notice. The original adaptation revision and exact source Skill were not recorded. The current upstream was checked on 2026-10-30, not asserted as the original baseline. No endorsement by Garry Tan or gstack is implied.
+
+### Reference formatting
+
+The bounded GB/T 7714—2025 numeric formatter is original Lumior code under Apache-2.0. It does not include citeproc-js or CSL style/locale implementations. The earlier local, unreleased integration of those components has been removed. Publication rules are independently implemented from the standard; this module is not a general CSL processor.

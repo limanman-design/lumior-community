@@ -3,6 +3,10 @@ type DocumentDragEditor = {
   view: { dom: HTMLElement; dragging: unknown };
   isEditable: () => boolean;
   onDragEnd: () => void;
+  identity?: () => string;
+  source?: () => import('./note-source').NoteSource;
+  /** Enrich only the target's in-memory slice; the original is never changed. */
+  onCopyFrom?: (source: import('./note-source').NoteSource) => void;
 };
 
 type DocumentDragState = {
@@ -135,6 +139,9 @@ function install(owner: Window, state: DocumentDragState) {
         owner.dispatchEvent(release);
       }
       if (target) {
+        if (crossEditor && state.source?.source && target.identity?.() !== state.source.identity?.()) {
+          target.onCopyFrom?.(state.source.source());
+        }
         // Match BlockNote's content bounds, excluding the editor's padding.
         // posAtCoords cannot resolve a caret in its outer top/side gutter.
         const rect = (target.view.dom.firstElementChild || target.view.dom).getBoundingClientRect();

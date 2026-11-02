@@ -1,0 +1,21 @@
+.note-references{margin:24px 0 8px;border-top:1px solid var(--ui-line);padding-top:16px;color:var(--ui-text-secondary);font-size:14px;line-height:1.7;overflow-wrap:anywhere}
+.note-references-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 44px}
+.note-references-title{display:flex;align-items:center;gap:6px}
+.note-references-heading h2{font-size:18px;font-weight:600;color:var(--ui-text);margin:0}
+.note-references-heading button{padding:4px 8px;border:1px solid var(--ui-line);border-radius:var(--lumior-control-radius,12px);background:transparent;color:var(--ui-text-secondary);font-size:13px;cursor:pointer}
+.note-references-heading button:hover{background:var(--ui-fill-hover);color:var(--ui-text)}
+.note-references-heading .note-reference-info{display:grid;place-items:center;width:28px;height:28px;padding:4px;border:0}
+.note-reference-info-content{width:280px;max-width:calc(100vw - 24px);white-space:normal;overflow-wrap:anywhere;line-height:1.6;z-index:100}
+.note-reference-entry{position:relative;margin:10px 0}
+.note-reference-entry small{display:block;color:var(--ui-text-muted)}
+.note-reference-text{display:flex;align-items:baseline;gap:4px;min-width:0}
+.note-reference-number{flex:none;white-space:pre}
+.note-reference-inline{flex:1;min-width:0;min-height:1.7em;white-space:pre-wrap;overflow-wrap:anywhere;cursor:text;outline:none;border:0;padding:0;background:transparent;color:inherit;font:inherit}
+.note-reference-toolbar{position:absolute;bottom:100%;left:0;z-index:4;display:flex;align-items:center;gap:2px;width:max-content;max-width:100%;padding:var(--lumior-menu-padding);border:1px solid var(--ui-line);border-radius:var(--lumior-menu-radius);background:var(--ui-panel);color:var(--ui-text);box-shadow:0 6px 24px var(--ui-shadow-soft);font-size:14px;line-height:20px;opacity:0;visibility:hidden;pointer-events:none}
+.note-reference-entry:is(:hover,:focus-within) .note-reference-toolbar{opacity:1;visibility:visible;pointer-events:auto}
+.note-reference-toolbar button{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;height:28px;min-height:28px;padding:0 6px;flex-shrink:0;border:0;border-radius:var(--lumior-menu-item-radius);background:transparent;color:var(--ui-text-secondary);font:inherit;cursor:pointer}
+.note-reference-toolbar button:is(:hover,:focus-visible){background:var(--ui-fill-hover);color:var(--ui-text)}
+.note-reference-origin{min-width:0;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px;color:var(--ui-text-muted);font-size:12px}
+@media(max-width:600px){.note-reference-origin{display:none}.note-reference-toolbar{flex-wrap:wrap}}
+body .block-document .bn-editor .bn-inline-content a[href^="#lumior-source="]{font-size:.85em;color:var(--ui-text-muted);text-decoration:none}
+body .block-document .bn-editor .bn-inline-content a[href^="#lumior-source="]:hover{color:var(--ui-text);text-decoration:underline}

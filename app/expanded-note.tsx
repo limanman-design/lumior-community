@@ -157,7 +157,7 @@ export default function ExpandedNote({
               onChange={event => onChange({ title: event.currentTarget.value || 'Untitled' })}
             />
           )}
-          <BlockEditor key={card.id} card={card} onChange={changeDocument} />
+          <BlockEditor key={card.id} card={card} onChange={changeDocument} sourceControls />
         </article>
       </div>
     </section>
