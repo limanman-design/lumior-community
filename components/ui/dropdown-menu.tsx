@@ -158,9 +158,11 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   inset,
+  indicator,
   ...props
 }: MenuPrimitive.CheckboxItem.Props & {
   inset?: boolean;
+  indicator?: React.ReactNode;
 }) {
   return (
     <MenuPrimitive.CheckboxItem
@@ -177,9 +179,9 @@ function DropdownMenuCheckboxItem({
         className="pointer-events-none absolute right-2 flex items-center justify-center"
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
-        <MenuPrimitive.CheckboxItemIndicator>
+        {indicator ?? <MenuPrimitive.CheckboxItemIndicator>
           <CheckIcon />
-        </MenuPrimitive.CheckboxItemIndicator>
+        </MenuPrimitive.CheckboxItemIndicator>}
       </span>
       {children}
     </MenuPrimitive.CheckboxItem>

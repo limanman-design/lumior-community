@@ -7,10 +7,12 @@ import {
   MoreHorizontal,
   Plus,
   Settings2,
+  Trash2,
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
@@ -21,6 +23,7 @@ import {
 import type { Board, Card } from './canvas-model';
 import type { WorkspaceContent } from './workspace-files';
 import { useI18n } from './i18n';
+import { MaterialIcon } from './material-icon';
 
 type ContentMoreOptions = {
   content?: WorkspaceContent;
@@ -30,6 +33,7 @@ type ContentMoreOptions = {
   onOpenContent: (id: string) => void;
   onAddToBoard?: (id: string) => void;
   onEditMetadata?: () => void;
+  onRecycleContent?: (id: string) => void;
 };
 
 /** Share actions across canonical readers and existing canvas reading overlays. */
@@ -41,6 +45,7 @@ export function useWorkspaceContentMore({
   onOpenContent,
   onAddToBoard,
   onEditMetadata,
+  onRecycleContent,
 }: ContentMoreOptions) {
   const { t } = useI18n();
   const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLElement | null>(
@@ -88,6 +93,7 @@ export function useWorkspaceContentMore({
         (!!card.pdf && candidate.card.pdfExcerpt?.pdf.url === card.pdf.url)),
   );
   const canPromoteToPage = content.role === 'note' && !card.pdfExcerpt;
+  const canShowReferences = card.kind === 'note' || card.kind === 'text' || !!card.pdfExcerpt;
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
@@ -105,8 +111,10 @@ export function useWorkspaceContentMore({
         {!source &&
           !related.length &&
           !canPromoteToPage &&
+          !canShowReferences &&
           !onEditMetadata &&
-          !onAddToBoard && (
+          !onAddToBoard &&
+          !onRecycleContent && (
             <DropdownMenuItem disabled>
               {t('No other actions', '暂无其他操作')}
             </DropdownMenuItem>
@@ -147,7 +155,7 @@ export function useWorkspaceContentMore({
           </DropdownMenuSub>
         )}
         {(source || related.length > 0) &&
-          (canPromoteToPage || onEditMetadata || onAddToBoard) && (
+          (canPromoteToPage || canShowReferences || onEditMetadata || onAddToBoard || onRecycleContent) && (
             <DropdownMenuSeparator />
           )}
         {canPromoteToPage && (
@@ -177,6 +185,24 @@ export function useWorkspaceContentMore({
             {t('Add to whiteboard', '添加到画板')}
           </DropdownMenuItem>
         )}
+        {canShowReferences && (
+          <DropdownMenuCheckboxItem
+            className="workspace-content-references"
+            checked={card.citationStyle === 'gbt-7714-2025'}
+            onCheckedChange={enabled => onChange({ citationStyle: enabled ? 'gbt-7714-2025' : undefined })}
+            indicator={<span className="workspace-content-reference-switch" data-checked={card.citationStyle === 'gbt-7714-2025'} aria-hidden="true" />}
+          >
+            <MaterialIcon name="format_quote" size={16} />
+            <span>{t('References at the end', '文末参考文献')}</span>
+          </DropdownMenuCheckboxItem>
+        )}
+        {onRecycleContent && <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={() => onRecycleContent(content.id)}>
+            <Trash2 size={14} aria-hidden="true" />
+            {t('Move to trash', '移入回收站')}
+          </DropdownMenuItem>
+        </>}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,3 +1,4 @@
+import { validNoteReferenceEdits } from './note-reference-edits.ts';
 import { validNoteAiChange } from './note-ai-change.ts';
 import {validBibliography} from '../lib/bibliography.ts';
 import type { Board, Card } from './canvas-model';
@@ -45,7 +46,7 @@ const knownSummaries = new Map<string, string>();
 // Workspace records are immutable snapshots. A normalized pair can be reused
 // until either the files or the committed board array changes.
 const synchronizedBoards = new WeakMap<WorkspaceFiles, readonly Board[]>();
-const documentEditKeys = new Set<keyof Card>(['title', 'body', 'blocks', 'storedDocument', 'aiNoteChange', 'updatedAt']);
+const documentEditKeys = new Set<keyof Card>(['title', 'body', 'blocks', 'citationStyle', 'citationEdits', 'storedDocument', 'aiNoteChange', 'updatedAt']);
 
 /**
  * A keystroke changes an immutable document snapshot, not the registry's
@@ -199,6 +200,7 @@ export function validWorkspaceFiles(value: unknown): value is WorkspaceFiles {
   if (files.version !== 1 || !Array.isArray(files.contents) || !Array.isArray(files.folders) || !Array.isArray(files.entries)) return false;
   const string = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
   const card = (value: Card) => value && string(value.id) && typeof value.title === 'string' && typeof value.body === 'string' && ['note', 'text', 'pdf', 'video', 'image'].includes(value.kind) && [value.x, value.y, value.width].every(Number.isFinite) && value.width > 0 && (value.height === undefined || Number.isFinite(value.height)) && (value.bibliography === undefined || validBibliography(value.bibliography)) && (value.kind !== 'video' || validVideoProviderMetadata(value.video))
+    && (value.citationStyle === undefined || value.citationStyle === 'gbt-7714-2025') && (value.citationEdits === undefined || validNoteReferenceEdits(value.citationEdits))
     && (value.aiNoteChange === undefined || value.kind === 'note' && validNoteAiChange(value.aiNoteChange))
     && (value.obsidianSource === undefined || validObsidianSource(value.obsidianSource))
     && (value.storedDocument === undefined || (value.kind === 'note' && validStoredDocument(value.storedDocument) && value.body === '' && value.blocks === undefined
@@ -335,6 +337,7 @@ export function appendWorkspaceContentBatch(
 
 export function patchWorkspaceContent(files: WorkspaceFiles, boards: readonly Board[], id: string, patch: Partial<Card>): { files: WorkspaceFiles; boards: Board[] } {
   if (!files.contents.some(content => content.id === id)) throw new Error('Content does not exist.');
+  if (patch.citationEdits !== undefined && !validNoteReferenceEdits(patch.citationEdits)) throw new Error('Invalid reference edits.');
   if (patch.bibliography !== undefined && !validBibliography(patch.bibliography)) throw new Error('Invalid literature information.');
   // The editor already supplies an immutable block snapshot. Keep that identity
   // through the canonical card and its references so it remains a local echo.

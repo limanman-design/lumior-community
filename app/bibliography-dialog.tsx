@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import { LoaderCircle, RefreshCw, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { bibliographyFields, normalizeDoi, validBibliography, type Bibliography, type BibliographyField, type BibliographyFields, type BibliographyOrigin } from '@/lib/bibliography';
+import { bibliographyFields, normalizeDoi, validBibliography, validBibliographyDate, type Bibliography, type BibliographyField, type BibliographyFields, type BibliographyOrigin } from '@/lib/bibliography';
 import type { Card } from './canvas-model';
 import { useI18n } from './i18n';
 import { BibliographyLookupError, lookupDoiBibliography } from './pdf-bibliography';
@@ -34,7 +34,7 @@ export function bibliographyDraft(card: Card): BibliographyDraft {
     year: String(data?.year ?? card.year ?? ''),
     journal: data?.journal ?? '', doi: data?.doi ?? '', type: data?.type ?? '',
     volume: data?.volume ?? '', issue: data?.issue ?? '', pages: data?.pages ?? '',
-    url: data?.url ?? '', tags: (card.tags ?? []).join(', '),
+    url: data?.url ?? '', publisher: data?.publisher ?? '', publisherPlace: data?.publisherPlace ?? '', edition: data?.edition ?? '', containerTitle: data?.containerTitle ?? '', containerAuthors: data?.containerAuthors ?? '', publishedDate: data?.publishedDate ?? '', accessedDate: data?.accessedDate ?? '', tags: (card.tags ?? []).join(', '),
   };
 }
 
@@ -224,6 +224,7 @@ function BibliographyDialogForm({ card, onSave, onClose, onRecognize }: Bibliogr
     if (!draft.title.trim()) { setError(t('Enter a title before saving.', '请填写题名后保存。')); return; }
     if (draft.year.trim() && (!/^\d{1,4}$/.test(draft.year.trim()) || Number(draft.year) < 1 || Number(draft.year) >= 3000)) { setError(t('Enter a publication year from 1 to 2999, or leave it blank.', '发表年份请填写 1—2999 的整数，或留空。')); return; }
     if (draft.doi.trim() && !normalizeDoi(draft.doi)) { setError(t('Check the DOI before saving, or leave it blank.', '请核对 DOI 后保存，或将其留空。')); return; }
+    if (['publishedDate','accessedDate'].some(field => {const value=draft[field as 'publishedDate'|'accessedDate'].trim();return value&&!validBibliographyDate(value);})) {setError(t('Use a valid date in YYYY-MM-DD format, or leave it blank.', '日期请填写有效的 YYYY-MM-DD 格式，或留空。'));return;}
     const authors = draft.authors.split(/\r\n?|\n/).map(bibliographyText).filter(Boolean);
     if (authors.length > 500 || authors.some(author => author.length > 300)) { setError(t('Use one author per line, up to 500 authors and 300 characters per author.', '作者请每行填写一位，最多 500 位，每位不超过 300 字符。')); return; }
     if (draft.url.trim()) {
@@ -262,6 +263,7 @@ function BibliographyDialogForm({ card, onSave, onClose, onRecognize }: Bibliogr
     ['journal-article', t('Journal article', '期刊文章')], ['review', t('Review article', '综述文章')],
     ['book', t('Book', '图书')], ['book-chapter', t('Book chapter', '图书章节')],
     ['proceedings-article', t('Conference paper', '会议论文')], ['report', t('Report', '报告')],
+    ['webpage', t('Webpage', '网页')], ['standard', t('Standard', '标准')], ['proceedings', t('Conference proceedings', '会议录')],
     ['dissertation', t('Thesis or dissertation', '学位论文')], ['other', t('Other', '其他')],
   ];
 
@@ -288,6 +290,15 @@ function BibliographyDialogForm({ card, onSave, onClose, onRecognize }: Bibliogr
             {textField('journal', t('Journal or source', '期刊／来源'), 500, true)}
             <div className="bibliography-volume-fields">{textField('volume', t('Volume', '卷'), 300)}{textField('issue', t('Issue', '期'), 300)}{textField('pages', t('Pages or article number', '页码／文章号'), 300)}</div>
             {textField('url', t('Original link', '原文链接'), 2048, true)}
+            <details className="bibliography-field-wide"><summary>{t('Additional reference fields', '补充参考文献字段')}</summary><div className="bibliography-fields">
+              {textField('publisher', t('Publisher / awarding institution', '出版者／学位授予单位'), 300)}
+              {textField('publisherPlace', t('Publication place / institution location', '出版地／单位所在地'), 300)}
+              {textField('edition', t('Edition', '版本（如：第2版）'), 300)}
+              {textField('containerTitle', t('Book / proceedings title', '所在图书／会议录题名'), 300)}
+              {textField('containerAuthors', t('Book / proceedings responsible persons', '所在图书／会议录责任者'), 300, true)}
+              {textField('publishedDate', t('Published / modified date · YYYY-MM-DD', '发布／修改日期 · YYYY-MM-DD'), 10)}
+              {textField('accessedDate', t('Access date · YYYY-MM-DD', '引用日期 · YYYY-MM-DD'), 10)}
+            </div></details>
             <label className="bibliography-field bibliography-field-wide"><span className="bibliography-field-label">{t('Tags · separated by commas', '标签 · 用逗号分隔')}</span><input value={draft.tags} onChange={event => edit('tags', event.currentTarget.value)} /></label>
           </div>
           {error && <p className="bibliography-error" role="alert">{error}</p>}

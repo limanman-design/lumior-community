@@ -1,3 +1,4 @@
+import { validNoteReferenceEdits } from './note-reference-edits.ts';
 import { validNoteAiChange } from './note-ai-change.ts';
 import {validBibliography} from '../lib/bibliography.ts';
 import {validBoardThesis} from './thesis-board.ts';
@@ -89,7 +90,7 @@ function validBoard(value: unknown): value is Board {
   const board = value as Partial<Board>;
   if (board.thesis !== undefined && !validBoardThesis(board.thesis)) return false;
   if (board.aiOperations !== undefined && !validAiOperationRecords(board.aiOperations)) return false;
-  return typeof board.id === 'string' && typeof board.title === 'string' && Array.isArray(board.cards) && Array.isArray(board.edges) && board.edges.every(edge => edge && (edge.label === undefined || typeof edge.label === 'string')) && board.cards.every(card => card && (card.aiNoteChange === undefined || card.kind === 'note' && validNoteAiChange(card.aiNoteChange)) && (card.bibliography === undefined || validBibliography(card.bibliography)) && (card.kind !== 'database' || validDatabaseReference(card.databaseRef)) && (card.kind !== 'video' || validVideoProviderMetadata(card.video)));
+  return typeof board.id === 'string' && typeof board.title === 'string' && Array.isArray(board.cards) && Array.isArray(board.edges) && board.edges.every(edge => edge && (edge.label === undefined || typeof edge.label === 'string')) && board.cards.every(card => card && (card.citationStyle === undefined || card.citationStyle === 'gbt-7714-2025') && (card.citationEdits === undefined || validNoteReferenceEdits(card.citationEdits)) && (card.aiNoteChange === undefined || card.kind === 'note' && validNoteAiChange(card.aiNoteChange)) && (card.bibliography === undefined || validBibliography(card.bibliography)) && (card.kind !== 'database' || validDatabaseReference(card.databaseRef)) && (card.kind !== 'video' || validVideoProviderMetadata(card.video)));
 }
 
 export function readWorkspace(raw: string | null, now = Date.now()): WorkspaceSnapshot | null {
