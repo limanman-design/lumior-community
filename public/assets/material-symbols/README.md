@@ -73,6 +73,12 @@ File: pinboard-outlined.svg (unchanged upstream SVG).
 Source: https://github.com/google/material-design-icons/blob/master/symbols/web/pinboard/materialsymbolsoutlined/pinboard_20px.svg
 License: Apache-2.0.
 
+Canvas image rotation (2026-11-02): Google Material Symbols Outlined, rotate_left, 20px.
+File: rotate-left-outlined.svg (unchanged upstream SVG).
+Google Fonts: https://fonts.google.com/icons?icon.query=rotate_left
+Source: https://github.com/google/material-design-icons/blob/master/symbols/web/rotate_left/materialsymbolsoutlined/rotate_left_20px.svg
+License: Apache-2.0 (same Google Material Design Icons license above).
+
 Windows caption buttons (2026-10-26): Google Material Symbols Rounded,
 20px optical size, weight 400. All rendered at 20px; 32px buttons.
 Names: remove (minimize), crop_square (maximize), filter_none (restore), close (reused).

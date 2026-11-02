@@ -25,6 +25,7 @@ import { importFile } from './file-import';
 import { namedImage } from './image-input';
 import { useTabReadingScroll, useTabReadingSession } from './tab-reading-session';
 import './image-card.css';
+import { imageRotationTransform } from './image-rotation';
 import './expanded-information-sidebar.css';
 
 function ImagePicture({ card, onChange, readOnly, onExpand }: {
@@ -34,12 +35,13 @@ function ImagePicture({ card, onChange, readOnly, onExpand }: {
   onExpand?: () => void;
 }) {
  useI18n();
+  const [pictureAspect, setPictureAspect] = useState(1);
   const [failedSource, setFailedSource] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const failed = !card.image || failedSource === card.image;
-  const picture = <img key={card.image} draggable={false} src={card.image} alt={card.title} onError={() => setFailedSource(card.image || '')} />;
+  const picture = <img key={card.image} style={{ transform: imageRotationTransform(card.imageRotation, pictureAspect) }} onLoad={event => { const image = event.currentTarget; if (image.naturalHeight) setPictureAspect(image.naturalWidth / image.naturalHeight); }} draggable={false} src={card.image} alt={card.title} onError={() => setFailedSource(card.image || '')} />;
   if (!failed) return onExpand ? <button className="image-preview-expand" aria-label={t("Expand image", "展开图片")} onClick={onExpand}>{picture}</button> : picture;
   return <figure className="image-missing" aria-label={t("Unavailable image: {title}","图片不可用：{title}",{title:card.sourceName||card.title})}>
     <span className="image-type-icon" />
@@ -365,7 +367,7 @@ export function ImageLightbox({
             src={card.image}
             alt={card.title}
             draggable={false}
-            style={{ '--image-aspect': aspect } as CSSProperties}
+            style={{ '--image-aspect': aspect, transform: imageRotationTransform(card.imageRotation, aspect) } as CSSProperties}
             onLoad={(event) => {
               const picture = event.currentTarget;
               if (picture.naturalHeight)

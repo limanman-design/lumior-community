@@ -47,6 +47,45 @@ const knownSummaries = new Map<string, string>();
 const synchronizedBoards = new WeakMap<WorkspaceFiles, readonly Board[]>();
 const documentEditKeys = new Set<keyof Card>(['title', 'body', 'blocks', 'storedDocument', 'aiNoteChange', 'updatedAt']);
 
+/**
+ * A keystroke changes an immutable document snapshot, not the registry's
+ * identities, classification or provenance. Reuse unrelated content (including
+ * PDF thumbnails) instead of cloning and comparing the whole workspace.
+ * Structural/metadata changes still go through the additive migration below.
+ */
+function syncDocumentEdits(files: WorkspaceFiles, previous: readonly Board[], boards: readonly Board[]): WorkspaceFiles | undefined {
+  if (previous.length !== boards.length) return undefined;
+  const changed: { boardId: string; before: Card; card: Card }[] = [];
+  for (let index = 0; index < boards.length; index++) {
+    const before = previous[index], board = boards[index];
+    if (before === board) continue;
+    if (before.id !== board.id || before.cards.length !== board.cards.length) return undefined;
+    for (let cardIndex = 0; cardIndex < board.cards.length; cardIndex++) {
+      const old = before.cards[cardIndex], card = board.cards[cardIndex];
+      if (old === card) continue;
+      // Check additions/removals as well as changed properties. Never infer
+      // equivalence from a timestamp or overwrite a legacy shared variant.
+      const keys = new Set([...Object.keys(old), ...Object.keys(card)] as (keyof Card)[]);
+      if ([...keys].some(key => !Object.is(old[key], card[key]) && !documentEditKeys.has(key))) return undefined;
+      if (!isDatabaseCard(card)) changed.push({ boardId: board.id, before: old, card });
+    }
+  }
+  if (!changed.length) return files;
+  const contents = new Map(files.contents.map(content => [content.id, content]));
+  const updated = new Map<string, WorkspaceContent>();
+  for (const { boardId, before, card } of changed) {
+    const id = contentIdentity(card), content = updated.get(id) || contents.get(id);
+    const index = content?.variants?.findIndex(variant => variant.boardId === boardId && variant.cardId === card.id) ?? -1;
+    if (!content || index < 0) return undefined;
+    const edited = cardContentKeys.filter(key => !same(before[key], card[key]));
+    const canonical = edited.length ? { ...content.card, ...Object.fromEntries(edited.map(key => [key, card[key]])), ...(card.updatedAt ? { updatedAt: card.updatedAt } : {}) } : content.card;
+    const variants = content.variants!.slice();
+    variants[index] = { boardId, cardId: card.id, card };
+    updated.set(id, { ...content, card: canonical, variants });
+  }
+  return { ...files, contents: files.contents.map(content => updated.get(content.id) || content) };
+}
+
 export function workspaceCardRole(card: Card): WorkspaceContentRole {
   if (card.kind === 'database') throw new Error('Database links are not knowledge content.');
   if (card.pdfExcerpt || card.contentRole === 'summary' || knownSummaries.has(card.id) || knownSummaries.has(contentIdentity(card))) return 'summary';
@@ -57,7 +96,15 @@ export function workspaceCardRole(card: Card): WorkspaceContentRole {
 // Registry migration is additive. Original boards and every differing shared copy
 // are retained; variants are also the baseline for later field-level edits.
 export function syncWorkspaceFiles(files: WorkspaceFiles | undefined, boards: readonly Board[]): WorkspaceFiles {
-  if (files && synchronizedBoards.get(files) === boards) return files;
+  const previous = files && synchronizedBoards.get(files);
+  if (files && previous) {
+    if (previous === boards) return files;
+    const incremental = syncDocumentEdits(files, previous, boards);
+    if (incremental) {
+      synchronizedBoards.set(incremental, boards);
+      return incremental;
+    }
+  }
   const original = files;
   const result: WorkspaceFiles = files ? copy(files) : { version: 1, contents: [], folders: [], entries: [] };
   const contents = new Map(result.contents.map(content => [content.id, content]));

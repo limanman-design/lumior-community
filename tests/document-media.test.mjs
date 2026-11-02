@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { documentMediaKind } from '../app/document-media.ts';
+import { documentMediaKind, emptyMediaParagraph } from '../app/document-media.ts';
 
 void test('media MIME type takes precedence over a misleading filename', () => {
   for (const [type, name, kind] of [
@@ -26,4 +26,17 @@ void test('Finder files with absent or generic MIME types fall back to case-inse
       ['mp3', 'file'],
     ]) assert.equal(documentMediaKind({ name, type }), kind);
   }
+});
+
+void test('media can replace only an empty paragraph without discarding text or nested structure', () => {
+  assert.equal(emptyMediaParagraph({ type: 'paragraph', content: [] }), true);
+  assert.equal(emptyMediaParagraph({ type: 'paragraph', content: [{ type: 'text', text: '', styles: {} }], children: [] }), true);
+  for (const block of [
+    { type: 'paragraph', content: [{ type: 'text', text: 'New text typed during upload' }] },
+    { type: 'paragraph', content: [{ type: 'link', href: 'https://example.test', content: [] }] },
+    { type: 'paragraph', content: [], children: [{ type: 'paragraph', content: [] }] },
+    { type: 'heading', content: [] },
+    { type: 'bulletListItem', content: [] },
+    { type: 'image' },
+  ]) assert.equal(emptyMediaParagraph(block), false);
 });
