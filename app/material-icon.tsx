@@ -45,6 +45,7 @@ export type MaterialIconName =
   | 'content_copy'
   | 'thumb_up'
   | 'thumb_down'
+  | 'rotate_left'
   | 'refresh'
   | 'keyboard_arrow_up'
   | 'chevron_right'
@@ -80,6 +81,7 @@ const outlinedSymbols = new Set<MaterialIconName>([
   'content_copy',
   'thumb_up',
   'thumb_down',
+  'rotate_left',
   'refresh',
   'keyboard_arrow_up',
   'chevron_right',

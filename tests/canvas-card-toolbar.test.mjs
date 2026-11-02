@@ -21,10 +21,10 @@ const excerpt = {
 const shared = ['Ask AI about this card', 'Expand card', 'Add to card box', 'More card actions'];
 const fixtures = [
   { name: 'note', card: card('note'), actions: [...shared, 'Fit to content'] },
-  { name: 'image', card: card('image', { image: 'https://example.invalid/image.png' }), actions: [...shared, 'Add note'] },
+  { name: 'image', card: card('image', { image: 'https://example.invalid/image.png' }), actions: [...shared, 'Rotate left 45°', 'Add note'] },
   { name: 'PDF', card: card('pdf', { pdf }), actions: ['Ask AI about this card', 'Preview PDF', 'Add to card box', 'More card actions'] },
   { name: 'note excerpt', card: card('note', { pdfExcerpt: excerpt }), actions: [...shared, 'View original PDF', 'Fit to content'] },
-  { name: 'image excerpt', card: card('image', { pdfExcerpt: excerpt }), actions: [...shared, 'View original PDF'] },
+  { name: 'image excerpt', card: card('image', { pdfExcerpt: excerpt }), actions: [...shared, 'Rotate left 45°', 'View original PDF'] },
   { name: 'video', card: card('video', { video: { url: 'https://example.invalid/video.mp4', poster: '', duration: 10 } }), actions: [...shared, 'Read existing captions'] },
   { name: 'linked database', card: card('database', { databaseRef: { databaseId: 'research' } }), actions: ['Expand card', 'More card actions'] },
 ];
@@ -59,6 +59,10 @@ void test('top card toolbar preserves the visible actions for each selected card
         const markup = render(fixture.card);
         assert.match(markup, /role="toolbar"/);
         assert.deepEqual(buttonLabels(markup), sortLabels(fixture.actions));
+        if (fixture.card.kind === 'image') {
+          const actions = [...markup.matchAll(/<button\b[^>]*\baria-label="([^"]*)"/g)].map(match => match[1]);
+          assert.equal(actions[actions.indexOf('Expand card') + 1], 'Rotate left 45°');
+        }
         assert.doesNotMatch(markup, /aria-label="Add to sidebar"/);
       });
       await context.test(`${fixture.name} compact mode retains chat, open, card box and overflow access`, () => {

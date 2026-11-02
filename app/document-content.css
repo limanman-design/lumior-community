@@ -21,3 +21,17 @@ body .block-document .bn-editor :is(table,th,td),body .ai-markdown :is(table,th,
    this containing block, table handles are positioned against the outer card
    and escape its inner overflow boundary when the table is taller than it. */
 .note .card-scroll{position:relative}
+
+/* Menus live outside the scaled canvas. Scope sizes explicitly: third-party
+   utility styles and document heading typography must not size these controls. */
+.lumior-document-controls.bn-root{font-family:var(--font-geist-sans),sans-serif;font-size:14px;line-height:1.4;color:var(--ui-text);--bn-colors-menu-background:var(--ui-panel);--bn-colors-menu-text:var(--ui-text)}
+body>.lumior-document-controls.bn-root{position:absolute;top:0;left:0;width:0;height:0;z-index:80}
+.lumior-document-controls .bn-toolbar{gap:2px;padding:var(--lumior-menu-padding);border:1px solid var(--ui-line);border-radius:var(--lumior-menu-radius);background:var(--ui-panel);color:var(--ui-text);max-width:calc(100vw - 24px);box-shadow:0 6px 24px var(--ui-shadow-soft)}
+.lumior-document-controls .bn-toolbar button{height:28px;min-height:28px;min-width:28px;padding:0 6px;flex-shrink:0;border:0;border-radius:var(--lumior-control-radius,12px);background:transparent;color:var(--ui-text-secondary);font-size:14px;line-height:20px}
+.lumior-document-controls .bn-toolbar button:hover,.lumior-document-controls .bn-toolbar button:is([data-pressed],[data-state=on],[aria-pressed=true]){background:var(--ui-fill-hover);color:var(--ui-text)}
+.lumior-document-controls .bn-toolbar [data-slot=select-trigger]{gap:6px;padding:0 8px;color:var(--ui-text)}
+.lumior-document-controls :is([data-slot=select-content],[data-slot=dropdown-menu-content],[data-slot=dropdown-menu-sub-content]){padding:var(--lumior-menu-padding);border:1px solid var(--ui-line);border-radius:var(--lumior-menu-radius);background:var(--ui-panel);color:var(--ui-text);font-size:14px;line-height:20px;box-shadow:0 6px 24px var(--ui-shadow-soft)}
+.lumior-document-controls [data-slot=select-content]{min-width:208px;max-width:calc(100vw - 24px)}
+.lumior-document-controls :is([data-slot=select-item],[data-slot=dropdown-menu-item],[data-slot=dropdown-menu-checkbox-item]){min-height:28px;padding:4px 28px 4px 8px;border-radius:var(--lumior-menu-item-radius);font-size:14px;line-height:20px}
+.lumior-document-controls :is([data-slot=select-item],[data-slot=dropdown-menu-item],[data-slot=dropdown-menu-checkbox-item]):is(:focus,[data-highlighted]){background:var(--ui-fill-hover);color:var(--ui-text)}
+body .lumior-document-controls :is(.bn-toolbar,[data-slot=select-content],[data-slot=dropdown-menu-content],[data-slot=dropdown-menu-sub-content]) svg{width:16px;height:16px;flex-shrink:0}

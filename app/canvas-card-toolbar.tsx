@@ -110,6 +110,7 @@ export function CanvasCardToolbar({ card, compact = false, onAction, onFitConten
     </Tool><span className="canvas-card-tool-divider" aria-hidden="true" /></>}
     {card.pdfExcerpt && !compact && <Tool label={t('View original PDF', '查看 PDF 原文')} onClick={() => onAction('pdf-source')}><BookOpen /><span>{t('Source', '原文')}</span></Tool>}
     <Tool label={preview} onClick={() => onAction('read')}><Maximize2 /><span>{card.kind === 'pdf' ? t('Preview', '预览') : t('Expand', '展开')}</span></Tool>
+    {card.kind === 'image' && <Tool label={t('Rotate left 45°', '向左旋转 45°')} onClick={() => onAction('rotate-image')}><MaterialIcon name="rotate_left" size={20}/><span>{t('Rotate', '旋转')}</span></Tool>}
     {!database && <Tool label={t('Add to card box', '加入卡片盒')} onClick={() => onAction('pin')}><MaterialIcon name="library_add" /><span>{t('Card box', '卡片盒')}</span></Tool>}
     {card.kind === 'video' && <DocumentReadingControl card={card} label={t('Captions', '字幕')} />}
     {imageNote && !compact && <Tool label={t('Add note', '添加笔记')} onClick={onImageNote} pressed={!!card.body}><StickyNote /><span>{t('Note', '笔记')}</span></Tool>}

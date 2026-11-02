@@ -15,7 +15,7 @@ import {resolveDocumentImage} from './document-images';
 import {editorPlaceholder} from './editor-placeholder';
 import {storeUploadedFile} from './local-repository';
 import {resolveWorkspace} from './workspace-assets';
-import {documentMediaKind} from './document-media';
+import {documentMediaKind,emptyMediaParagraph} from './document-media';
 import {readStoredDocument,saveStoredDocument,storedDocumentError,flushStoredDocuments} from './stored-document';
 import {registerDocumentBlockDrag} from './document-block-drag';
 import './document-content.css';
@@ -75,6 +75,10 @@ function DocumentEditor({card,editable=true,autoFocus=false,onActivate,onChange,
  const blockTypes=useMemo(()=>blockTypeSelectItems(dictionary).filter(item=>item.type!=='heading'||Number(item.props?.level)<=4),[dictionary]);
  const placeholder=editorPlaceholder(language,!!card.pdfExcerpt);
  const wrapper=useRef<HTMLDivElement>(null);
+ const [inlineControls,setInlineControls]=useState<HTMLDivElement|null>(null);
+ // Floating menus escape the canvas transform/scroll clip. Drag handles and
+ // table handles stay in the document so their hit testing and clipping remain local.
+ const portalElements=useMemo(()=>({default:null,tableHandles:inlineControls}),[inlineControls]);
  const mounted=useRef(true);
  const pendingImports=useRef(new Set<AbortController>());
  const [importing,setImporting]=useState(0);
@@ -102,7 +106,8 @@ function DocumentEditor({card,editable=true,autoFocus=false,onActivate,onChange,
   if(!editor.isEditable||!files.length)return;
   setFileError('');
   let anchor=editor.getTextCursorPosition().block;
-  let placement:'before'|'after'='after';
+  const selection=editor.prosemirrorState.selection;
+  let placement:'before'|'after'=!point&&selection.empty&&selection.$from.parentOffset===0&&editor.document[0]?.id===anchor.id?'before':'after';
   if(point){
    const pos=editor.prosemirrorView.posAtCoords({left:point.x,top:point.y});
    const node=pos&&editor.prosemirrorView.domAtPos(pos.pos).node;
@@ -111,14 +116,17 @@ function DocumentEditor({card,editable=true,autoFocus=false,onActivate,onChange,
    const found=block?.dataset.id&&editor.getBlock(block.dataset.id);
    if(found){anchor=found;const rect=block!.getBoundingClientRect();placement=point.y<(rect.top+rect.bottom)/2?'before':'after';}
   }
+  const replaceEmpty=emptyMediaParagraph(anchor);
   const operation=new AbortController();
   pendingImports.current.add(operation);setImporting(count=>count+1);
   try{
    // Store bytes before inserting, so closing or undoing a pending import never
    // leaves an empty media block behind. A batch is one complete undo step.
    const blocks=await Promise.all(files.map(async file=>({type:documentMediaKind(file),props:{name:file.name,url:await uploadFile(file)}})));
-   if(!mounted.current||operation.signal.aborted||!editor.isEditable||!editor.getBlock(anchor.id))return;
-   editor.insertBlocks(blocks,anchor,placement);
+   const currentAnchor=editor.getBlock(anchor.id);
+   if(!mounted.current||operation.signal.aborted||!editor.isEditable||!currentAnchor)return;
+   if(replaceEmpty&&emptyMediaParagraph(currentAnchor))editor.replaceBlocks([currentAnchor],blocks);
+   else editor.insertBlocks(blocks,currentAnchor,placement);
   }catch{if(mounted.current&&!operation.signal.aborted)setFileError(language==='zh'?'文件未能保存，请检查本地可用空间后重试。':'The file could not be saved. Check available storage and try again.');}
   finally{pendingImports.current.delete(operation);if(mounted.current)setImporting(count=>count-1);}
  };
@@ -132,9 +140,9 @@ function DocumentEditor({card,editable=true,autoFocus=false,onActivate,onChange,
   if(!editor.isEditable||!Array.from(event.dataTransfer.types).includes('Files'))return;
   event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect='copy';
  };
- return <div ref={wrapper} onDragEnterCapture={dragFiles} onDragOverCapture={dragFiles} onDropCapture={receiveFiles} onPasteCapture={receiveFiles} onKeyDownCapture={event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='z')for(const operation of pendingImports.current)operation.abort();}} onPointerDownCapture={()=>{if(!editable&&onActivate){activateDocumentEditor(editor);onActivate();}}} className={`block-document ${editable?'is-editable':'is-readonly'}`}>
+ return <div ref={wrapper} onDragEnterCapture={dragFiles} onDragOverCapture={dragFiles} onDropCapture={receiveFiles} onPasteCapture={receiveFiles} onKeyDownCapture={event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='z')for(const operation of pendingImports.current)operation.abort();}} onPointerDownCapture={()=>{if(!editable&&onActivate){activateDocumentEditor(editor);onActivate();}}} onPointerDown={event=>{if(!event.currentTarget.contains(event.target as Node))event.stopPropagation();}} className={`block-document ${editable?'is-editable':'is-readonly'}`}>
   {importing>0&&<output className="document-file-status">{language==='zh'?'正在保存文件…':'Saving files…'}</output>}
   {fileError&&<p className="document-file-error" role="alert">{fileError}</p>}
-  <BlockNoteView editor={editor} theme="dark" editable={editable} sideMenu={false} formattingToolbar={false} onChange={change}><FormattingToolbarController formattingToolbar={()=> <FormattingToolbar blockTypeSelectItems={blockTypes}/>}/><SideMenuController sideMenu={()=> <SideMenu><DragHandleButton/></SideMenu>}/></BlockNoteView>
+  <BlockNoteView editor={editor} className="lumior-document-controls" portalElements={portalElements} theme="dark" editable={editable} sideMenu={false} formattingToolbar={false} onChange={change}><FormattingToolbarController formattingToolbar={()=> <FormattingToolbar blockTypeSelectItems={blockTypes}/>}/><SideMenuController portalElement={inlineControls??undefined} sideMenu={()=> <SideMenu><DragHandleButton/></SideMenu>}/><div ref={setInlineControls} className="bn-root bn-shadcn document-inline-controls"/></BlockNoteView>
  </div>;
 }

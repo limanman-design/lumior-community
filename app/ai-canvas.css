@@ -51,7 +51,7 @@
 .ai-canvas.ai-bottom .redesigned-composer textarea{padding-inline:10px}
 .ai-canvas.ai-bottom .redesigned-composer .ai-send{margin:0}
 .ai-canvas .redesigned-composer textarea{font-size:15px;line-height:22px;padding:2px 2px 0;min-height:28px;color:var(--ui-text)}
-.ai-canvas .redesigned-composer textarea::placeholder{color:var(--ui-text-muted)}
+.ai-canvas .redesigned-composer textarea::placeholder{color:var(--ui-text-disabled)}
 .ai-canvas .redesigned-composer .ai-compose-actions{gap:6px;align-items:center}
 .ai-canvas .redesigned-composer .ai-compose-actions button{color:var(--ui-text-secondary);border-radius:12px}
 .ai-canvas .redesigned-composer .ai-compose-actions button:hover{background:var(--ui-fill-hover);color:var(--ui-text)}
@@ -176,4 +176,25 @@
 @keyframes ai-history-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.ai-detached .ai-history-spinner .workspace-symbol{animation:none}}
 
-.ai-detached .ai-conversation-rail .ai-header-actions button[aria-pressed=true]{color:var(--ui-brand);background:var(--ui-fill-selected);box-shadow:inset 0 0 0 1px var(--ui-brand)}
+.ai-detached .ai-conversation-rail .ai-header-actions button[aria-pressed=true]{color:var(--ui-brand);background:transparent;box-shadow:none}
+
+/* Reveal upwards from the rail anchor without scaling the text. */
+.workspace-shell .ai-detached .ai-conversation-rail .ai-canvas-response:not([hidden]){
+  animation:canvas-conversation-open 280ms cubic-bezier(.22,1,.36,1) both;
+}
+.ai-detached .ai-recent-conversations{
+  animation:canvas-history-open 240ms cubic-bezier(.22,1,.36,1) both;
+}
+.ai-detached .ai-conversation-rail .ai-header-actions button[aria-pressed=true] .workspace-symbol{opacity:1}
+@keyframes canvas-conversation-open{
+  from{opacity:0;clip-path:inset(100% 0 0 0 round 24px);transform:translateY(8px)}
+  to{opacity:1;clip-path:inset(0 round 24px);transform:translateY(0)}
+}
+@keyframes canvas-history-open{
+  from{max-height:0;opacity:0;transform:translateY(6px)}
+  to{max-height:236px;opacity:1;transform:translateY(0)}
+}
+@media(prefers-reduced-motion:reduce){
+  .workspace-shell .ai-detached .ai-conversation-rail .ai-canvas-response:not([hidden]),
+  .ai-detached .ai-recent-conversations{animation:none}
+}
