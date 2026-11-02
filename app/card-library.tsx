@@ -1,5 +1,5 @@
 'use client';
-/* oxlint-disable next/no-img-element, jsx-a11y/no-autofocus, jsx-a11y/prefer-tag-over-role -- Keep local media previews, focused sidebar search and existing view/status wrappers. */
+/* oxlint-disable next/no-img-element, jsx-a11y/prefer-tag-over-role -- Keep local media previews and existing view/status wrappers. */
 import { useI18n } from './i18n';
 import { cardIdentity } from './shared-cards';
 import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
@@ -178,6 +178,12 @@ function LibraryContent({
     >(null),
     [cleaned, setCleaned] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const searchInput = useRef<HTMLInputElement>(null);
+  useLayoutEffect(() => {
+    // The drawer starts outside the viewport. Scrolling it into view would
+    // move the whole desktop shell while the slide animation is running.
+    if (mode === 'sidebar') searchInput.current?.focus({ preventScroll: true });
+  }, [mode]);
   useEffect(() => {
     let active = true;
     void Promise.resolve().then(() => {
@@ -363,7 +369,7 @@ function LibraryContent({
           <label className="library-search">
             <Glyph name="search" />
             <input
-              autoFocus={mode === 'sidebar'}
+              ref={searchInput}
               aria-label={t('Find a library card', '查找卡片库卡片')}
               placeholder={t('Find a card...', '查找卡片…')}
               value={query}
