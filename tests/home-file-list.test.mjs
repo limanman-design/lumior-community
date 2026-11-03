@@ -83,18 +83,24 @@ void test('the actual Home list scans 100 papers without summary rows or per-row
       }
     });
 
-    await context.test('reference boards appear as preview actions, with an empty state and no list-column changes', () => {
+    await context.test('reference boards are compact row links while tags appear once in preview details', () => {
       const item = { ...papers[0], referencingBoards: [{ id: 'a', title: 'Research board' }, { id: 'b', title: 'Reading board' }] };
       const html = render({ items: [item], selectedId: item.id, onOpenReferencedBoard: noop });
-      assert.match(html, /<dt>Referenced by<\/dt>/);
-      assert.match(html, /<button[^>]*title="Research board"[^>]*>Research board<\/button>/);
-      assert.match(html, /<button[^>]*title="Reading board"[^>]*>Reading board<\/button>/);
       const table = html.match(/<table\b[\s\S]*?<\/table>/)[0];
-      assert.doesNotMatch(table, /Research board|Reading board|Referenced by/);
-      assert.match(render({ items: [{ ...item, referencingBoards: [] }], selectedId: item.id }), /No board references/);
+      assert.match(table, />Referenced by</);
+      assert.match(table, /<button[^>]*class="home-file-text-link"[^>]*title="Research board"[^>]*>Research board<\/button>/);
+      assert.match(table, /<button[^>]*title="Reading board"[^>]*>Reading board<\/button>/);
+      assert.doesNotMatch(table, /<dt>Tags|>reading<|home-file-tag/);
+      const preview = html.slice(html.indexOf('</table>'));
+      assert.match(preview, /<dt>Tags<\/dt>/);
+      assert.match(preview, /<button[^>]*class="home-file-text-link"[^>]*title="reading"[^>]*>reading<\/button>/);
+      assert.doesNotMatch(preview, /<dt>Referenced by/);
+      const empty = render({ items: [{ ...item, referencingBoards: [], tags: [] }], selectedId: item.id });
+      assert.match(empty, /home-file-reference-links">—<\/div>/);
+      assert.match(empty, /home-file-preview-tags">Not set<\/dd>/);
     });
 
-    await context.test('mixed rows expose name, file type, tags and last opened while bibliography stays in the preview', () => {
+    await context.test('mixed rows expose name, file type, referenced boards and last opened while bibliography stays in the preview', () => {
       const html = render();
       const table = html.match(/<table\b[\s\S]*?<\/table>/)[0];
       assert.match(table, /aria-colcount="4"/);
@@ -104,7 +110,7 @@ void test('the actual Home list scans 100 papers without summary rows or per-row
       assert.match(table, />File type</);
       assert.match(table, /home-file-type-cell">Literature</);
       assert.match(table, /home-file-type-cell">Whiteboard</);
-      assert.match(table, />Tags</);
+      assert.match(table, />Referenced by</);
       assert.match(table, />Last opened</);
       assert.doesNotMatch(table, /Author 42|Author \/ details|>Year</);
       for (const row of table.matchAll(/<tr\b[^>]*aria-label="[\s\S]*?<\/tr>/g))
@@ -115,7 +121,7 @@ void test('the actual Home list scans 100 papers without summary rows or per-row
         items: [{ id: 'page', kind: 'notePage', title: 'Without history', updatedAt: Date.now() }],
         selectedId: 'page',
       });
-      assert.match(unknown, /home-file-tags-cell"><div><\/div>/);
+      assert.match(unknown, /home-file-reference-links">—<\/div>/);
       assert.match(unknown, /<time>—<\/time>/);
       assert.doesNotMatch(unknown, /<dt>Authors|<dt>Publication year/);
       const details = render({

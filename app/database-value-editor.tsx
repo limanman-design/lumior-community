@@ -23,6 +23,7 @@ import { zhCN, enUS } from 'react-day-picker/locale';
 import { useI18n } from './i18n';
 import {
   databaseValue,
+  databaseChoiceOptions,
   databaseValueText,
   isChoiceProperty,
   isSystemProperty,
@@ -67,8 +68,8 @@ export function DatabaseValueDisplay({
     const ids = (Array.isArray(value) ? value : [value]) as string[];
     return (
       <span className="database-choice-values">
-        {property.options
-          ?.filter((option) => ids.includes(option.id))
+        {databaseChoiceOptions(property)
+          .filter((option) => ids.includes(option.id))
           .map((option) => (
             <span
               className="database-value-status"
@@ -339,7 +340,7 @@ function ChoiceValue({
     Array.isArray(value) ? value : value ? [value] : []
   ) as string[];
   const multi = property.type === 'multiSelect';
-  const options = (property.options || []).filter((option) =>
+  const options = databaseChoiceOptions(property).filter((option) =>
     option.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
   );
   const choose = (id: string) => {

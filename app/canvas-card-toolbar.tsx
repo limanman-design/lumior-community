@@ -1,7 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { BookOpen, Copy, Scissors, Focus, Link2, Maximize2, Minimize2, MoreHorizontal, StickyNote, Trash2 } from 'lucide-react';
+import { BookOpen, Copy, Scissors, Focus, Link2, Maximize2, Minimize2, MoreHorizontal, StickyNote } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Card } from './canvas-model';
@@ -10,6 +10,7 @@ import { DocumentReadingControl } from './document-reading-control';
 import { useI18n } from './i18n';
 import { WakeOrb } from './wake-orb';
 import { MaterialIcon } from './material-icon';
+import { CanvasRemovalMenu } from './canvas-removal-menu';
 
 type Props = {
   card: Card;
@@ -131,7 +132,7 @@ export function CanvasCardToolbar({ card, compact = false, onAction, onFitConten
         <DropdownMenuItem onClick={() => onAction('connect')}><Link2 />{t('Connect to a card', '连接到卡片')}</DropdownMenuItem>
         <DropdownMenuItem onClick={() => onAction('fit')}><Focus />{t('Focus card', '定位卡片')}</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={() => onAction('delete')}><Trash2 />{t('Remove from whiteboard', '从画板移除')}</DropdownMenuItem>
+        <CanvasRemovalMenu hasDatabase={database} onRemove={() => onAction('remove')} onRecycle={() => onAction('recycle')} />
       </DropdownMenuContent>
     </DropdownMenu>
   </div>;

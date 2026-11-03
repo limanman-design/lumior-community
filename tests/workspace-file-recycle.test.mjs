@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { addWorkspaceContent, createWorkspaceFolder, deleteWorkspaceFolder, moveWorkspaceEntry, syncWorkspaceFiles, validWorkspaceFiles } from '../app/workspace-files.ts';
-import { pruneRecycledContents, recycleWorkspaceContent, restoreWorkspaceContent } from '../app/workspace-file-recycle.ts';
+import { addWorkspaceContent, createWorkspaceFolder, deleteWorkspaceFolder, moveWorkspaceEntry, syncWorkspaceFiles, validWorkspaceFiles, removeWorkspaceContentReference } from '../app/workspace-files.ts';
+import { pruneRecycledContents, recycleWorkspaceContent, recycleWorkspaceContents, restoreWorkspaceContent } from '../app/workspace-file-recycle.ts';
 import { dayMs, recycleRetentionDays, readWorkspace, recycleBoard } from '../app/workspace-store.ts';
 import { createWorkspaceBackup, mergeRestoredWorkspace, readWorkspaceBackup } from '../app/workspace-backup.ts';
 import { cleanupCandidates, managedFiles } from '../app/storage-management.ts';
@@ -19,6 +19,70 @@ const fixture = () => {
   files.navigation = { selectedFolderId: 'folder', selectedEntryId: 'content:a', expandedFolderIds: ['folder'], previewOpen: true };
   return { files, boards };
 };
+
+void test('removing a canvas reference retains its source and other boards; trashing removes all references', () => {
+  const initial = fixture();
+  const boards = removeWorkspaceContentReference(initial.boards, 'board', 'instance-a');
+  const files = syncWorkspaceFiles(initial.files, boards);
+  assert.equal(files.contents.some(content => content.id === 'a'), true);
+  assert.equal(files.recycledContents?.length ?? 0, 0);
+  assert.equal(boards[1], initial.boards[1]);
+  const trashed = recycleWorkspaceContents(files, boards, ['a'], now);
+  assert.equal(trashed.files.contents.some(content => content.id === 'a'), false);
+  assert.equal(trashed.boards[1].cards.length, 0);
+  const restored = restoreWorkspaceContent(trashed.files, trashed.boards, 'a', now);
+  assert.equal(restored.boards[0].cards.some(card => card.id === 'instance-a'), false);
+  assert.deepEqual(restored.boards[1], initial.boards[1]);
+});
+
+void test('batch trash deduplicates shared instances and restores connected cards in either order', () => {
+  const initial = fixture(), original = structuredClone(initial);
+  const trashed = recycleWorkspaceContents(initial.files, initial.boards, ['a', 'b', 'a'], now);
+  assert.deepEqual(initial, original);
+  assert.deepEqual(trashed.files.recycledContents.map(item => item.content.id), ['a', 'b']);
+  assert.deepEqual(trashed.boards.map(board => board.cards.length), [0, 0]);
+  assert.equal(validWorkspaceFiles(trashed.files), true);
+  assert.equal(readWorkspace(JSON.stringify(snapshot(trashed.files, trashed.boards)), now).files.recycledContents.length, 2);
+  for (const order of [['a', 'b'], ['b', 'a']]) {
+    let restored = trashed;
+    for (const id of order) restored = restoreWorkspaceContent(restored.files, restored.boards, id, now);
+    for (const board of restored.boards) {
+      const before = initial.boards.find(item => item.id === board.id);
+      assert.deepEqual(board.edges, before.edges);
+      assert.deepEqual([...board.cards].sort((a, b) => a.id.localeCompare(b.id)), [...before.cards].sort((a, b) => a.id.localeCompare(b.id)));
+    }
+  }
+});
+
+void test('invalid batch targets never partially recycle files', () => {
+  const initial = fixture(), original = structuredClone(initial);
+  assert.throws(() => recycleWorkspaceContents(initial.files, initial.boards, ['a', 'missing'], now));
+  assert.throws(() => recycleWorkspaceContents(initial.files, initial.boards, ['a', 'b'], -1));
+  assert.deepEqual(initial, original);
+  assert.deepEqual(recycleWorkspaceContents(initial.files, initial.boards, [], now), initial);
+});
+
+void test('batch trash keeps stored note payloads, text, media and source PDFs recoverable', () => {
+  const pdf = { url: 'lumior-file:pdf', name: 'paper.pdf', size: 12, pages: 3, thumbnail: '' };
+  const cards = [
+    note('note', { body: '', storedDocument: { version: 1, libraryId: 'library', path: 'note.md', source: 'lumior-file:markdown' } }),
+    note('text', { kind: 'text', contentRole: 'text' }),
+    note('image', { kind: 'image', contentRole: 'image', image: 'lumior-file:image' }),
+    note('video', { kind: 'video', contentRole: 'video', video: { url: 'lumior-file:video', poster: '', duration: 12 } }),
+    note('excerpt', { pdfExcerpt: { sourceId: 'pdf', sourceTitle: 'Paper', pdf, mark: { id: 'mark', text: 'Quote', color: 'yellow', fragments: [{ page: 2, rects: [] }] } } }),
+  ];
+  const boards = [{ id: 'board', title: 'Board', cards, edges: [] }];
+  const files = syncWorkspaceFiles(undefined, boards);
+  const trashed = recycleWorkspaceContents(files, boards, cards.map(card => card.id), now);
+  assert.equal(trashed.boards[0].cards.length, 0);
+  assert.equal(trashed.files.contents.length, 1);
+  assert.equal(trashed.files.contents[0].id, 'pdf');
+  assert.equal(validWorkspaceFiles(trashed.files), true);
+  let restored = trashed;
+  for (const card of cards) restored = restoreWorkspaceContent(restored.files, restored.boards, card.id, now);
+  assert.deepEqual(restored.boards[0].cards, cards);
+  assert.equal(restored.files.contents.find(item => item.id === 'pdf').card.pdf.url, pdf.url);
+});
 
 test('recycle and restore preserve content, variants, placement, metadata and connected references without mutating input', () => {
   const initial = fixture(), original = structuredClone(initial);

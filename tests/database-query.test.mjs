@@ -12,6 +12,8 @@ import {
   convertDatabaseProperty,
   validDatabases,
   databaseSorts,
+  databaseValueText,
+  databaseBoardGroups,
 } from '../app/database-model.ts';
 import {
   createWorkspaceBackup,
@@ -21,6 +23,7 @@ import {
   matchesDatabaseFilter,
   databaseFilterOperators,
   databaseActiveFilterCount,
+  databaseChoiceOptions,
 } from '../app/database-query.ts';
 const now = '2026-10-17T10:00:00.000Z';
 const rule = (propertyId, operator, value, endValue) => ({
@@ -116,6 +119,80 @@ function fixture() {
 }
 const titles = (db) =>
   databaseRecords(db, '', new Date(2026, 9, 17, 12)).map((row) => row.title);
+
+void test('select sorts follow visible option order, change with reordering, and survive reload without changing records', () => {
+  const db = fixture();
+  const labels = ['夯', '顶级', '人上人', 'NPC', '拉完了'];
+  const property = { id: 'rating', name: 'Rating', type: 'select', options: labels.map((name, index) => ({ id: `option-${4 - index}`, name, color: 'gray' })) };
+  db.properties.push(property);
+  db.records = [4, 1, 0, 2, 1, 3].map((index, row) => ({ ...newDatabaseRecord(db, now), title: `${labels[index]}-${row}`, values: { rating: property.options[index].id } }));
+  db.records.unshift({ ...newDatabaseRecord(db, now), title: 'Empty', values: {} });
+  const original = structuredClone(db.records);
+  const asc = ['夯-2', '顶级-1', '顶级-4', '人上人-3', 'NPC-5', '拉完了-0', 'Empty'];
+  const sorted = updateActiveDatabaseView(db, { sorts: [{ propertyId: 'rating', direction: 'asc' }] });
+  assert.deepEqual(titles(sorted), asc);
+  assert.deepEqual(titles(JSON.parse(JSON.stringify(sorted))), asc);
+  assert.deepEqual(titles(updateActiveDatabaseView(sorted, { sorts: [{ propertyId: 'rating', direction: 'desc' }] })), ['拉完了-0', 'NPC-5', '人上人-3', '顶级-1', '顶级-4', '夯-2', 'Empty']);
+  const reordered = convertDatabaseProperty(sorted, { ...property, options: [property.options[4], ...property.options.slice(0, 4)] }).database;
+  assert.deepEqual(titles(reordered), ['拉完了-0', ...asc.slice(0, -2), 'Empty']);
+  assert.deepEqual(db.records, original);
+  assert.ok(validDatabases([reordered]));
+});
+
+void test('multi-select compares displayed option positions rather than click order or option names', () => {
+  const db = fixture();
+  const property = { id: 'ranked', name: 'Ranked', type: 'multiSelect', options: ['Z', 'A', 'M'].map(name => ({ id: name, name, color: 'gray' })) };
+  db.properties.push(property);
+  const values = [['M'], ['A', 'Z'], ['Z'], ['A'], [], ['Z', 'A'], ['M', 'Z']];
+  db.records = values.map((value, index) => ({ ...newDatabaseRecord(db, now), title: String(index), values: { ranked: value } }));
+  assert.equal(databaseValueText(db.records[1], property), 'Z, A');
+  const sorted = updateActiveDatabaseView(db, { sorts: [{ propertyId: 'ranked', direction: 'asc' }] });
+  assert.deepEqual(titles(sorted), ['2', '1', '5', '6', '3', '0', '4']);
+  assert.deepEqual(titles(updateActiveDatabaseView(sorted, { sorts: [{ propertyId: 'ranked', direction: 'desc' }] })), ['0', '3', '6', '1', '5', '2', '4']);
+  const secondary = updateActiveDatabaseView(sorted, { sorts: [...sorted.view.sorts, { propertyId: 'title', direction: 'desc' }] });
+  assert.deepEqual(titles(secondary), ['2', '5', '1', '6', '3', '0', '4']);
+  assert.deepEqual(db.records.map(record => record.values.ranked), values);
+});
+
+void test('status sorting and board groups match the editor group order even if stored options are interleaved', () => {
+  const db = fixture();
+  const property = { id: 'status', name: 'Status', type: 'status', options: [
+    { id: 'done', name: 'A done', group: 'done', color: 'green' },
+    { id: 'progress', name: 'B progress', group: 'progress', color: 'blue' },
+    { id: 'todo2', name: 'Z second', group: 'todo', color: 'gray' },
+    { id: 'todo1', name: 'C first', color: 'gray' },
+  ] };
+  db.properties = db.properties.map(item => item.id === 'status' ? property : item);
+  db.records = ['done', 'progress', 'todo1', 'todo2', ''].map(id => ({ ...newDatabaseRecord(db, now), title: id || 'Empty', values: { status: id } }));
+  const sorted = updateActiveDatabaseView(db, { sorts: [{ propertyId: 'status', direction: 'asc' }], groupBy: 'status' });
+  assert.deepEqual(databaseChoiceOptions(property).map(option => option.id), ['todo2', 'todo1', 'progress', 'done']);
+  assert.deepEqual(titles(sorted), ['todo2', 'todo1', 'progress', 'done', 'Empty']);
+  assert.deepEqual(databaseBoardGroups(sorted).groups.map(group => group.key), ['todo2', 'todo1', 'progress', 'done', '']);
+  assert.deepEqual(property.options.map(option => option.id), ['done', 'progress', 'todo2', 'todo1']);
+});
+
+void test('other field sorts retain semantic numeric, chronological and visible text order, with empty values last', () => {
+  /** @type {Array<[string, unknown[], string[]]>} */
+  const cases = [
+    ['number', [10, -2, 0], ['1', '2', '0']],
+    ['checkbox', [true, false, true], ['1', '0', '2']],
+    ['text', ['Item 10', 'Item 2', 'Item 1'], ['2', '1', '0']],
+    ['date', ['2026-11-03', '2025-01-01', '2026-02-01'], ['1', '2', '0']],
+    ['createdAt', ['2026-11-03T08:00:00+08:00', '2026-11-03T00:30:00Z', '2026-11-02T22:00:00Z'], ['2', '0', '1']],
+    ['updatedAt', ['2026-11-03T08:00:00+08:00', '2026-11-03T00:30:00Z', '2026-11-02T22:00:00Z'], ['2', '0', '1']],
+    ['files', ['File 10.pdf', 'File 2.pdf', 'File 1.pdf'].map(name => [{ name, url: 'lumior-file:file', type: 'application/pdf', size: 1 }]), ['2', '1', '0']],
+  ];
+  for (const [type, values, expected] of cases) {
+    const db = fixture();
+    db.properties.push({ id: 'checked-order', name: type, type });
+    db.records = [...values, undefined].map((value, index) => ({ ...newDatabaseRecord(db, now), title: String(index), ...(type === 'createdAt' || type === 'updatedAt' ? { [type]: value } : {}), values: { 'checked-order': value } }));
+    const sorted = updateActiveDatabaseView(db, { sorts: [{ propertyId: 'checked-order', direction: 'asc' }] });
+    assert.deepEqual(titles(sorted), type === 'checkbox' ? ['1', '3', '0', '2'] : [...expected, '3'], type);
+    // Duplicate values keep their original order even when descending.
+    const descending = type === 'checkbox' ? ['0', '2', '1'] : [...expected].reverse();
+    assert.deepEqual(titles(updateActiveDatabaseView(sorted, { sorts: [{ propertyId: 'checked-order', direction: 'desc' }] })), [...descending, '3'], type);
+  }
+});
 void test('nested AND/OR filters combine with search without changing records or timestamps', () => {
   const original = fixture();
   const filter = group(

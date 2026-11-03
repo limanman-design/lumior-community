@@ -865,7 +865,7 @@ export function HomeFileList({
               <colgroup>
                 <col className="home-file-col-name" />
                 <col className="home-file-col-type" />
-                <col className="home-file-col-tags" />
+                <col className="home-file-col-references" />
                 <col className="home-file-col-opened" />
               </colgroup>
               <thead>
@@ -892,8 +892,8 @@ export function HomeFileList({
                       <SortIndicator column="type" sort={sort} />
                     </button>
                   </th>
-                  <th scope="col" className="home-file-tags-cell">
-                    {t('Tags', '标签')}
+                  <th scope="col" className="home-file-references-cell">
+                    {t('Referenced by', '引用画板')}
                   </th>
                   <th
                     scope="col"
@@ -1071,17 +1071,22 @@ export function HomeFileList({
                         </div>
                       </td>
                       <td className="home-file-type-cell">{kindName}</td>
-                      <td className="home-file-tags-cell">
-                        <div>
-                          {item?.tags?.map((tag, tagIndex) => (
-                            <span
-                              key={`${tag}:${tagIndex}`}
-                              className="home-file-tag"
-                              title={tag}
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                      <td className="home-file-references-cell">
+                        <div className="home-file-reference-links">
+                          {item?.referencingBoards?.length ? item.referencingBoards.map((board, index) => (
+                            <Fragment key={board.id}>
+                              {index > 0 && <span aria-hidden="true">、</span>}
+                              {onOpenReferencedBoard ? <button
+                                type="button"
+                                className="home-file-text-link"
+                                title={board.title || t('Untitled', '未命名')}
+                                onClick={event => { event.stopPropagation(); onOpenReferencedBoard(board.id); }}
+                                onDoubleClick={event => event.stopPropagation()}
+                                onKeyDown={event => event.stopPropagation()}
+                              >{board.title || t('Untitled', '未命名')}</button>
+                                : <span className="home-file-reference-name" title={board.title || t('Untitled', '未命名')}>{board.title || t('Untitled', '未命名')}</span>}
+                            </Fragment>
+                          )) : '—'}
                         </div>
                       </td>
                       <td className="home-file-opened-cell">
@@ -1307,17 +1312,19 @@ export function HomeFileList({
                       <dd>{selected.location}</dd>
                     </div>
                   )}
-                  {selected.referencingBoards !== undefined && (
-                    <div>
-                      <dt>{t('Referenced by', '引用画板')}</dt>
-                      <dd className="home-file-referencing-boards">
-                        {selected.referencingBoards.length ? selected.referencingBoards.map(board => (
-                          onOpenReferencedBoard ? <button key={board.id} type="button" title={board.title || t('Untitled', '未命名')} onClick={() => onOpenReferencedBoard(board.id)}>{board.title || t('Untitled', '未命名')}</button>
-                            : <span key={board.id}>{board.title || t('Untitled', '未命名')}</span>
-                        )) : t('No board references', '暂无引用')}
-                      </dd>
-                    </div>
-                  )}
+                  <div>
+                    <dt>{t('Tags', '标签')}</dt>
+                    <dd className="home-file-preview-tags">
+                      {selected.tags?.length ? selected.tags.map((tag, index) => (
+                        <Fragment key={`${tag}:${index}`}>
+                          {index > 0 && <span aria-hidden="true">、</span>}
+                          <button type="button" className="home-file-text-link" title={tag}
+                            onClick={() => { onQueryChange(tag); setSearchOpen(true); }}
+                          >{tag}</button>
+                        </Fragment>
+                      )) : t('Not set', '未设置')}
+                    </dd>
+                  </div>
                   <div>
                     <dt title={dateDescription}>{dateLabel}</dt>
                     <dd>
@@ -1333,18 +1340,6 @@ export function HomeFileList({
                     </div>
                   ))}
                 </dl>
-                {!!selected.tags?.length && (
-                  <div
-                    className="home-file-preview-tags"
-                    aria-label={t('Tags', '标签')}
-                  >
-                    {selected.tags.map((tag, index) => (
-                      <span className="home-file-tag" key={`${tag}:${index}`}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
                 {relatedContent && (
                   <section className="home-file-related">
                     <h4>{t('Related content', '关联内容')}</h4>

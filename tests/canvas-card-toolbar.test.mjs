@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import React from 'react';
@@ -37,19 +37,29 @@ function buttonLabels(markup) {
 void test('top card toolbar preserves the visible actions for each selected card type', async context => {
   const temporary = await mkdtemp(join(root, 'tests', '.canvas-card-toolbar-'));
   try {
+    const entry = join(temporary, 'fixture.tsx');
+    await writeFile(entry, `
+      import React from 'react';
+      import { DropdownMenu } from '../../components/ui/dropdown-menu';
+      import { CanvasRemovalMenu } from '../../app/canvas-removal-menu';
+      export { CanvasCardToolbar } from '../../app/canvas-card-toolbar';
+      export function RemovalFixture({ hasDatabase }) {
+        return <DropdownMenu open><CanvasRemovalMenu hasDatabase={hasDatabase} onRemove={() => {}} onRecycle={() => {}} /></DropdownMenu>;
+      }
+    `);
     await build({
       configFile: false,
       logLevel: 'silent',
       resolve: { alias: { '@': root } },
       build: {
-        ssr: join(root, 'app', 'canvas-card-toolbar.tsx'),
+        ssr: entry,
         outDir: temporary,
         emptyOutDir: false,
         minify: false,
         rolldownOptions: { output: { format: 'es', entryFileNames: 'toolbar.mjs' } },
       },
     });
-    const { CanvasCardToolbar } = await import(pathToFileURL(join(temporary, 'toolbar.mjs')).href);
+    const { CanvasCardToolbar, RemovalFixture } = await import(pathToFileURL(join(temporary, 'toolbar.mjs')).href);
     const render = (currentCard, compact = false) => renderToStaticMarkup(React.createElement(CanvasCardToolbar, {
       card: currentCard, compact, onAction: noop, onFitContent: noop, onImageNote: noop,
     }));
@@ -83,6 +93,17 @@ void test('top card toolbar preserves the visible actions for each selected card
     await context.test('the toolbar identifies the selected card and original PDF page for excerpts', () => {
       assert.match(render(card('note', { title: 'Specific selection' })), /aria-label="Actions for Specific selection"/);
       assert.match(render(card('note', { pdfExcerpt: excerpt })), /aria-label="Actions for Research\.pdf · Page 2"/);
+    });
+    await context.test('shared removal menu renders database guidance inside a valid menu group', () => {
+      const regular = renderToStaticMarkup(React.createElement(RemovalFixture, { hasDatabase: false }));
+      const database = renderToStaticMarkup(React.createElement(RemovalFixture, { hasDatabase: true }));
+      for (const markup of [regular, database]) {
+        assert.match(markup, /Remove from whiteboard/);
+        assert.match(markup, /Move to trash/);
+      }
+      assert.doesNotMatch(regular, /aria-disabled="true"/);
+      assert.match(database, /aria-disabled="true"/);
+      assert.match(database, /Deselect them to move other cards to trash/);
     });
   } finally {
     await rm(temporary, { recursive: true, force: true });

@@ -11,7 +11,6 @@ import {
   Copy,
   LayoutGrid,
   MoreHorizontal,
-  Trash2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,6 +26,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useI18n } from './i18n';
 import { WakeOrb } from './wake-orb';
+import { CanvasRemovalMenu } from './canvas-removal-menu';
 import './canvas-selection-toolbar.css';
 
 export type SelectionArrangement =
@@ -44,7 +44,9 @@ export type CanvasSelectionToolbarProps = {
   onNewChat: () => void;
   onArrange: (arrangement: SelectionArrangement) => void;
   onDuplicate: () => void;
-  onDelete: () => void;
+  onRemove: () => void;
+  onRecycle: () => void;
+  hasDatabase?: boolean;
 };
 
 const alignments = [
@@ -62,7 +64,9 @@ export function CanvasSelectionToolbar({
   onNewChat,
   onArrange,
   onDuplicate,
-  onDelete,
+  onRemove,
+  onRecycle,
+  hasDatabase = false,
 }: CanvasSelectionToolbarProps) {
   const { t } = useI18n();
   const [focusIndex, setFocusIndex] = useState(0);
@@ -173,10 +177,8 @@ export function CanvasSelectionToolbar({
             <Copy aria-hidden="true" />
             {t('Duplicate', '复制')}
           </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={onDelete}>
-            <Trash2 aria-hidden="true" />
-            {t('Delete', '删除')}
-          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <CanvasRemovalMenu hasDatabase={hasDatabase} onRemove={onRemove} onRecycle={onRecycle} />
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
