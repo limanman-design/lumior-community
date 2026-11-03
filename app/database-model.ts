@@ -1,9 +1,11 @@
 import {
   matchesDatabaseFilter,
   compareDatabaseRecords,
+  databaseChoiceOptions,
   pruneDatabaseFilter,
   validDatabaseFilter,
 } from './database-query.ts';
+export { databaseChoiceOptions } from './database-query.ts';
 // Database records are deliberately separate from knowledge cards and AI extraction.
 export const databasePropertyTypes = [
   'text',
@@ -380,8 +382,8 @@ export function databaseValueText(
   if (isChoiceProperty(property)) {
     const ids = Array.isArray(value) ? value : [value];
     return (
-      property.options
-        ?.filter((option) => ids.includes(option.id as never))
+      databaseChoiceOptions(property)
+        .filter((option) => ids.includes(option.id as never))
         .map((option) => option.name)
         .join(', ') || ''
     );
@@ -548,7 +550,7 @@ export function databaseBoardGroups(
             (database.view.groupBy === undefined ||
               property.id === database.view.groupBy),
         );
-  const options = property?.options ?? [];
+  const options = property ? databaseChoiceOptions(property) : [];
   const groups = options.map((option) => ({
     key: option.id,
     name: option.name,

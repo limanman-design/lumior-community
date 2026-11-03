@@ -19,6 +19,14 @@ const dateType = (type: string) =>
   ['date', 'createdAt', 'updatedAt'].includes(type);
 const choiceType = (type: string) =>
   ['select', 'multiSelect', 'status'].includes(type);
+/** Match the option editor and picker, including the visible status groups. */
+export function databaseChoiceOptions(property: DatabaseProperty) {
+  const options = property.options || [];
+  return property.type === 'status'
+    ? (['todo', 'progress', 'done'] as const).flatMap(group =>
+        options.filter(option => (option.group || 'todo') === group))
+    : options;
+}
 const rawValue = (record: DatabaseRecord, property: DatabaseProperty) =>
   property.type === 'createdAt'
     ? record.createdAt
@@ -31,8 +39,8 @@ const textValue = (record: DatabaseRecord, property?: DatabaseProperty) => {
   if (blank(value)) return '';
   if (choiceType(property.type))
     return (
-      property.options
-        ?.filter((option) =>
+      databaseChoiceOptions(property)
+        .filter((option) =>
           (Array.isArray(value) ? value : [value]).includes(option.id as never),
         )
         .map((option) => option.name)
@@ -276,13 +284,33 @@ export function compareDatabaseRecords(
       (property) => property.id === sort.propertyId,
     );
     if (!property && sort.propertyId !== 'title') continue;
+    if (property && choiceType(property.type)) {
+      const options = databaseChoiceOptions(property);
+      // Multi-select chips are displayed in option order, not selection order.
+      // Compare those ranks lexicographically; matching prefixes sort shorter first.
+      const ranks = (record: DatabaseRecord) => {
+        const value = rawValue(record, property);
+        const selected = new Set<unknown>(Array.isArray(value) ? value : [value]);
+        return options.flatMap((option, index) => selected.has(option.id) ? [index] : []);
+      };
+      const left = ranks(a), right = ranks(b);
+      const missing = Number(!left.length) - Number(!right.length);
+      if (missing) return missing;
+      let result = 0;
+      for (let index = 0; index < Math.min(left.length, right.length); index++) {
+        result = left[index] - right[index];
+        if (result) break;
+      }
+      result ||= left.length - right.length;
+      if (result) return sort.direction === 'asc' ? result : -result;
+      continue;
+    }
     const value = (record: DatabaseRecord) =>
-      property &&
-      ['number', 'checkbox', 'date', 'createdAt', 'updatedAt'].includes(
-        property.type,
-      )
-        ? primitive(rawValue(record, property))
-        : textValue(record, property);
+      property?.type === 'checkbox'
+        ? Number(rawValue(record, property) === true)
+        : property && ['number', 'date', 'createdAt', 'updatedAt'].includes(property.type)
+          ? primitive(rawValue(record, property))
+          : textValue(record, property);
     let left = value(a),
       right = value(b);
     // Empty values stay last in both directions; ties fall through to the next rule.

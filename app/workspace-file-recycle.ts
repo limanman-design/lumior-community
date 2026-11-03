@@ -28,6 +28,19 @@ export function recycleWorkspaceContent(files: WorkspaceFiles, boards: readonly 
   return { boards: removed.boards, files: { ...removed.files, recycledContents: [...retained, recycled] } };
 }
 
+/** Calculate the whole batch before publishing it. Shared instances recycle once. */
+export function recycleWorkspaceContents(files: WorkspaceFiles, boards: readonly Board[], ids: readonly string[], now = Date.now()) {
+  const unique = [...new Set(ids)];
+  for (const id of unique) {
+    if (!files.contents.some(item => item.id === id) || !files.entries.some(item => item.kind === 'content' && item.contentId === id)) {
+      throw new Error('The file no longer exists.');
+    }
+  }
+  let result = { files, boards: [...boards] };
+  for (const id of unique) result = recycleWorkspaceContent(result.files, result.boards, id, now);
+  return result;
+}
+
 export function restoreWorkspaceContent(files: WorkspaceFiles, boards: readonly Board[], id: string, now = Date.now()) {
   const item = files.recycledContents?.find(item => item.content.id === id);
   if (!item || item.expiresAt <= now) throw new Error('The file is no longer in the trash.');
