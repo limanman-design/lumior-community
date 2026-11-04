@@ -1,6 +1,6 @@
 'use client';
 import {useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type DragEvent,type ClipboardEvent} from 'react';
-import {SideMenuExtension} from '@blocknote/core/extensions';
+import {SideMenuExtension,FormattingToolbarExtension} from '@blocknote/core/extensions';
 import {en,zh} from '@blocknote/core/locales';
 import {useI18n} from './i18n';
 import {useCreateBlockNote,useBlockNoteEditor,useComponentsContext,SideMenuController,SideMenu,DragHandleButton,FormattingToolbarController,FormattingToolbar,blockTypeSelectItems,LinkToolbarController,LinkToolbar,type LinkToolbarProps} from '@blocknote/react';
@@ -18,6 +18,7 @@ import {resolveWorkspace} from './workspace-assets';
 import {documentMediaKind,emptyMediaParagraph} from './document-media';
 import {readStoredDocument,saveStoredDocument,storedDocumentError,flushStoredDocuments} from './stored-document';
 import {registerDocumentBlockDrag} from './document-block-drag';
+import {registerDocumentToolbarActivity} from './document-toolbar-activity';
 import {captureNoteSource,documentSources,noteSourceLink,parseNoteSource,numberedSources,sourceKey,sourceLabel,labelNoteSources,openNoteSourceEvent} from './note-source';
 import {useNoteSourceResolver} from './note-source-context';
 import {NoteReferences} from './note-references';
@@ -108,6 +109,7 @@ function DocumentEditor({card,editable=true,autoFocus=false,onActivate,onChange,
  const blockTypes=useMemo(()=>blockTypeSelectItems(dictionary).filter(item=>item.type!=='heading'||Number(item.props?.level)<=4),[dictionary]);
  const placeholder=editorPlaceholder(language,!!card.pdfExcerpt);
  const wrapper=useRef<HTMLDivElement>(null);
+ const [toolbarActive,setToolbarActive]=useState(false);
  const [inlineControls,setInlineControls]=useState<HTMLDivElement|null>(null);
  // Floating menus escape the canvas transform/scroll clip. Drag handles and
  // table handles stay in the document so their hit testing and clipping remain local.
@@ -118,6 +120,11 @@ function DocumentEditor({card,editable=true,autoFocus=false,onActivate,onChange,
  const [fileError,setFileError]=useState('');
  const uploadFile=useCallback((file:File)=>storeUploadedFile(file,file.name),[]);
  const editor=useCreateBlockNote({schema:documentSchema,dictionary:{...dictionary,placeholders:{...dictionary.placeholders,default:placeholder,emptyDocument:placeholder}},initialContent,uploadFile,links:{onClick:event=>{const anchor=event.target instanceof Element?event.target.closest('a[href]'):null;const href=anchor?.getAttribute('href')||'';if(parseNoteSource(href)){event.preventDefault();window.dispatchEvent(new CustomEvent(openNoteSourceEvent,{detail:href}));return true;}const id=contentLinkId(href);if(!id)return false;event.preventDefault();window.dispatchEvent(new CustomEvent(openContentLinkEvent,{detail:id}));return true;}},resolveFileUrl:async url=>resolveDocumentImage(resolveWorkspace(url))},[]);
+ useEffect(()=>registerDocumentToolbarActivity({root:document,windowTarget:window,
+  owns:target=>target instanceof Node&&!!(wrapper.current?.contains(target)||editor.portalElement?.contains(target)),
+  onActive:setToolbarActive,
+  onDismiss:()=>editor.getExtension(FormattingToolbarExtension)?.store.setState(false),
+ }),[editor]);
  useEffect(()=>{mounted.current=true;const pending=pendingImports.current;return()=>{mounted.current=false;for(const operation of pending)operation.abort();};},[]);
  useEffect(()=>{if(!wrapper.current)return;return registerDocumentBlockDrag({element:wrapper.current,view:editor.prosemirrorView,isEditable:()=>editor.isEditable,
   identity:()=>sourceCard.current.sharedId||sourceCard.current.id,
@@ -220,7 +227,7 @@ function DocumentEditor({card,editable=true,autoFocus=false,onActivate,onChange,
  return <div ref={wrapper} onDragEnterCapture={dragFiles} onDragOverCapture={dragFiles} onDropCapture={receiveFiles} onPasteCapture={receiveFiles} onKeyDownCapture={event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='z')for(const operation of pendingImports.current)operation.abort();}} onPointerDownCapture={()=>{if(!editable&&onActivate){activateDocumentEditor(editor);onActivate();}}} onPointerDown={event=>{if(!event.currentTarget.contains(event.target as Node))event.stopPropagation();}} className={`block-document ${editable?'is-editable':'is-readonly'}`}>
   {importing>0&&<output className="document-file-status">{language==='zh'?'正在保存文件…':'Saving files…'}</output>}
   {fileError&&<p className="document-file-error" role="alert">{fileError}</p>}
-  <BlockNoteView editor={editor} className="lumior-document-controls" portalElements={portalElements} theme="dark" editable={editable} sideMenu={false} formattingToolbar={false} linkToolbar={false} onChange={change}><FormattingToolbarController formattingToolbar={()=> <FormattingToolbar blockTypeSelectItems={blockTypes}/>}/><LinkToolbarController linkToolbar={DocumentLinkToolbar} floatingUIOptions={{useFloatingOptions:{placement:"top"}}}/><SideMenuController portalElement={inlineControls??undefined} sideMenu={()=> <SideMenu><DragHandleButton/></SideMenu>}/><div ref={setInlineControls} className="bn-root bn-shadcn document-inline-controls"/></BlockNoteView>
+  <BlockNoteView editor={editor} className="lumior-document-controls" portalElements={portalElements} theme="dark" editable={editable} sideMenu={false} formattingToolbar={false} linkToolbar={false} onChange={change}>{toolbarActive&&<FormattingToolbarController formattingToolbar={()=> <FormattingToolbar blockTypeSelectItems={blockTypes}/>}/>}<LinkToolbarController linkToolbar={DocumentLinkToolbar} floatingUIOptions={{useFloatingOptions:{placement:"top"}}}/><SideMenuController portalElement={inlineControls??undefined} sideMenu={()=> <SideMenu><DragHandleButton/></SideMenu>}/><div ref={setInlineControls} className="bn-root bn-shadcn document-inline-controls"/></BlockNoteView>
   {sourceControls&&<NoteReferences sources={sources} enabled={card.citationStyle==='gbt-7714-2025'} edits={card.citationEdits} onChange={editable&&onChange?citationEdits=>onChange({citationEdits}):undefined}/>}
  </div>;
 }
