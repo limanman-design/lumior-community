@@ -9,6 +9,7 @@ import {
   type ThesisSnapshot,
 } from './model.ts';
 import { runThesis } from './run.ts';
+import { thesisCardRoles, thesisContextPath } from './card-roles.ts';
 
 type Settings = ThesisProviderSettings;
 const json = (data: unknown, status = 200) =>
@@ -67,6 +68,22 @@ export function readThesisRequest(value: unknown): {
       file.blob !== undefined
     )
       throw new Error('项目文件无效，PDF 原件必须保留在本地。');
+  }
+  if (snapshot.cardContext !== undefined) {
+    const context = record(snapshot.cardContext);
+    if (!Array.isArray(context.cards) || context.cards.length > 1000 || !Array.isArray(context.existing) || context.existing.length > 1000) throw new Error('引用卡片范围无效。');
+    const ids = new Set<string>();
+    for (const value of context.cards) {
+      const card = record(value);
+      if (typeof card.id !== 'string' || !card.id || card.id.length > 200 || ids.has(card.id) || typeof card.title !== 'string' || card.title.length > 10000
+        || (card.canBeOutput !== undefined && typeof card.canBeOutput !== 'boolean') || !['note', 'text', 'pdf'].includes(String(card.kind)) || card.path !== thesisContextPath(card.id, card.kind === 'pdf') || !files[String(card.path)]) throw new Error('引用卡片或对应文字无效。');
+      ids.add(card.id);
+    }
+    for (const value of context.existing) {
+      const binding = record(value);
+      if (typeof binding.cardId !== 'string' || !binding.cardId || typeof binding.role !== 'string' || !(binding.role === 'CLAUDE.md' || thesisCardRoles.some(role => role.id === binding.role))) throw new Error('卡片用途关联无效。');
+    }
+    if (context.versions !== undefined && Object.values(record(context.versions)).some(value => !Number.isSafeInteger(value) || Number(value) < 0)) throw new Error('成果版本无效。');
   }
   if (
     !Array.isArray(snapshot.directories) ||

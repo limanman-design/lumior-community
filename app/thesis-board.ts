@@ -4,14 +4,10 @@ import type { Board, Card } from './canvas-model';
 import { thesisDirectories, newThesisSession, type ThesisFile, type ThesisSession, type ThesisSkillId, type ThesisSnapshot } from '../lib/thesis/model.ts';
 import { thesisSettingsTemplate } from '../lib/thesis/skill-content.generated.ts';
 import type { ThesisRunResult } from '../lib/thesis/run';
+import { resolveCardBinding, type AiCardBinding } from '../lib/ai-card-roles.ts';
+import { thesisArtifactLabels, thesisSourceLabels, thesisCardRoles, type ThesisSourceRole } from '../lib/thesis/card-roles.ts';
+export { thesisArtifactLabels, thesisSourceLabels, type ThesisSourceRole } from '../lib/thesis/card-roles.ts';
 
-export const thesisArtifactLabels: Record<string, string> = {
-  'CLAUDE.md': '学生背景', 'thesis/topic.md': '选题卡', 'thesis/lit-matrix.md': '文献矩阵',
-  'thesis/review-outline.md': '综述提纲', 'thesis/review-draft.md': '综述初稿',
-  'thesis/proposal-outline.md': '开题提纲', 'thesis/proposal-draft.md': '开题报告',
-};
-export const thesisSourceLabels = { refs: '论文文献', template: '学院模板', rubric: '评审要求', material: '企业／背景资料' } as const;
-export type ThesisSourceRole = keyof typeof thesisSourceLabels;
 export type ThesisArtifact = { cardId: string; revision: number; modifiedAt: number; needsReview?: string; lastEditAt?: number; lastDecisionEditAt?: number };
 export type ThesisRevision = { id: string; path: string; title: string; body: string; blocks?: Card['blocks']; revision: number; at: number };
 export type ThesisProposal = { path: string; text: string; base: string; baseNote?: NoteSnapshot; topicVersion: number; at: number };
@@ -121,22 +117,54 @@ export function reconcileThesisEdits(before: Board, after: Board, now = Date.now
   return next ? { ...after, thesis: next } : after;
 }
 export function setThesisSource(board: Board, id: string, role: ThesisSourceRole | ''): Board {
-  if (!board.cards.some(card => card.id === id)) throw new Error('这张资料卡已移除。');
+  if (!board.cards.some(card => card.id === id) && (role || !board.thesis?.sources[id])) throw new Error('这张资料卡已移除。');
+  if (role && !Object.hasOwn(thesisSourceLabels, role)) throw new Error('不支持的资料用途。');
   const next = enableBoardThesis(board), thesis = structuredClone(next.thesis!);
   if (role) thesis.sources[id] = role; else delete thesis.sources[id];
   if (board.thesis?.sources[id] !== role) markDependent(thesis, '论文资料用途已调整，请复核来源范围。');
   return { ...next, thesis };
 }
+/** Bind existing user content without rewriting it or replacing another output. */
+export function bindThesisCard(board: Board, binding: AiCardBinding): Board {
+  const { role } = resolveCardBinding(thesisCardRoles, board.cards.map(card => ({ id: card.id, title: card.title, kind: card.kind, path: '', canBeOutput: !card.storedDocument && !card.sharedId })), binding);
+  const previous = thesisArtifactForCard(board, binding.cardId);
+  if (previous && previous[0] !== role.id) throw new Error('这张卡片已是另一项成果，请先在资料与历史中解除原关联。');
+  if (role.kind === 'source') return setThesisSource(board, binding.cardId, role.id as ThesisSourceRole);
+  const current = board.thesis?.artifacts[role.id];
+  if (current && current.cardId !== binding.cardId) throw new Error('这项成果已关联其他卡片，请先在资料与历史中解除原关联。');
+  if (current) return board;
+  const enabled = enableBoardThesis(board);
+  const next = { ...enabled, thesis: structuredClone(enabled.thesis!) };
+  const state = next.thesis!;
+  delete state.sources[binding.cardId];
+  state.artifacts[role.id] = { cardId: binding.cardId, revision: 1, modifiedAt: Date.now() };
+  if (role.id === topicPath) state.topicVersion = Math.max(1, state.topicVersion + 1);
+  markDependent(state, `${role.label}关联已调整，请复核相关成果。`, role.id);
+  return next;
+}
+export function unbindThesisArtifact(board: Board, path: string): Board {
+  const next = { ...board, thesis: structuredClone(board.thesis!) }, state = next.thesis!;
+  const artifact = state.artifacts[path];
+  if (!artifact) return board;
+  const card = board.cards.find(item => item.id === artifact.cardId);
+  if (card) archive(state, path, card, artifact.revision, Date.now());
+  delete state.artifacts[path];
+  delete state.proposals[path];
+  delete state.files[path];
+  markDependent(state, `${thesisArtifactLabels[path]}关联已解除，请复核相关成果。`, path);
+  return next;
+}
 export function thesisSourcePath(id: string, role: ThesisSourceRole, card: Card) {
   // Stable identity, independent of renaming and ordering on the canvas.
   return `thesis/${role === 'material' ? 'materials' : role}/${encodeURIComponent(id)}${card.pdf ? '.pdf' : '.md'}`;
 }
-export function thesisInputSignature(board: Board) {
+export function thesisInputSignature(board: Board, referenceIds?: readonly string[]) {
   if (!board.thesis) return '';
   return JSON.stringify({ boardId: board.id, topicVersion: board.thesis.topicVersion,
     artifacts: Object.entries(board.thesis.artifacts).map(([path, value]) => [path, value.cardId, board.cards.find(card => card.id === value.cardId) && cardText(board.cards.find(card => card.id === value.cardId)!)]),
     sources: Object.entries(board.thesis.sources).map(([id, role]) => { const card = board.cards.find(item => item.id === id); return [id, role, card?.title, card?.body, card?.pdf?.url, card?.pdf?.size]; }),
     files: board.thesis.files, proposals: board.thesis.proposals,
+    ...(referenceIds ? { references: referenceIds.map(id => { const card = board.cards.find(item => item.id === id); return [id, card && { title: card.title, kind: card.kind, body: card.body, blocks: card.blocks, pdf: card.pdf, storedDocument: card.storedDocument }]; }), conversations: Object.entries(board.thesis.sessions).map(([id, session]) => [id, session.skill, session.turns]) } : {}),
     ...(() => {
       const ids = new Set([...Object.keys(board.thesis.sources), ...Object.values(board.thesis.artifacts).map(item => item.cardId)]);
       const notes = board.cards.filter(card => ids.has(card.id) && (card.blocks?.length || card.storedDocument));
@@ -172,7 +200,7 @@ export function boardThesisSnapshot(board: Board, workingSkill?: ThesisSkillId, 
     files[matrixPath] = { path: matrixPath, text: proposal.text, modifiedAt: proposal.at };
   }
   return { files, directories: [...thesisDirectories, 'thesis/materials'], literatureSequence: board.thesis.literatureSequence,
-    boardContext: `本项目绑定当前画板。卡片内容是用户最新编辑结果，优先于旧对话。选题版本由系统维护为 v${board.thesis.topicVersion}。已有卡片的写入只会保存为待采纳建议，用户采纳后才生效；不要宣称已覆盖。待采纳：${Object.keys(board.thesis.proposals).join('、') || '无'}。需复核：${Object.entries(board.thesis.artifacts).filter(([, v]) => v.needsReview).map(([p, v]) => `${p}：${v.needsReview}`).join('；') || '无'}。来源文件只含用户明确分配用途的本画板资料；materials 是企业背景，不是论文。` };
+    boardContext: `本项目绑定当前画板。卡片内容是用户最新编辑结果，优先于旧对话。选题版本由系统维护为 v${board.thesis.topicVersion}。已有卡片的写入只会保存为待采纳建议，用户采纳后才生效；不要宣称已覆盖。待采纳：${Object.keys(board.thesis.proposals).join('、') || '无'}。需复核：${Object.entries(board.thesis.artifacts).filter(([, v]) => v.needsReview).map(([p, v]) => `${p}：${v.needsReview}`).join('；') || '无'}。已关联来源仅用于本画板；本轮引用位于 context/cards，默认不持久关联，用途明确时可调用 SetCardRole。materials 是企业背景，不是论文。` };
 }
 export function boardThesisSession(board: Board, chatId: string, skill: ThesisSkillId): ThesisSession {
   const old = board.thesis?.sessions[chatId];
@@ -198,7 +226,7 @@ function newArtifact(board: Board, path: string, text: string, now: number) {
     createdAt: new Date(now).toISOString(), updatedAt: new Date(now).toISOString(), creationDateSource: 'actual' };
   board.cards.push(card);
   board.thesis!.artifacts[path] = { cardId: card.id, revision: 1, modifiedAt: now };
-  if (path === topicPath) board.thesis!.topicVersion = 1;
+  if (path === topicPath) board.thesis!.topicVersion = Math.max(1, board.thesis!.topicVersion + 1);
 }
 export function createThesisArtifact(board: Board, path: string, text = '') {
   if (!thesisArtifactLabels[path]) throw new Error('不支持的论文成果。');
@@ -207,9 +235,14 @@ export function createThesisArtifact(board: Board, path: string, text = '') {
   newArtifact(next, path, text, Date.now());
   return next;
 }
-export function applyThesisResult(board: Board, expected: string, result: ThesisRunResult, chatId: string): Board {
-  if (thesisInputSignature(board) !== expected) throw new Error('等待期间论文内容或资料范围已改变，本轮结果未写入画板，用户修改已保留。请重新发送。');
-  const next: Board = { ...board, cards: [...board.cards], thesis: structuredClone(board.thesis!) }, state = next.thesis!, now = Date.now();
+export function applyThesisResult(board: Board, expected: string, result: ThesisRunResult, chatId: string, referenceIds?: readonly string[]): Board {
+  if (thesisInputSignature(board, referenceIds) !== expected) throw new Error('等待期间论文内容或资料范围已改变，本轮结果未写入画板，用户修改已保留。请重新发送。');
+  let next: Board = { ...board, cards: [...board.cards], thesis: structuredClone(board.thesis!) };
+  for (const binding of result.cardBindings || []) {
+    resolveCardBinding(thesisCardRoles, board.cards.filter(card => referenceIds?.includes(card.id)).map(card => ({ id: card.id, title: card.title, kind: card.kind, path: '' })), binding);
+    next = bindThesisCard(next, binding);
+  }
+  const state = next.thesis!, now = Date.now();
   for (const path of result.changed) {
     const file = result.snapshot.files[path];
     if (!file) continue;
@@ -277,7 +310,7 @@ export function restoreThesisRevision(board: Board, id: string): Board {
 export function remapThesisValue<T>(value: T, ids: ReadonlyMap<string, string>): T {
   if (typeof value === 'string') {
     let text: string = ids.get(value) || value;
-    for (const [old, next] of ids) for (const role of ['refs', 'template', 'rubric', 'materials']) text = text.split(`thesis/${role}/${encodeURIComponent(old)}.`).join(`thesis/${role}/${encodeURIComponent(next)}.`);
+    for (const [old, next] of ids) for (const role of ['refs', 'template', 'rubric', 'materials', 'context/cards']) text = text.split(`thesis/${role}/${encodeURIComponent(old)}.`).join(`thesis/${role}/${encodeURIComponent(next)}.`);
     return text as T;
   }
   if (Array.isArray(value)) return value.map(item => remapThesisValue(item, ids)) as T;

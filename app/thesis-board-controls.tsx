@@ -7,7 +7,8 @@ import type { AiChat } from './ai-chat-store';
 import { useI18n } from './i18n';
 import { thesisSkills, writingMode, type ThesisSkillId } from '@/lib/thesis/model';
 import { thesisStageStatus } from './thesis-stage-status';
-import { createThesisArtifact, restoreThesisRevision, setThesisSource, thesisCardMarkdown, thesisArtifactLabels, thesisSourceLabels, type ThesisSourceRole } from './thesis-board';
+import { bindThesisCard, unbindThesisArtifact, restoreThesisRevision, setThesisSource, thesisCardMarkdown, thesisArtifactLabels, thesisSourceLabels } from './thesis-board';
+import { thesisCardRoles } from '../lib/thesis/card-roles';
 import { exportThesisWord } from './thesis-files';
 import './thesis-board.css';
 
@@ -31,18 +32,24 @@ export function ThesisBoardDialog({ provider = defaultThesisModel.provider, boar
             <p>{status.reason}</p>
           </div>; })}
         </div></details>
-        <label className="thesis-consent"><input type="checkbox" checked={hasThesisConsent(thesis, provider)} disabled={disabled} onChange={e => { const checked = e.target.checked; void change(b => ({ ...b, thesis: updateThesisConsent(b.thesis!, provider, checked) })); }} />同意将本画板论文卡片和已指定用途的资料文字通过当前 AI 服务发送给 {thesisProviderName(provider)}。PDF 原件保留在本机。</label>
+        <label className="thesis-consent"><input type="checkbox" checked={hasThesisConsent(thesis, provider)} disabled={disabled} onChange={e => { const checked = e.target.checked; void change(b => ({ ...b, thesis: updateThesisConsent(b.thesis!, provider, checked) })); }} />同意将本画板论文卡片、论文对话、已指定用途及当前引用的资料文字通过当前 AI 服务发送给 {thesisProviderName(provider)}。PDF 原件保留在本机。</label>
         <label>写作模式 <select disabled={disabled} value={writingMode(thesis.files)} onChange={e => { const mode = e.target.value; void change(b => { const path = 'thesis/settings.md', file = b.thesis!.files[path], setting = `写作模式：${mode === 'outline' ? '只给提纲和评审' : '生成初稿'}`, old = file?.text || '', text = /^写作模式[：:].*$/m.test(old) ? old.replace(/^写作模式[：:].*$/m, setting) : `${setting}\n\n${old}`; return { ...b, thesis: { ...b.thesis!, files: { ...b.thesis!.files, [path]: { ...file, path, text, modifiedAt: Date.now() } } } }; }); }}><option value="draft">生成初稿</option><option value="outline">只给提纲和评审</option></select></label>
         <h3>成果卡片</h3>
-        {Object.entries(thesisArtifactLabels).map(([path, label]) => {
+        {!Object.keys(thesis.artifacts).length && <p>在对话中完成选题、文献整理或写作后，成果会自动成为带标记的普通卡片。学生背景留在对话中，无需新建卡片。</p>}
+        {Object.entries(thesisArtifactLabels).filter(([path]) => thesis.artifacts[path]).map(([path, label]) => {
           const artifact = thesis.artifacts[path], card = board.cards.find(item => item.id === artifact?.cardId);
           return <div className="thesis-artifact-row" key={path}><div><strong>{label}</strong>{artifact && <small>v{path === 'thesis/topic.md' ? thesis.topicVersion : artifact.revision}{!card ? ' · 已移除' : artifact.needsReview ? ' · 需复核' : ''}</small>}{artifact?.needsReview && <p>{artifact.needsReview}</p>}</div>
-            {card ? <><button onClick={() => { onOpenChange(false); onOpen(card.id); }}>打开编辑</button><button onClick={() => void exportThesisWord({ path, text: thesisCardMarkdown(card), modifiedAt: artifact.modifiedAt }).catch(e => setError(e.message))}>导出 Word</button>{artifact.needsReview && <button disabled={disabled} onClick={() => void change(b => ({ ...b, thesis: { ...b.thesis!, artifacts: { ...b.thesis!.artifacts, [path]: { ...b.thesis!.artifacts[path], needsReview: undefined } } } }))}>我已复核</button>}</> : artifact ? <small>从下方历史恢复</small> : <button disabled={disabled} onClick={() => void change(b => createThesisArtifact(b, path, path === 'CLAUDE.md' ? '学校／项目：\n截止日期：\n行业与岗位：\n数据来源与取得方式：\n导师要求：' : ''))}>新建卡片</button>}
+            {card ? <><button onClick={() => { onOpenChange(false); onOpen(card.id); }}>打开编辑</button><button onClick={() => void exportThesisWord({ path, text: thesisCardMarkdown(card), modifiedAt: artifact.modifiedAt }).catch(e => setError(e.message))}>导出 Word</button>{artifact.needsReview && <button disabled={disabled} onClick={() => void change(b => ({ ...b, thesis: { ...b.thesis!, artifacts: { ...b.thesis!.artifacts, [path]: { ...b.thesis!.artifacts[path], needsReview: undefined } } } }))}>我已复核</button>}</> : artifact ? <small>从下方历史恢复</small> : null}
           </div>;
         })}
-        <h3>资料用途</h3><p>拖入的 PDF 默认是普通资料。只有“论文文献”进入读文献流程；模板、评审要求和企业资料分别处理。设置仅作用于本画板。</p>
-        {board.cards.filter(card => !Object.values(thesis.artifacts).some(a => a.cardId === card.id) && ['pdf', 'note', 'text'].includes(card.kind)).map(card => <label className="thesis-source-row" key={card.id}><span>{card.title}</span><select aria-label={`${card.title} 的论文用途`} disabled={disabled} value={thesis.sources[card.id] || ''} onChange={e => { const role = e.target.value as ThesisSourceRole | ''; void change(b => setThesisSource(b, card.id, role)); }}><option value="">普通资料（不参与论文）</option>{Object.entries(thesisSourceLabels).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select></label>)}
-        {!board.cards.some(card => card.pdf) && <p>可先把 PDF 拖进画板，再在这里指定用途。</p>}
+        <h3>已关联资料</h3><p>将卡片添加到对话，再说明“按这张要求评审”或“读这几篇文献”。助手会按你的要求指定用途；普通提问不会自动留下关联。设置仅作用于本画板。</p>
+        {!Object.keys(thesis.sources).length && <p>还没有指定用途的资料。</p>}
+        {Object.entries(thesis.sources).map(([id, role]) => { const card = board.cards.find(item => item.id === id); return <div className="thesis-artifact-row" key={id}><span>{card?.title || '已移除的资料'} · {thesisSourceLabels[role]}</span>{card && <button onClick={() => { onOpenChange(false); onOpen(id); }}>打开</button>}<button disabled={disabled} onClick={() => void change(b => setThesisSource(b, id, ''))}>解除关联</button></div>; })}
+        <details><summary>调整卡片用途</summary><p>仅调整本项目关联，不修改或删除卡片正文。已有成果需先解除关联，再指定另一张卡片。解除成果关联会移除该成果的待采纳建议，正文与历史保留。</p>
+        {board.cards.filter(card => ['pdf', 'note', 'text'].includes(card.kind)).map(card => {
+          const artifact = Object.entries(thesis.artifacts).find(([, item]) => item.cardId === card.id);
+          return <label className="thesis-source-row" key={card.id}><span>{card.title}</span><select aria-label={`${card.title} 的用途`} disabled={disabled} value={artifact?.[0] || thesis.sources[card.id] || ''} onChange={e => { const role = e.target.value; void change(b => role ? bindThesisCard(b, { cardId: card.id, role }) : artifact ? unbindThesisArtifact(b, artifact[0]) : setThesisSource(b, card.id, '')); }}><option value="">未关联</option>{artifact?.[0] === 'CLAUDE.md' && <option value="CLAUDE.md">学生背景（已有卡片）</option>}{thesisCardRoles.filter(role => role.cardKinds.includes(card.kind) && (role.kind !== 'output' || !card.storedDocument && !card.sharedId)).map(role => <option key={role.id} value={role.id}>{role.label}</option>)}</select></label>;
+        })}</details>
         {count > 0 && <><h3>待处理修改</h3><p>打开卡片，点击旁边的修改气泡预览、接受或拒绝建议。</p>{Object.values(thesis.proposals).map(proposal => {
           const card = board.cards.find(c => c.id === thesis.artifacts[proposal.path]?.cardId);
           return <div className="thesis-artifact-row" key={proposal.path}><strong>{thesisArtifactLabels[proposal.path] || '卡片修改'}</strong>{card ? <button onClick={() => { onOpenChange(false); onOpen(card.id); }}>前往卡片</button> : <span>原卡片已移除，请先从历史恢复</span>}</div>;

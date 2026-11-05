@@ -8,6 +8,7 @@ import { thesisChat, thesisMessageQuestions } from './thesis-chat';
 import { defaultThesisModel, hasThesisConsent, updateThesisConsent, thesisProviderName } from '../lib/thesis/providers';
 import { AiQuestionOptions } from './ai-question-options';
 import { aiMessageQuestions } from './ai-question-state';
+import { thesisCardRoles } from '../lib/thesis/card-roles';
 import { runBoardThesis } from './thesis-board-client';
 import { ThesisBoardDialog, type ChangeThesisBoard } from './thesis-board-controls';
 import { AiMarkdown } from './ai-markdown';
@@ -251,14 +252,12 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
     if (!source || source.id !== chat.boardId) return;
     if (!source.thesis) source = await onThesisChange(enableBoardThesis);
     if (!hasThesisConsent(source.thesis, selected.provider)) { patchChat(chat.id, item => ({ ...item, draft: question, canvasView: { ...readAiCanvasView(item.canvasView), collapsed: false } }), true); setNotice(`请先勾选对话中的 ${thesisProviderName(selected.provider)} 资料处理说明，再发送。`); return; }
-    if (chat.refs.some(id => source.cards.some(c => c.id === id && c.pdf) && !source.thesis!.sources[id])) {
-      setThesisOpen(true); setNotice('引用的 PDF 尚未指定论文用途。请在“资料与历史 → 资料用途”中选择论文文献、模板、评审要求或背景资料后再发送。'); return;
-    }
-    const expected = thesisInputSignature(source), now = eventTime(), id = crypto.randomUUID(), questionId = crypto.randomUUID();
+    const references = [...chat.refs];
+    const expected = thesisInputSignature(source, references), now = eventTime(), id = crypto.randomUUID(), questionId = crypto.randomUUID();
     const user: AiMessage = { id: questionId, role: 'user', text: question.trim(), createdAt: now, live: true, references: chat.refs.flatMap(id => { const c = source.cards.find(c => c.id === id); return c ? [{ id, title: c.title, kind: c.kind }] : []; }) };
     const run: Running = { id, chatId: chat.id, abort: new AbortController(), text: '', process: [], started: now };
     running.current = run; setBusy(true); setNotice('');
-    patchChat(chat.id, item => ({ ...item, skill: targetSkill, draft: '', refs: [], title: item.messages.length ? item.title : question.slice(0, 36), canvasView: { ...readAiCanvasView(item.canvasView), collapsed: true }, messages: [...item.messages, user, { id, role: 'assistant', text: '', createdAt: now, live: true, replyTo: questionId, status: 'preparing', presentationMode: 'conversation', model: selected.name }] }), true);
+    patchChat(chat.id, item => ({ ...item, skill: targetSkill, draft: '', title: item.messages.length ? item.title : question.slice(0, 36), canvasView: { ...readAiCanvasView(item.canvasView), collapsed: true }, messages: [...item.messages, user, { id, role: 'assistant', text: '', createdAt: now, live: true, replyTo: questionId, status: 'preparing', presentationMode: 'conversation', model: selected.name }] }), true);
     const progress = (message: string, cardId?: string) => {
       if (running.current !== run) return;
       run.process = [...run.process, { message, elapsed: Math.round((eventTime() - now) / 1000) }];
@@ -266,13 +265,14 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
       onReadingCards?.(cardId ? [cardId] : []);
     };
     try {
-      const result = await runBoardThesis(source, chat.id, targetSkill, question.trim(), run.abort.signal, progress, selected.id);
+      const result = await runBoardThesis(source, chat.id, targetSkill, question.trim(), run.abort.signal, progress, selected.id, references);
       if (running.current !== run || run.abort.signal.aborted) return;
       run.text = result.text;
       const target = liveTarget.current;
       if (target.thesisBoard?.id !== source.id || !target.onThesisChange) throw new Error('画板已切换，本轮未写入。');
-      const next = await target.onThesisChange(current => applyThesisResult(current, expected, result, chat.id));
+      const next = await target.onThesisChange(current => applyThesisResult(current, expected, result, chat.id, references));
       if (running.current !== run) return;
+      if (result.cardBindings?.length) run.text += `\n\n已关联：${result.cardBindings.map(binding => `${next.cards.find(card => card.id === binding.cardId)?.title || '卡片'} → ${thesisCardRoles.find(role => role.id === binding.role)?.label || binding.role}`).join('；')}。可在“资料与历史”中调整或解除关联。`;
       const pending = Object.keys(next.thesis!.proposals).length;
       if (pending) run.text += `\n\n有 ${pending} 项修改建议等待采纳；原卡片保持不变。请点击对应卡片旁的修改气泡，预览后决定是否接受。`;
       patchMessage(run.chatId, id, { text: run.text, thesisQuestion: result.session.pending, status: result.error ? 'error' : 'complete', error: result.error, progress: undefined, process: run.process, elapsed: Math.round((eventTime() - now) / 1000) }, true);
@@ -571,7 +571,7 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
           void onThesisChange(board => ({ ...board, thesis: updateThesisConsent(board.thesis!, thesisModel.provider, true) }))
             .then(() => { setNotice(''); setFocusRequest(value => value + 1); })
             .catch(error => setNotice(error.message)).finally(() => setBusy(false));
-        }} />同意将本画板论文卡片、对话和已指定用途的资料文字通过当前 AI 服务发送给 {thesisProviderName(thesisModel.provider)}。PDF 原件保留在本机。</label>}
+        }} />同意将本画板论文卡片、论文对话、已指定用途及当前引用的资料文字通过当前 AI 服务发送给 {thesisProviderName(thesisModel.provider)}。PDF 原件保留在本机。</label>}
       </div>
     </>}
     </div>;

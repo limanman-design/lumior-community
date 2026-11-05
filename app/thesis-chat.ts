@@ -40,7 +40,7 @@ export function thesisChat(board: Board, chats: readonly AiChat[], skill: Thesis
   }
   if (!next.messages.length) {
     const question = skill === 'mba-topic' ? '可以先告诉我你的行业、岗位和已有研究想法，或直接发送“开始”，由论文助手按步骤引导。'
-      : skill === 'mba-lit' ? '你想先读哪篇文献？可以先告诉我题名和想弄清的问题；PDF 拖入画板后，指定为“论文文献”即可参与。'
+      : skill === 'mba-lit' ? '你想先读哪篇文献？可以先告诉我题名和想弄清的问题；把 PDF 添加到对话，说“读这几篇文献”即可；用途不清楚时我会追问。'
       : skill === 'mba-review' ? '你目前确定的研究主题是什么，文献整理到哪一步了？已有综述也可以直接贴在下方。'
       : '你的研究题目和目前的准备进度是什么？有学院要求，也可以先用自己的话告诉我。';
     next.messages = [{ id: `thesis-intro:${next.id}`, role: 'assistant', live: true, createdAt: now,

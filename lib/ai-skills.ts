@@ -1,9 +1,12 @@
 import { thesisSkills } from './thesis/model.ts';
+import { thesisCardRoles } from './thesis/card-roles.ts';
+import type { AiCardRole } from './ai-card-roles.ts';
 export type AiSkill = {
   readonly id: string;
   readonly name: { readonly en: string; readonly zh: string };
   readonly instructions: string;
   readonly target?: 'thesis';
+  readonly cardRoles?: readonly AiCardRole[];
 };
 
 export const defaultAiSkillId = 'research';
@@ -11,7 +14,7 @@ export const defaultAiSkillId = 'research';
 /** Add a skill here only when its behavior is available to requests. */
 export const aiSkills: readonly AiSkill[] = [
   { id: defaultAiSkillId, name: { en: 'Research assistant', zh: '研究助手' }, instructions: '' },
-  ...thesisSkills.map(skill => ({ id: skill.id, name: { en: `MBA · ${skill.id.slice(4)}`, zh: `MBA · ${skill.name}` }, instructions: '', target: 'thesis' as const })),
+  ...thesisSkills.map(skill => ({ id: skill.id, name: { en: `MBA · ${skill.id.slice(4)}`, zh: `MBA · ${skill.name}` }, instructions: '', target: 'thesis' as const, cardRoles: thesisCardRoles })),
 ];
 
 export function getAiSkill(id: string): AiSkill | undefined {

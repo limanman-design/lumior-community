@@ -1,4 +1,6 @@
 import { thesisSkillContent } from './skill-content.generated.ts';
+import { cardRoleTool, resolveCardBinding, type AiCardBinding } from '../ai-card-roles.ts';
+import { thesisCardRoles, thesisRolePath } from './card-roles.ts';
 import {
   thesisDirectories,
   thesisPath,
@@ -33,6 +35,7 @@ const schema = (
 });
 const string = { type: 'string' };
 export const thesisTools = [
+  cardRoleTool(thesisCardRoles),
   schema(
     'Read',
     '读本项目文件。PDF 与 docx 均返回本地提取文字。PDF 包含 === PDF p.N === 页序标记，引用要根据原文页眉页脚换算印刷页码。首次筛选 PDF 用 mode=preview 只读前 3 页；精读用 full，每批最多精读 5 篇。已登记文献默认返回矩阵记录，避免重复精读；确需核对其原文时才用 mode=verify。',
@@ -118,6 +121,7 @@ function wholeFile(snapshot: ThesisSnapshot, path: string) {
 export class ThesisTools {
   readonly snapshot: ThesisSnapshot;
   readonly changes = new Set<string>();
+  readonly cardBindings: AiCardBinding[] = [];
   readonly session: ThesisSession;
   readonly context: WriteContext;
   constructor(
@@ -134,6 +138,30 @@ export class ThesisTools {
     args: Record<string, unknown>,
     callId: string,
   ): { result: unknown; question?: ThesisQuestion } {
+    if (name === 'SetCardRole') {
+      const binding = { cardId: text(args.cardId, 'cardId'), role: text(args.role, 'role') };
+      const scope = this.snapshot.cardContext;
+      const { card, role } = resolveCardBinding(thesisCardRoles, scope?.cards || [], binding);
+      const previous = [...(scope?.existing || []), ...this.cardBindings];
+      const path = thesisRolePath(card.id, role.id, card.kind === 'pdf');
+      const effective = this.cardBindings.find(item => item.cardId === card.id) || scope?.existing.find(item => item.cardId === card.id);
+      if (effective?.role === role.id && this.snapshot.files[path]) return { result: { saved: true, cardId: card.id, role: role.id, label: role.label, path, message: '已有关联，保留当前正文和待采纳修改。' } };
+      if (previous.some(item => item.cardId === card.id && item.role !== role.id && (item.role === 'CLAUDE.md' || thesisCardRoles.some(r => r.id === item.role && r.kind === 'output'))))
+        throw new Error('这张卡片已是另一项成果，请先在资料与历史中解除原关联。');
+      if (role.kind === 'output' && (previous.some(item => item.role === role.id && item.cardId !== card.id) || this.changes.has(role.id)))
+        throw new Error('这项成果已存在，请先在资料与历史中解除原关联，不能直接替换。');
+      const source = wholeFile(this.snapshot, card.path);
+      const version = Math.max(1, (scope?.versions?.['thesis/topic.md'] || 0) + (scope?.existing.some(item => item.role === role.id && item.cardId === card.id) ? 0 : 1));
+      this.snapshot.files[path] = { ...source, path, uploaded: role.kind === 'source', text: role.kind === 'source' ? `原文件：${card.title}\n\n${source.text}` : path === 'thesis/topic.md' ? `# 选题卡 v${version}\n\n${source.text.replace(/^#\s+选题卡(?:\s+v\d+)?[^\n]*\n?/m, '').trim()}` : source.text };
+      // Each attached card has one role per project. Preserve the original
+      // attachment as read-only evidence and remove obsolete source aliases.
+      for (const old of previous.filter(item => item.cardId === card.id && item.role !== role.id)) {
+        if (thesisCardRoles.find(r => r.id === old.role)?.kind === 'source') delete this.snapshot.files[thesisRolePath(card.id, old.role, card.kind === 'pdf')];
+      }
+      const index = this.cardBindings.findIndex(item => item.cardId === card.id);
+      if (index >= 0) this.cardBindings[index] = binding; else this.cardBindings.push(binding);
+      return { result: { saved: true, cardId: card.id, role: role.id, label: role.label, path, message: '已指定本项目用途，原卡片正文未修改。' } };
+    }
     const path = args.path === undefined ? 'thesis' : text(args.path, 'path');
     if (
       name === 'Read' &&
@@ -228,6 +256,13 @@ export class ThesisTools {
       };
     }
     if (name === 'Read') {
+      // An attachment alias must not bypass the literature batch/read ledger.
+      const candidate = this.snapshot.cardContext?.cards.find(card => card.path === path);
+      if (candidate && this.session.skill === 'mba-lit') {
+        const binding = this.cardBindings.find(item => item.cardId === candidate.id) || this.snapshot.cardContext?.existing.find(item => item.cardId === candidate.id);
+        if (binding?.role === 'refs') return this.execute('Read', { ...args, path: thesisRolePath(candidate.id, 'refs', candidate.kind === 'pdf') }, callId);
+        if (!binding && args.mode !== 'preview') throw new Error('请先根据用户要求指定文献用途再精读；用途不清楚时先预览并追问。');
+      }
       const file = wholeFile(this.snapshot, path);
       const existing = this.session.skill === 'mba-lit' && file.path.startsWith('thesis/refs/')
         ? literatureCards(this.snapshot.files['thesis/lit-matrix.md']?.text || '').find(card => card.source === file.path) : undefined;

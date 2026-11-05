@@ -114,7 +114,7 @@ export type ThesisProject = {
 export type ThesisSnapshot = Pick<
   ThesisProject,
   'files' | 'directories' | 'literatureSequence'
-> & { boardContext?: string };
+> & { boardContext?: string; cardContext?: import('../ai-card-roles.ts').AiCardRoleContext };
 export function isThesisSkill(value: unknown): value is ThesisSkillId {
   return (
     typeof value === 'string' && thesisSkillIds.includes(value as ThesisSkillId)
