@@ -9,7 +9,7 @@ import { defaultThesisModel, hasThesisConsent, updateThesisConsent, thesisProvid
 import { AiQuestionOptions } from './ai-question-options';
 import { aiMessageQuestions } from './ai-question-state';
 import { runBoardThesis } from './thesis-board-client';
-import { ThesisBoardControls, type ChangeThesisBoard } from './thesis-board-controls';
+import { ThesisBoardDialog, type ChangeThesisBoard } from './thesis-board-controls';
 import { AiMarkdown } from './ai-markdown';
 import { AiComposer } from './ai-composer';
 import { AiResearchProcess } from './ai-research-process';
@@ -51,7 +51,7 @@ import './ai-canvas.css';
 import { appendAiReferences, canvasRunningActivity, readAiCanvasView, type AiCanvasView } from './ai-canvas-presentation';
 
 type Props = {
-  thesisBoard?: Board; onThesisChange?: ChangeThesisBoard; onOpenThesisCard?: (id: string) => void;
+  thesisBoard?: Board; thesisDialogRequest?: number; onThesisChange?: ChangeThesisBoard; onOpenThesisCard?: (id: string) => void;
   onReadingCards?: (ids: string[]) => void;
   onGenerationChange?: (requestId: string, generation: AiBoardGeneration | null, cancel?: () => void) => void;
   selectedCardIds?: string[]; onImport?: () => void;
@@ -92,7 +92,7 @@ function AiEvidence({ context, onSource }: { context: AiContext; onSource: (inde
   </details>;
 }
 
-export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: readerMode, onMode, canvas = false, visible = true, selectedCardIds = [], onImport, recordsRequest = 0, operations = [], operationStatuses = {}, onUndoOperation, onCanvasDockChange, onHoverSource, request, cards, boardId, board, layoutSections, onApplyBoardActions, onGenerationChange, onReadingCards, onCreateCard, onDropSelection, onCitation, onResearchFocus, expandedVideo = false, expandedPdf = false, expandedNote = false, expandedImage = false, portalTarget }: Props) {
+export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, onOpenThesisCard, mode: readerMode, onMode, canvas = false, visible = true, selectedCardIds = [], onImport, recordsRequest = 0, operations = [], operationStatuses = {}, onUndoOperation, onCanvasDockChange, onHoverSource, request, cards, boardId, board, layoutSections, onApplyBoardActions, onGenerationChange, onReadingCards, onCreateCard, onDropSelection, onCitation, onResearchFocus, expandedVideo = false, expandedPdf = false, expandedNote = false, expandedImage = false, portalTarget }: Props) {
   const { t, locale, language } = useI18n();
   const saved = useAiHistory(boardId);
   const chat = presentedAiChat(saved.state.chats, saved.state.activeId);
@@ -122,6 +122,12 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
   const histories = visibleAiChats(saved.state.chats);
   const recentHistories = histories.filter(item => visibleAiMessages(item.messages).length || item.draft.trim());
   const [thesisOpen, setThesisOpen] = useState(false);
+  const handledThesisDialog = useRef(thesisDialogRequest);
+  useEffect(() => {
+    if (thesisDialogRequest === handledThesisDialog.current) return;
+    handledThesisDialog.current = thesisDialogRequest;
+    setThesisOpen(true);
+  }, [thesisDialogRequest]);
   const [recordsOpen, setRecordsOpen] = useState(false), [recordDetail, setRecordDetail] = useState('');
   const [operationToast, setOperationToast] = useState<AiBoardActionResult | null>(null);
   const [suggestionIntent, setSuggestionIntent] = useState<{ chatId: string; prompt: string; mode: 'operation' | 'conversation' } | null>(null);
@@ -509,7 +515,8 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
         setSuggestionIntent({ chatId: chat.id, prompt: t(...item.prompt!), mode: ['outline', 'structure', 'arrange', 'group'].includes(item.id) ? 'operation' : 'conversation' });
         setFocusRequest(value => value + 1);
       }}>{t(...item.label)}</button>)}</div>;
-  if (panelMode === 'closed') return null;
+  const thesisDialog = thesisBoard?.thesis && onThesisChange && <ThesisBoardDialog provider={thesisModel.provider} chats={histories} activeStage={isThesisSkill(skill) ? skill : undefined} board={thesisBoard} onChange={onThesisChange} onStage={selectSkill} onOpen={id => onOpenThesisCard?.(id)} open={thesisOpen} onOpenChange={setThesisOpen} busy={busy}/>;
+  if (panelMode === 'closed') return <>{thesisDialog}</>;
   const responsePanel = <div className={canvas ? 'ai-canvas-response' : 'ai-reader-response'} ref={response} hidden={canvas && collapsed}>
     {canvas ? <header className="ai-header ai-canvas-header">
       <span className="ai-current-title" title={chat ? aiChatDisplayTitle(chat, t('New conversation', '新对话')) : ''}>{chat ? aiChatDisplayTitle(chat, t('New conversation', '新对话')) : t('New conversation', '新对话')}</span>
@@ -586,9 +593,6 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
     <div className="ai-compose-slot" hidden={!canvas && historyOpen}>
       {canvas && operationToast && !responseExpanded && <AiOperationToast key={operationToast.id} result={operationToast} onClose={() => setOperationToast(null)} onUndo={() => { const id = operationToast.id; setOperationToast(null); void onUndoOperation?.(id).catch(error => setNotice(error.message)); }}/>}
       {canvas && !messages.length && !isThesisSkill(skill) && !busy && suggestions()}
-      {thesisBoard?.thesis && onThesisChange && <ThesisBoardControls provider={thesisModel.provider} chats={histories} activeStage={isThesisSkill(skill) ? skill : undefined} board={thesisBoard} onChange={onThesisChange} onStage={selectSkill} onOpen={id => onOpenThesisCard?.(id)} open={thesisOpen} onOpenChange={setThesisOpen} busy={busy}/>}
-
-
       <AiComposer fixedModelLabel={isThesisSkill(skill) ? thesisModel.name : undefined} key={isThesisSkill(skill) ? 'thesis' : 'research'} modelScope={isThesisSkill(skill) ? 'thesis' : 'research'} canvas={canvas} focusRequest={canvas ? focusRequest : 0} placeholder={canvas ? (messages.length ? t('Continue the conversation…', '继续追问，或回答 AI 的问题…') : t('Ask AI, or organize this canvas…', '问 AI，或让它帮你整理这块画板…')) : undefined}
 
         portalContainer={portalTarget} draft={chat?.draft || ''} onDraft={draft => edit({ draft })} refs={chat?.refs || []} onRefs={refs => edit({ refs })} cards={cards} context={context} ready={saved.ready} busy={busy} onSend={() => void send()} onStop={stop} model={isThesisSkill(skill) ? thesisModel.id : model} onModel={model => edit(isThesisSkill(skill) ? { thesisModel: model } : { model })} skill={skill} onSkill={selectSkill} onOpenCard={id => { const card = cards.find(item => item.id === id); if (card) openReference({ id: card.id, title: card.title, kind: card.kind, excerpt: !!card.pdfExcerpt }); }} />
@@ -596,5 +600,5 @@ export function AiPanel({ thesisBoard, onThesisChange, onOpenThesisCard, mode: r
     </div>
     {canvas && recordsOpen && <AiCanvasHistory key={recordDetail || 'records'} open onClose={() => setRecordsOpen(false)} chats={histories} operations={operations} statuses={operationStatuses} initialOperation={recordDetail} onUndo={onUndoOperation || (async () => {})} onOpenChat={(id) => { stop(); updateHistory(value => ({ ...value, activeId: id, chats: value.chats.map(item => item.id === id ? { ...item, canvasView: { ...readAiCanvasView(item.canvasView), docked: canvasView.docked, collapsed: false } } : item) }), true); setRecordsOpen(false); setCanvasResponseOpen(true); setHistoryOpen(false); }}/>}
   </aside>;
-  return portalTarget ? createPortal(panel, portalTarget) : panel;
+  return <>{thesisDialog}{portalTarget ? createPortal(panel, portalTarget) : panel}</>;
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { Board } from './canvas-model';
 import type { AiChat } from './ai-chat-store';
+import { useI18n } from './i18n';
 import { thesisSkills, writingMode, type ThesisSkillId } from '@/lib/thesis/model';
 import { thesisStageStatus } from './thesis-stage-status';
 import { createThesisArtifact, restoreThesisRevision, setThesisSource, thesisCardMarkdown, thesisArtifactLabels, thesisSourceLabels, type ThesisSourceRole } from './thesis-board';
@@ -11,19 +12,17 @@ import { exportThesisWord } from './thesis-files';
 import './thesis-board.css';
 
 export type ChangeThesisBoard = (change: (board: Board) => Board) => Promise<Board>;
-export function ThesisBoardControls({ provider = defaultThesisModel.provider, board, chats, activeStage, onChange, onStage, onOpen, open, onOpenChange, busy }: { provider?: ThesisProvider; board: Board; chats: readonly AiChat[]; activeStage?: ThesisSkillId; onChange: ChangeThesisBoard; onStage: (skill: string) => void; onOpen: (id: string) => void; open: boolean; onOpenChange: (value: boolean) => void; busy: boolean }) {
+export function ThesisBoardDialog({ provider = defaultThesisModel.provider, board, chats, activeStage, onChange, onStage, onOpen, open, onOpenChange, busy }: { provider?: ThesisProvider; board: Board; chats: readonly AiChat[]; activeStage?: ThesisSkillId; onChange: ChangeThesisBoard; onStage: (skill: string) => void; onOpen: (id: string) => void; open: boolean; onOpenChange: (value: boolean) => void; busy: boolean }) {
+  const { t } = useI18n();
   const [error, setError] = useState(''), [working, setWorking] = useState(false), [restore, setRestore] = useState<string | null>(null);
   const thesis = board.thesis;
   if (!thesis) return null;
-  const count = Object.keys(thesis.proposals).length, missing = Object.entries(thesis.artifacts).filter(([, a]) => !board.cards.some(c => c.id === a.cardId));
+  const count = Object.keys(thesis.proposals).length;
   const change = async (fn: (board: Board) => Board) => { setWorking(true); setError(''); try { await onChange(fn); } catch (e) { setError((e as Error).message); } finally { setWorking(false); } };
   const disabled = working || busy;
-  return <>
-    <div className="thesis-chat-tools">
-      <button type="button" disabled={disabled} onClick={() => onOpenChange(true)}>资料与历史{count > 0 ? ` · ${count} 项待处理` : missing.length ? ' · 有成果待恢复' : ''}</button>
-    </div>
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="thesis-board-dialog">
-      <DialogTitle>{board.title} · 资料与历史</DialogTitle>
+      <DialogTitle>{board.title} · {t('Materials & history', '资料与历史')}</DialogTitle>
       <DialogDescription>成果使用普通笔记卡编辑。AI 修改在卡片旁预览和接受；这里保留资料用途、流程进度与历史。</DialogDescription>
       <div className="thesis-board-scroll">
         <details><summary>流程进度</summary><p>也可以通过对话输入框的 Skill 选择继续对应阶段。</p><div className="thesis-progress-list">
@@ -53,7 +52,7 @@ export function ThesisBoardControls({ provider = defaultThesisModel.provider, bo
         <p>论文状态、修改历史和原文件随 Lumior 的“设置 → 备份与恢复”一起保存。</p>
       </div>{error && <p role="alert">{error}</p>}
     </DialogContent></Dialog>
-  </>;
+  );
 }
 
 export function ThesisDeleteDialog({ request, onCancel, onConfirm }: { request: { titles: string[]; consequence: string; wholeBoard: boolean } | null; onCancel: () => void; onConfirm: () => void }) {

@@ -290,12 +290,12 @@
   {
     "key": "fill-hover",
     "scene": "stage",
-    "location": "对话资料入口",
-    "target": "鼠标悬停的资料与历史按钮",
+    "location": "资料与历史中的流程进度",
+    "target": "鼠标悬停的流程阶段按钮",
     "source": {
       "file": "app/thesis-board.css",
-      "line": 29,
-      "selector": ".thesis-chat-tools button:is(:hover,:focus-visible)",
+      "line": 2,
+      "selector": ".thesis-board-dialog button:hover",
       "property": "background",
       "value": "var(--ui-fill-hover)"
     },
@@ -310,7 +310,7 @@
     "target": "当前选中的阶段",
     "source": {
       "file": "app/thesis-board.css",
-      "line": 36,
+      "line": 29,
       "selector": ".thesis-progress-list button[aria-pressed=true]",
       "property": "background",
       "value": "var(--ui-fill-selected)"
