@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MaterialIcon } from './material-icon';
 import type { Board, Card } from './canvas-model';
@@ -52,6 +52,9 @@ import './ai-canvas.css';
 import { appendAiReferences, canvasRunningActivity, readAiCanvasView, type AiCanvasView } from './ai-canvas-presentation';
 
 type Props = {
+  hideReferenceButton?: boolean; generalAssistantLabel?: boolean;
+  composerHeader?: ReactNode; composerToolbar?: ReactNode; showSuggestions?: boolean;
+  onContextCardsChange?: (ids: string[]) => void; onBusyChange?: (busy: boolean) => void; embedded?: boolean; contextCardIds?: string[]; composerPlaceholder?: string;
   thesisBoard?: Board; thesisDialogRequest?: number; onThesisChange?: ChangeThesisBoard; onOpenThesisCard?: (id: string) => void;
   onReadingCards?: (ids: string[]) => void;
   onGenerationChange?: (requestId: string, generation: AiBoardGeneration | null, cancel?: () => void) => void;
@@ -93,7 +96,7 @@ function AiEvidence({ context, onSource }: { context: AiContext; onSource: (inde
   </details>;
 }
 
-export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, onOpenThesisCard, mode: readerMode, onMode, canvas = false, visible = true, selectedCardIds = [], onImport, recordsRequest = 0, operations = [], operationStatuses = {}, onUndoOperation, onCanvasDockChange, onHoverSource, request, cards, boardId, board, layoutSections, onApplyBoardActions, onGenerationChange, onReadingCards, onCreateCard, onDropSelection, onCitation, onResearchFocus, expandedVideo = false, expandedPdf = false, expandedNote = false, expandedImage = false, portalTarget }: Props) {
+export function AiPanel({ hideReferenceButton = false, generalAssistantLabel = false, composerHeader, composerToolbar, showSuggestions = true, embedded = false, onContextCardsChange, onBusyChange, contextCardIds, composerPlaceholder, thesisBoard, thesisDialogRequest = 0, onThesisChange, onOpenThesisCard, mode: readerMode, onMode, canvas = false, visible = true, selectedCardIds = [], onImport, recordsRequest = 0, operations = [], operationStatuses = {}, onUndoOperation, onCanvasDockChange, onHoverSource, request, cards, boardId, board, layoutSections, onApplyBoardActions, onGenerationChange, onReadingCards, onCreateCard, onDropSelection, onCitation, onResearchFocus, expandedVideo = false, expandedPdf = false, expandedNote = false, expandedImage = false, portalTarget }: Props) {
   const { t, locale, language } = useI18n();
   const saved = useAiHistory(boardId);
   const chat = presentedAiChat(saved.state.chats, saved.state.activeId);
@@ -111,14 +114,14 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
     return () => clearTimeout(timer);
   }, [mode]);
   const panelMode = mode === 'closed' ? presentMode : mode;
-  const canvasDrawer = panelMode === 'sidebar' && !expandedVideo && !expandedPdf && !expandedNote && !expandedImage;
+  const canvasDrawer = !embedded && panelMode === 'sidebar' && !expandedVideo && !expandedPdf && !expandedNote && !expandedImage;
   const { update: updateHistory, flush: flushHistory } = saved;
   const presentedChatId = chat?.id;
   const model = presentedAiModel(chat?.model);
   const thesisModel = defaultThesisModel;
   const skill = skillForChat(chat);
   const availableSkill = !!getAiSkill(skill);
-  const skillName = (id: string) => getAiSkill(id) ? aiSkillLabel(id, language) : t('Assistant unavailable', '助手暂不可用');
+  const skillName = (id: string) => generalAssistantLabel && id === 'research' ? t('General assistant', '通用助手') : getAiSkill(id) ? aiSkillLabel(id, language) : t('Assistant unavailable', '助手暂不可用');
   const messages = visibleAiMessages(chat?.messages || []);
   const histories = visibleAiChats(saved.state.chats);
   const recentHistories = histories.filter(item => visibleAiMessages(item.messages).length || item.draft.trim());
@@ -137,6 +140,7 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
   const [focusRequest, setFocusRequest] = useState(0);
   const response = useRef<HTMLDivElement>(null);
   const [historyOpen, setHistoryOpen] = useState(false), [busy, setBusy] = useState(false), [notice, setNotice] = useState('');
+  useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
   const [answerPresentation, setAnswerPresentation] = useState<{ id: string; text: string } | null>(null);
   const presentationVisible = useRef(mode !== 'closed');
   useLayoutEffect(() => { presentationVisible.current = mode !== 'closed'; }, [mode]);
@@ -236,6 +240,12 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
     }, 0);
     return () => clearTimeout(task);
   }, [request.nonce, request.cardId, request.cardIds, request.boardId, request.intent, canvas, patchChat, model, boardId, cards, saved.ready, saved.state.chats.length, saved.state.activeId, presentedChatId, mode, fresh, updateHistory, t, skill]);
+  const controlledContext = contextCardIds === undefined ? undefined : JSON.stringify(contextCardIds);
+  useEffect(() => {
+    if (controlledContext === undefined || !saved.ready || !presentedChatId || busy) return;
+    const refs = JSON.parse(controlledContext) as string[];
+    patchChat(presentedChatId, current => JSON.stringify(current.refs) === controlledContext ? current : { ...current, refs }, true);
+  }, [controlledContext, saved.ready, presentedChatId, busy, patchChat]);
   useEffect(() => {
     if (mode === 'closed' || historyOpen || canvas && !canvasResponseOpen || !follow.current) return;
     scroll.current?.scrollTo({ top: scroll.current.scrollHeight });
@@ -529,7 +539,7 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
     <header className="ai-header"><button className="ai-chat-title" title={t('Conversation history', '对话历史')} onClick={() => setHistoryOpen(!historyOpen)} aria-expanded={historyOpen}><span>{chat ? aiChatDisplayTitle(chat, t('New conversation', '新对话')) : t('New conversation', '新对话')}</span><ResearchIcon name="chevron" /></button>
       <div className="ai-header-actions">
         <button title={t('New conversation', '新对话')} aria-label={t('New conversation', '新对话')} disabled={!saved.ready} onClick={() => fresh([], skill)}><ResearchIcon name="edit" /></button>
-        <button title={mode === 'sidebar' ? t('Switch to floating window', '切换浮动窗口') : t('Dock to sidebar', '固定到侧边栏')} aria-label={mode === 'sidebar' ? t('Switch to floating window', '切换浮动窗口') : t('Dock to sidebar', '固定到侧边栏')} onClick={() => onMode(mode === 'sidebar' ? 'floating' : 'sidebar')}><ResearchIcon name="dock" /></button>
+        {!embedded && <button title={mode === 'sidebar' ? t('Switch to floating window', '切换浮动窗口') : t('Dock to sidebar', '固定到侧边栏')} aria-label={mode === 'sidebar' ? t('Switch to floating window', '切换浮动窗口') : t('Dock to sidebar', '固定到侧边栏')} onClick={() => onMode(mode === 'sidebar' ? 'floating' : 'sidebar')}><ResearchIcon name="dock" /></button>}
         <button title={t('Minimize AI Tutor', '收起 AI 助手')} aria-label={t('Minimize AI Tutor', '收起 AI 助手')} onClick={() => onMode('closed')}><ResearchIcon name="close" /></button>
       </div>
     </header>
@@ -575,7 +585,7 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
       </div>
     </>}
     </div>;
-  const panel = <aside className={`ai-panel ai-${panelMode} ${canvas ? 'ai-canvas ai-detached' : ''} ${canvasDrawer ? 'ai-canvas-drawer' : ''} ${expandedVideo ? 'ai-expanded-video' : ''} ${expandedPdf ? 'ai-expanded-pdf' : ''} ${expandedNote ? 'ai-expanded-note' : ''} ${expandedImage ? 'ai-expanded-image' : ''}`} data-state={mode === 'closed' ? 'closed' : 'open'} data-collapsed={collapsed} data-empty={!hasResponse} data-chat-id={canvas ? chat?.id : undefined} inert={mode === 'closed'} aria-hidden={mode === 'closed'} aria-label={t('AI Tutor', 'AI 助手')}>
+  const panel = <aside className={`ai-panel ai-${panelMode}${embedded ? ' ai-embedded' : ''} ${canvas ? 'ai-canvas ai-detached' : ''} ${canvasDrawer ? 'ai-canvas-drawer' : ''} ${expandedVideo ? 'ai-expanded-video' : ''} ${expandedPdf ? 'ai-expanded-pdf' : ''} ${expandedNote ? 'ai-expanded-note' : ''} ${expandedImage ? 'ai-expanded-image' : ''}`} data-state={mode === 'closed' ? 'closed' : 'open'} data-collapsed={collapsed} data-empty={!hasResponse} data-chat-id={canvas ? chat?.id : undefined} inert={mode === 'closed'} aria-hidden={mode === 'closed'} aria-label={t('AI Tutor', 'AI 助手')}>
     {canvas ? <div className="ai-conversation-rail" data-history-open={canvasHistoryOpen}>
       {collapsed && <button className="ai-response-launcher" aria-label={t('Expand conversation', '展开对话')} title={busy ? activity?.label || t('Thinking…', '思考中…') : t('Expand conversation', '展开对话')} aria-busy={busy} onClick={toggleConversation}><WakeOrb compact speed={busy ? 1.6 : 1}/></button>}
       {responsePanel}
@@ -591,11 +601,12 @@ export function AiPanel({ thesisBoard, thesisDialogRequest = 0, onThesisChange, 
       </section>
     </div> : responsePanel}
     <div className="ai-compose-slot" hidden={!canvas && historyOpen}>
+      {composerHeader}
       {canvas && operationToast && !responseExpanded && <AiOperationToast key={operationToast.id} result={operationToast} onClose={() => setOperationToast(null)} onUndo={() => { const id = operationToast.id; setOperationToast(null); void onUndoOperation?.(id).catch(error => setNotice(error.message)); }}/>}
-      {canvas && !messages.length && !isThesisSkill(skill) && !busy && suggestions()}
-      <AiComposer fixedModelLabel={isThesisSkill(skill) ? thesisModel.name : undefined} key={isThesisSkill(skill) ? 'thesis' : 'research'} modelScope={isThesisSkill(skill) ? 'thesis' : 'research'} canvas={canvas} focusRequest={canvas ? focusRequest : 0} placeholder={canvas ? (messages.length ? t('Continue the conversation…', '继续追问，或回答 AI 的问题…') : t('Ask AI, or organize this canvas…', '问 AI，或让它帮你整理这块画板…')) : undefined}
+      {canvas && showSuggestions && !messages.length && !isThesisSkill(skill) && !busy && suggestions()}
+      <AiComposer hideReferenceButton={hideReferenceButton} generalAssistantLabel={generalAssistantLabel} toolbar={composerToolbar} fixedModelLabel={isThesisSkill(skill) ? thesisModel.name : undefined} key={isThesisSkill(skill) ? 'thesis' : 'research'} modelScope={isThesisSkill(skill) ? 'thesis' : 'research'} canvas={canvas} focusRequest={canvas ? focusRequest : 0} placeholder={composerPlaceholder || (canvas ? (messages.length ? t('Continue the conversation…', '继续追问，或回答 AI 的问题…') : t('Ask AI, or organize this canvas…', '问 AI，或让它帮你整理这块画板…')) : undefined)}
 
-        portalContainer={portalTarget} draft={chat?.draft || ''} onDraft={draft => edit({ draft })} refs={chat?.refs || []} onRefs={refs => edit({ refs })} cards={cards} context={context} ready={saved.ready} busy={busy} onSend={() => void send()} onStop={stop} model={isThesisSkill(skill) ? thesisModel.id : model} onModel={model => edit(isThesisSkill(skill) ? { thesisModel: model } : { model })} skill={skill} onSkill={selectSkill} onOpenCard={id => { const card = cards.find(item => item.id === id); if (card) openReference({ id: card.id, title: card.title, kind: card.kind, excerpt: !!card.pdfExcerpt }); }} />
+        portalContainer={portalTarget} draft={chat?.draft || ''} onDraft={draft => edit({ draft })} refs={chat?.refs || []} onRefs={refs => { edit({ refs }); onContextCardsChange?.(refs); }} cards={cards} context={context} ready={saved.ready} busy={busy} onSend={() => void send()} onStop={stop} model={isThesisSkill(skill) ? thesisModel.id : model} onModel={model => edit(isThesisSkill(skill) ? { thesisModel: model } : { model })} skill={skill} onSkill={selectSkill} onOpenCard={id => { const card = cards.find(item => item.id === id); if (card) openReference({ id: card.id, title: card.title, kind: card.kind, excerpt: !!card.pdfExcerpt }); }} />
     {notice && <button className="ai-status" onClick={() => setNotice('')}>{localizeAiSystemText(notice, t)}</button>}
     </div>
     {canvas && recordsOpen && <AiCanvasHistory key={recordDetail || 'records'} open onClose={() => setRecordsOpen(false)} chats={histories} operations={operations} statuses={operationStatuses} initialOperation={recordDetail} onUndo={onUndoOperation || (async () => {})} onOpenChat={(id) => { stop(); updateHistory(value => ({ ...value, activeId: id, chats: value.chats.map(item => item.id === id ? { ...item, canvasView: { ...readAiCanvasView(item.canvasView), docked: canvasView.docked, collapsed: false } } : item) }), true); setRecordsOpen(false); setCanvasResponseOpen(true); setHistoryOpen(false); }}/>}

@@ -1,3 +1,4 @@
+import { markDailyCapture } from './daily-model.ts';
 import type { WorkspaceFiles } from './workspace-files';
 import { addWorkspaceContent } from './workspace-files.ts';
 import { fileUrl, type StoredFile } from './workspace-assets.ts';
@@ -42,8 +43,8 @@ export function addDesktopQuickNote(files: WorkspaceFiles, request: DesktopQuick
     }
   }
   const timestamp = new Date(now).toISOString();
-  return addWorkspaceContent(files, {
+  return markDailyCapture(addWorkspaceContent(files, {
     id, kind: 'note', contentRole: 'notePage', title, body: request.body, ...(blocks ? { blocks } : {}),
     width: 360, x: 0, y: 0, createdAt: timestamp, updatedAt: timestamp, creationDateSource: 'actual',
-  }, null, 'notePage', now);
+  }, null, 'notePage', now), id, 'pet', now);
 }

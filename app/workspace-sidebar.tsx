@@ -38,6 +38,7 @@ import { useDesktopPlatform } from './desktop-bridge';
 import './workspace-sidebar.css';
 
 export type WorkspaceSidebarView =
+  | 'daily'
   | 'canvas'
   | 'boards'
   | 'library'
@@ -47,6 +48,7 @@ export type WorkspaceSidebarProps = {
   boards: { id: string; title: string; pinnedAt?: number }[];
   currentId: string | null;
   activeView: WorkspaceSidebarView;
+  onDaily: () => void;
   onBoards: () => void;
   onLibrary: () => void;
   onNewBoard: () => void;
@@ -92,6 +94,7 @@ export function WorkspaceSidebar({
   boards,
   currentId,
   activeView,
+  onDaily,
   onBoards,
   onLibrary,
   onNewBoard,
@@ -346,12 +349,12 @@ export function WorkspaceSidebar({
           className="workspace-rail-navigation"
           aria-label={t('Workspace navigation', '工作区导航')}
         >
-          <SidebarTip label={t('Home', '首页')}>
+          <SidebarTip label={t('All files', '所有文件')}>
             <button
               ref={homeButton}
               type="button"
               className="workspace-rail-destination"
-              aria-label={t('Home', '首页')}
+              aria-label={t('All files', '所有文件')}
               aria-pressed={homeActive}
               onClick={() => act(onBoards)}
             >
@@ -367,6 +370,11 @@ export function WorkspaceSidebar({
                 alt=""
                 draggable={false}
               />
+            </button>
+          </SidebarTip>
+          <SidebarTip label={t('Daily', '日常')}>
+            <button type="button" className="workspace-rail-destination" aria-label={t('Daily', '日常')} aria-pressed={activeView === 'daily'} onClick={() => act(onDaily)}>
+              <MaterialIcon name="note_stack" size={20} filled={activeView === 'daily'} />
             </button>
           </SidebarTip>
           <SidebarTip label={t('Card Library', '卡片库')}>
@@ -417,7 +425,7 @@ export function WorkspaceSidebar({
             <button type="button" className="workspace-rail-destination"
               aria-label={t('Star Sea', '星海')} aria-pressed={activeView === 'atlas'}
               onClick={() => act(onMemoryAtlas)}>
-              <MaterialIcon name="hub" size={20} filled={activeView === 'atlas'} />
+              <MaterialIcon name="graph_8" size={24} filled={activeView === 'atlas'} />
             </button>
           </SidebarTip>
         </nav>

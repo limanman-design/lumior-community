@@ -6,6 +6,7 @@ import { useI18n } from './i18n';
 import { useDesktopPlatform } from './desktop-bridge';
 import { WindowsWindowMenus, WindowsCaptionButtons } from './windows-window-controls';
 import type { BoardTab } from './use-board-tabs';
+import { MaterialIcon } from './material-icon';
 import './board-tabs.css';
 
 const tabIcons = { board: Layers2, home: House, literature: FileText, notePage: NotebookPen, video: Video, image: ImageIcon, summary: TextQuote, note: StickyNote, text: Type };
@@ -100,9 +101,9 @@ export function BoardTabs({ boards, tabs, activeId, onSelect, onClose, onNew, ne
     }}>
       {visible.map(board => {
         const Icon = board.kind === 'database' ? null : tabIcons[board.kind || 'board'];
-        const title = board.kind === 'home' ? t('Home', '首页') : board.title || t('Untitled', '未命名');
+        const title = board.title || t('Untitled', '未命名');
         return <div key={board.id} className={`board-tabs-item${activeId === board.id ? ' is-active' : ''}`} role="presentation" data-kind={board.kind || 'board'}>
-        <button type="button" role="tab" ref={element => { if (element) tabButtons.current.set(board.id, element); else tabButtons.current.delete(board.id); }} aria-selected={activeId === board.id} tabIndex={focusId === board.id ? 0 : -1} title={title} className="board-tabs-select" onClick={() => onSelect(board.id)} onKeyDown={event => onTabKey(event, board.id)}>{board.kind === 'database' ? <img src={`/assets/workspace-shell/table-${activeId === board.id ? 'filled' : 'outline'}.svg`} width={16} height={16} alt="" aria-hidden="true" draggable={false} style={{ flex: '0 0 16px' }}/> : Icon && <Icon size={16} aria-hidden="true"/>}<span>{title}</span></button>
+        <button type="button" role="tab" ref={element => { if (element) tabButtons.current.set(board.id, element); else tabButtons.current.delete(board.id); }} aria-selected={activeId === board.id} tabIndex={focusId === board.id ? 0 : -1} title={title} className="board-tabs-select" onClick={() => onSelect(board.id)} onKeyDown={event => onTabKey(event, board.id)}>{board.id === 'workspace:daily' ? <MaterialIcon name="note_stack" size={16} filled={activeId === board.id}/> : board.kind === 'database' ? <img src={`/assets/workspace-shell/table-${activeId === board.id ? 'filled' : 'outline'}.svg`} width={16} height={16} alt="" aria-hidden="true" draggable={false} style={{ flex: '0 0 16px' }}/> : Icon && <Icon size={16} aria-hidden="true"/>}<span>{title}</span></button>
         <button type="button" className="board-tabs-close" aria-label={t('Close tab: {title}', '关闭标签：{title}', { title })} title={t('Close tab', '关闭标签')} tabIndex={focusId === board.id ? 0 : -1} onClick={() => close(board.id)}><X size={12} aria-hidden="true" /></button>
       </div>;
       })}

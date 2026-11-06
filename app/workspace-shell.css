@@ -234,3 +234,50 @@ body:has(.workspace-shell .board-tabs:is([data-platform='darwin'], [data-platfor
   border-radius: 16px;
   box-shadow: inset 0 0 0 1px var(--ui-line-subtle);
 }
+
+/* Daily joins the canvas to its navigation chrome; other surfaces keep the frame. */
+.workspace-shell[data-daily='true'] {
+  position: relative;
+  isolation: isolate;
+  --workspace-frame-surface: var(--ui-canvas);
+  background: var(--ui-canvas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.workspace-shell[data-daily='true'] .workspace-body { padding: 0 0 8px; }
+.workspace-shell[data-daily='true'] .workspace-stage {
+  border-radius: 0;
+  box-shadow: none;
+  mask-image: none;
+}
+.workspace-shell[data-daily='true'] .board-tabs-navigation::after { background: transparent; }
+
+/* Daily is a full-window canvas. Navigation floats over the same background. */
+.workspace-shell[data-daily='true'] :is(.workspace-stage, .workspace-content) {
+  position: static;
+  overflow: visible;
+}
+.workspace-shell[data-daily='true'] > .board-tabs {
+  position: relative;
+  z-index: 45;
+}
+.workspace-shell[data-daily='true'] .workspace-sidebar { z-index: 45; }
+.workspace-shell[data-daily='true'] .daily-home {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.workspace-shell[data-daily='true'] .daily-filters-position,
+.workspace-shell[data-daily='true'] .daily-top-toolbar {
+  top: calc(var(--workspace-top-inset) + 8px);
+}
+.workspace-shell[data-daily='true'] .daily-bottom-controls { left: 60px; }
+@media(max-width:800px) {
+  .workspace-shell[data-daily='true'] .daily-top-toolbar {
+    top: calc(var(--workspace-top-inset) + 56px);
+  }
+}
+
+/* Hide only document tabs. Keep history navigation and the rail at their usual positions. */
+.workspace-shell[data-daily='true'] > .board-tabs .board-tabs-content { display: none; }
+.workspace-shell[data-daily='true'] > .board-tabs .windows-caption-buttons { margin-left: auto; }

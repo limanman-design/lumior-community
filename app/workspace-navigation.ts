@@ -5,7 +5,7 @@ export type NavigationAction =
   | { type: 'page-visible'; page: string; visible: boolean }
   | { type: 'library'; mode: LibraryMode | ((previous: LibraryMode) => LibraryMode) };
 
-export const initialNavigation: WorkspaceNavigation = { page: 'boards', librarySidebar: false };
+export const initialNavigation: WorkspaceNavigation = { page: 'daily', librarySidebar: false };
 
 export function libraryModeFor(state: WorkspaceNavigation): LibraryMode {
   return state.page === 'library' ? 'page' : state.librarySidebar ? 'sidebar' : null;
