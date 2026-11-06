@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { initialNavigation, libraryModeFor, workspaceNavigation } from '../app/workspace-navigation.ts';
 
-test('new sessions enter the all-files Home instead of opening the last board canvas', () => {
-  assert.deepEqual(initialNavigation, { page: 'boards', librarySidebar: false });
+test('new sessions enter Daily instead of opening the last board canvas', () => {
+  assert.deepEqual(initialNavigation, { page: 'daily', librarySidebar: false });
 });
 
 test('any destination, including a future feature, leaves atlas without a destination cleanup list', () => {

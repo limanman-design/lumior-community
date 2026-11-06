@@ -1,4 +1,8 @@
 Google Material Symbols Outlined, select, 24px, weight 400.
+Daily location control: Material Symbols Outlined, location_searching, 20px, weight 400.
+Source: https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/location_searching/materialsymbolsoutlined/location_searching_20px.svg
+License: Apache-2.0 (same Google Material Design Icons license below).
+
 Source: https://github.com/google/material-design-icons/blob/master/symbols/web/select/materialsymbolsoutlined/select_24px.svg
 License: Apache-2.0 (https://github.com/google/material-design-icons/blob/master/LICENSE)
 
@@ -127,3 +131,24 @@ Reference explanation: Google Material Symbols Outlined, info, 20px optical size
 File: info-outlined.svg.
 Source: https://github.com/google/material-design-icons/blob/master/symbols/web/info/materialsymbolsoutlined/info_20px.svg
 License: Apache-2.0.
+
+Daily canvas return to center: Google Material Symbols Outlined, my_location, 20px, weight 400.
+Source: https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/my_location/default/20px.svg
+File: my-location-outlined.svg. License: Apache-2.0 (existing LICENSE).
+
+Daily navigation: Google Material Symbols Outlined `note_stack`, 24px, weight 400.
+Default uses fill=0, selected uses fill=1; navigation displays the 24px optical asset at 20px for matched visual weight, and tab icons at 16px.
+Sources:
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/note_stack/materialsymbolsoutlined/note_stack_24px.svg
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/note_stack/materialsymbolsoutlined/note_stack_fill1_24px.svg
+Files: note-stack-outlined.svg, note-stack-filled.svg. Unchanged upstream SVGs.
+License: Apache-2.0 (existing LICENSE).
+
+Daily location and Star Sea navigation (2026-11-06): Material Symbols Outlined
+`trip_origin` and `graph_8`, optical size 20px, weight 400.
+Star Sea uses `graph_8` fill=0 normally and fill=1 when selected.
+Unmodified official SVGs, bundled locally under the existing Apache-2.0 LICENSE.
+Sources:
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/trip_origin/materialsymbolsoutlined/trip_origin_20px.svg
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/graph_8/materialsymbolsoutlined/graph_8_20px.svg
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/graph_8/materialsymbolsoutlined/graph_8_fill1_20px.svg

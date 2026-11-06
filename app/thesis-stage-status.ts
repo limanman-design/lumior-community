@@ -37,7 +37,7 @@ export function thesisStageStatus(board: Board, chats: readonly AiChat[], skill:
     return { kind: 'error', label: '执行失败', reason: `上次${name}未完成：${latest.error || '处理失败，请在对话中重试。'} 已有成果保留。` };
   }
   const missing = paths.filter(path => thesis.artifacts[path] && !cardAt(path));
-  if (missing.length) return { kind: 'attention', label: '待处理', reason: `${missing.map(path => thesisArtifactLabels[path]).join('、')}已移除，可在“论文项目”的修改历史中恢复。` };
+  if (missing.length) return { kind: 'attention', label: '待处理', reason: `${missing.map(path => thesisArtifactLabels[path]).join('、')}已移除，可在“资料与历史”的修改历史中恢复。` };
   const review = paths.filter(path => thesis.artifacts[path]?.needsReview);
   if (review.length) return { kind: 'attention', label: '需复核', reason: review.map(path => `${thesisArtifactLabels[path]}：${thesis.artifacts[path].needsReview}`).join('；') };
   const proposals = paths.filter(path => thesis.proposals[path]);
@@ -53,7 +53,7 @@ export function thesisStageStatus(board: Board, chats: readonly AiChat[], skill:
     return { kind: 'attention', label: '待补资料', reason: '还没有可用的选题卡，可先回到定题明确研究问题，或在当前对话中补充已有选题。' };
   }
   if (skill === 'mba-lit' && !Object.entries(thesis.sources).some(([id, role]) => role === 'refs' && board.cards.some(card => card.id === id))) {
-    return { kind: 'attention', label: '待补资料', reason: '还没有指定论文文献。可在“论文项目”中设置资料用途，或在对话中粘贴文献内容。' };
+    return { kind: 'attention', label: '待补资料', reason: '还没有指定论文文献。将卡片添加到对话并说“读这几篇文献”，也可以直接粘贴文献内容。' };
   }
   if (skill === 'mba-review' && !hasContent('thesis/lit-matrix.md')) {
     return { kind: 'attention', label: '待补资料', reason: '尚无文献矩阵，可先读文献整理证据，或在对话中补充已有文献整理。' };

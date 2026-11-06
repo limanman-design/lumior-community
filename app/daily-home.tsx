@@ -1,0 +1,235 @@
+'use client';
+/* oxlint-disable next/no-img-element -- Captures use the user's original local assets. */
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import { ArrowRight, Layers2, Maximize2, Minimize2, MoreHorizontal, Plus, Sparkles, StickyNote, Upload, X } from 'lucide-react';
+import type { Board, Card } from './canvas-model';
+import type { WorkspaceContent, WorkspaceFiles } from './workspace-files';
+import { dailyBoardIds, dailyClues, dailyContents, dailyDisplayCard, dailyImageSize, dailyPreviewImage, dailyRecordStreak, type DailyClue } from './daily-model';
+import { canvasGridStyle } from './canvas-grid';
+import { CANVAS_ZOOM_BASE, CANVAS_ZOOM_STEP, canvasZoomPercent } from './canvas-zoom';
+import { useDailyCanvas } from './use-daily-canvas';
+import { arrangeDailyCards, dailyCardTilt } from './daily-layout';
+import { MaterialIcon } from './material-icon';
+import { AiPanel } from './ai-panel';
+import { useI18n } from './i18n';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import './canvas-selection-toolbar.css';
+import './daily-home.css';
+import { ImagesBadge } from '@/components/ui/images-badge';
+import { WakeOrb } from './wake-orb';
+
+export type DailyCardEditor = { imageNoteRequest: number; editing: boolean; onChange: (patch: Partial<Card>) => void; onEdit: (editing: boolean) => void };
+type Point = { x: number; y: number };
+type Props = {
+  renderCard: (card: Card, selected: boolean, onMeasure: (id: string, height: number) => void, editor: DailyCardEditor) => ReactNode;
+  files: WorkspaceFiles; boards: Board[]; visible: boolean;
+  onImport: (files: File[], point: Point) => Promise<string | undefined> | undefined;
+  onNewNote: (point: Point) => string;
+  onPatch: (id: string, patch: Partial<Card>) => void;
+  onPositions: (positions: Record<string, Point>) => void;
+  onSaveAnswer: (title: string, body: string, blocks?: Card['blocks'], point?: Point) => void;
+  onOpenContent: (id: string) => void; onOpenBoard: (id: string) => void;
+  onRecycle: (ids: string[]) => void;
+  onLink: (id: string, boardId: string) => void;
+  onPosition: (id: string, position: { x: number; y: number }) => void;
+  onDismiss: (id: string, boardId: string) => void;
+};
+const noFocus = () => {};
+const noDrop = () => false;
+const request = { nonce: 0, cardId: null, boardId: 'workspace:daily' };
+
+export function DailyHome({ files, boards, visible, onNewNote, onPatch, onPositions, onImport, onSaveAnswer, onOpenContent, onOpenBoard, onRecycle, onLink, onDismiss, onPosition, renderCard }: Props) {
+  const { t, locale } = useI18n();
+  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (notice !== t('Saved to Daily', '已记下') && notice !== t('Saved to Daily', '已把成果保存到日常') && notice !== t('Added to board', '已加入画板')) return;
+    const timer = setTimeout(() => setNotice(''), 4000);
+    return () => clearTimeout(timer);
+  }, [notice, t]);
+  const [limit, setLimit] = useState(24);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [aiIds, setAiIds] = useState<string[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [imageNoteRequest, setImageNoteRequest] = useState(0);
+  const [askNonce, setAskNonce] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [clueId, setClueId] = useState<string | null>(null);
+  const { root: canvasRoot, view, positions, dragging, locate, zoom, start, toPoint, events } = useDailyCanvas(visible, onPosition);
+  const dragDepth = useRef(0);
+  const [fileOver, setFileOver] = useState(false);
+  const [imports, setImports] = useState(0);
+  const importFiles = async (incoming: File[], point: Point) => {
+    if (!incoming.length) return;
+    setImports(value => value + 1); setNotice('');
+    setLimit(value => value + incoming.length);
+    try { setNotice(await onImport(incoming, point) || ''); }
+    catch (error) { setNotice(error instanceof Error ? error.message : t('Could not import files.', '文件导入失败。')); }
+    finally { setImports(value => value - 1); }
+  };
+  const records = useMemo(() => dailyContents(files).filter(content => !dailyBoardIds(content.id, boards).length), [files, boards]);
+  const links = useMemo(() => new Map(records.map(content => [content.id, dailyBoardIds(content.id, boards)])), [records, boards]);
+  const clues = useMemo(() => dailyClues(records, boards), [records, boards]);
+  const clue = clues.find(item => item.id === clueId);
+  const displayed = records.slice(0, limit);
+  const contextCards = useMemo(() => files.contents.filter(content => aiIds.includes(content.id)).map(content => content.card), [files.contents, aiIds]);
+  const contextIds = useMemo(() => contextCards.map(card => card.id), [contextCards]);
+  const pending = records.filter(content => !links.get(content.id)?.length).length;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!visible) return;
+    const tick = () => setNow(Date.now());
+    tick();
+    const timer = setInterval(tick, 60000);
+    window.addEventListener('focus', tick);
+    return () => { clearInterval(timer); window.removeEventListener('focus', tick); };
+  }, [visible]);
+  const date = new Date(now).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+  const weekday = new Date(now).toLocaleDateString(locale, { weekday: 'long' });
+  const time = new Date(now).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  const streak = dailyRecordStreak(files.contents, now);
+  const summaryImages = [...new Map(records.flatMap(content => { const src = dailyPreviewImage(content.card); return src ? [[content.id, { id: content.id, src, alt: content.card.title }] as const] : []; })).values()];
+  const selectedRecords = records.filter(content => selected.includes(content.id));
+  const remainingSelection = selected.filter(id => records.some(content => content.id === id));
+  if (remainingSelection.length !== selected.length) setSelected(remainingSelection);
+  const toggle = (id: string) => {
+    if (busy) return;
+    const next = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
+    setSelected(next); setEditing(null); setClueId(null); setNotice('');
+  };
+  const askAI = (ids = selected) => { if (busy) return; setAiIds(ids); setAskNonce(value => value + 1); setEditing(null); };
+  const blankTarget = (target: EventTarget) => !(target as HTMLElement).closest('[data-daily-ui],.daily-card-shell,button,a,input,textarea');
+  const compare = (item: DailyClue) => {
+    if (busy) return;
+    setSelected([item.contentId]); askAI([item.contentId, ...(item.sourceId ? [item.sourceId] : [])]); setClueId(null); setNotice('');
+  };
+  const [heights, setHeights] = useState<Record<string, number>>({});
+  const [imageSizes, setImageSizes] = useState<Record<string, { src: string; width: number; height: number }>>({});
+  const [centerSize, setCenterSize] = useState({ width: 660, height: 180 });
+  const summaryRef = useRef<HTMLElement>(null);
+  const measure = useCallback((id: string, height: number) => {
+    if (!Number.isFinite(height) || height <= 0) return;
+    setHeights(value => Math.abs((value[id] || 0) - height) < 1 ? value : { ...value, [id]: height });
+  }, []);
+  useEffect(() => {
+    const element = summaryRef.current;
+    if (!element || !visible) return;
+    const observer = new ResizeObserver(() => {
+      const width = element.offsetWidth, height = element.offsetHeight;
+      if (width && height) setCenterSize(value => value.width === width && value.height === height ? value : { width, height });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [visible]);
+  const layout = useMemo(() => {
+    const items = [...records].reverse().map(content => {
+      const base = dailyDisplayCard(content.card);
+      const size = imageSizes[content.id];
+      const display = size && size.src === base.image ? { ...base, width: size.width, height: size.height } : base;
+      return { id: content.id, width: display.width, height: heights[content.id] || display.height || (dailyPreviewImage(display) ? 420 : 260),
+        position: content.daily?.position, priority: content.card.kind === 'video' ? 3 : content.card.kind === 'pdf' ? 2 : 0 };
+    });
+    const next = arrangeDailyCards(items, centerSize);
+    return next;
+  }, [records, heights, centerSize, imageSizes]);
+  useLayoutEffect(() => {
+    if (!visible) return;
+    const missing = records.filter(content => !content.daily?.position);
+    if (missing.length) onPositions(Object.fromEntries(missing.map(content => [content.id, layout.get(content.id)!])));
+  }, [records, layout, visible, onPositions]);
+  const card = (content: WorkspaceContent) => {
+    const position = positions[content.id] || layout.get(content.id)!;
+    const chosen = selected.includes(content.id);
+    const base = dailyDisplayCard(content.card);
+    const size = imageSizes[content.id];
+    const displayCard = size && size.src === base.image ? { ...base, width: size.width, height: size.height } : base;
+    return <div className="daily-card-shell" key={content.id} data-selected={chosen} data-fixed={!!content.daily?.position} data-moving={!!positions[content.id]} data-editing={editing === content.id}
+      style={{ left: position.x, top: position.y, width: displayCard.width, height: heights[content.id] || displayCard.height || 260, '--daily-tilt': `${dailyCardTilt(content.id)}deg` } as CSSProperties}
+      onLoadCapture={event => { const image = event.target; if (!(image instanceof HTMLImageElement) || !image.parentElement?.classList.contains('image-picture-frame') || !base.image) return;
+        const bounds = dailyImageSize(image.naturalWidth, image.naturalHeight);
+        setImageSizes(previous => previous[content.id]?.src === base.image && previous[content.id]?.width === bounds.width && previous[content.id]?.height === bounds.height ? previous : { ...previous, [content.id]: { src: base.image!, ...bounds } }); }}>
+      <div inert={editing !== content.id} data-daily-ui={editing === content.id ? true : undefined} className="daily-card-content">{renderCard(displayCard, chosen, measure, { imageNoteRequest: editing === content.id ? imageNoteRequest : 0, editing: editing === content.id, onChange: patch => onPatch(content.id, patch), onEdit: value => setEditing(value ? content.id : null) })}</div>
+      {editing !== content.id && <button type="button" className="daily-card-hit" aria-label={t('Select {title}', '选择 {title}', { title: content.card.title })} aria-pressed={chosen}
+        disabled={busy} onPointerDown={event => start(event, content.id, position)} onClick={() => toggle(content.id)}
+        onDoubleClick={event => { event.stopPropagation(); if (displayCard.kind === 'note') { setSelected([content.id]); setEditing(content.id); } else onOpenContent(content.id); }} onKeyDown={event => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); onOpenContent(content.id); } }}
+        title={t('Select · Double-click to edit or open', '单击选中 · 双击编辑或打开')}/>}
+    </div>;
+  };
+
+  const summary = <section ref={summaryRef} className="daily-center" aria-label={t('Today’s thoughts', '今天的想法')}>
+        <p className="daily-date"><time dateTime={new Date(now).toISOString()}>{date}<span>·</span>{weekday}<span>·</span>{time}</time></p>
+        <div className="daily-summary">
+          <p className="daily-knowledge-line">{t('You have', '有')} <span className="daily-image-badge" data-daily-ui><ImagesBadge images={summaryImages} label={t('Preview captured images', '展开记录缩略图')} selected={selected} onSelect={toggle}/></span><strong>{pending}</strong>{t(' pieces of knowledge to organize.', ' 条知识等你整理，')}</p>
+          <p className="daily-streak-line">{t('You’ve recorded for ', '已经连续记录 ')}<em>{streak}</em>{t(' days.', ' 天。')}</p>
+        </div>
+        {!!clues.length && <div className="daily-clues" data-daily-ui aria-label={t('Connections to explore', '可以继续的想法')}>
+          {clues.map(item => <button key={item.id} type="button" className="daily-clue" aria-expanded={clueId === item.id} onClick={() => setClueId(clueId === item.id ? null : item.id)}>
+            <span className="daily-clue-icon"><Layers2 size={17}/></span>
+            <span><strong>{t('A connection with “{board}”', '和「{board}」有个交集', { board: item.boardTitle })}</strong><small>{t('Shared terms: {terms}', '都提到了 {terms}', { terms: item.terms.join('、') })}</small></span>
+            <ArrowRight size={16}/>
+          </button>)}
+        </div>}
+        {clue && <section className="daily-clue-detail" data-daily-ui aria-label={t('Connection evidence', '关联依据')}>
+          <div className="daily-clue-detail-head"><span>{t('Look at them together', '放在一起看')}</span><button type="button" onClick={() => setClueId(null)} aria-label={t('Close', '关闭')}><X size={15}/></button></div>
+          <button className="daily-evidence" type="button" onClick={() => onOpenContent(clue.contentId)}><small>{t('Your new capture', '新记下的内容')}</small><strong>{files.contents.find(content => content.id === clue.contentId)?.card.title}</strong></button>
+          <button className="daily-evidence" type="button" onClick={() => clue.sourceId ? onOpenContent(clue.sourceId) : onOpenBoard(clue.boardId)}><small>{clue.boardTitle}</small><strong>{clue.sourceTitle || t('Board title shares these terms', '画板名称包含这些词')}</strong></button>
+          <p>{t('These terms appear in both. Compare the sources to see whether the ideas connect.', '这些词同时出现在两边，是否有关联，还可以结合原文继续看看。')}</p>
+          <div className="daily-clue-actions"><button type="button" disabled={busy || !clue.sourceId} onClick={() => compare(clue)}>{t('Think together', '一起想想')}<Sparkles size={13}/></button><button type="button" onClick={() => { onLink(clue.contentId, clue.boardId); setClueId(null); }}>{t('Add to board', '放入画板')}</button><button type="button" onClick={() => { onDismiss(clue.contentId, clue.boardId); setClueId(null); }}>{t('Dismiss', '暂不提醒')}</button></div>
+        </section>}
+
+      </section>;
+
+  // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- File drops supplement the keyboard-accessible import button.
+  return <main ref={canvasRoot} className="daily-home" hidden={!visible} data-dragging={dragging} aria-label={t('Daily canvas', '日常画布')} onKeyDown={event => { if (event.key === 'Escape' && blankTarget(event.target)) { setSelected([]); setEditing(null); } }} style={canvasGridStyle(view)} {...events}
+    onClick={event => { if (blankTarget(event.target)) { setSelected([]); setEditing(null); setClueId(null); } }}
+    onDoubleClick={event => { if (!blankTarget(event.target)) return; event.preventDefault(); const point = toPoint(event.clientX, event.clientY); const id = onNewNote({ x: point.x - 180, y: point.y - 24 }); setSelected([id]); setEditing(id); }}
+    onDragEnter={event => { if (Array.from(event.dataTransfer.types).includes('Files')) { event.preventDefault(); dragDepth.current++; setFileOver(true); } }}
+    onDragOver={event => { if (Array.from(event.dataTransfer.types).includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } }}
+    onDragLeave={event => { if (Array.from(event.dataTransfer.types).includes('Files')) { dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setFileOver(false); } }}
+    onDrop={event => { dragDepth.current = 0; setFileOver(false); if (event.defaultPrevented || !event.dataTransfer.files.length) return; event.preventDefault(); event.stopPropagation(); void importFiles(Array.from(event.dataTransfer.files), toPoint(event.clientX, event.clientY)); }}>
+    {fileOver && <div className="file-drop-overlay"><Upload size={36}/><strong>{t('Drop files into Daily', '松开以添加到日常')}</strong><span>{t('PDF · Images · Video', 'PDF · 图片 · 视频')}</span></div>}
+    <div className="daily-content-plane"><div className="daily-world" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
+      {summary}
+      <section className="daily-cards" aria-label={t('Captured thoughts', '记录的片段')}>{displayed.map(card)}</section>
+    </div>
+    </div>
+    {!!selectedRecords.length && <div className="daily-top-toolbar canvas-selection-toolbar" role="toolbar" aria-label={t('Selected card actions', '所选卡片操作')} data-daily-ui>
+      {selectedRecords.length > 1 && <span className="canvas-selection-count">{t('{count} selected', '已选 {count} 张', { count: selectedRecords.length })}</span>}
+      <button type="button" className="canvas-selection-chat" disabled={busy} onClick={() => askAI()}><WakeOrb compact/>Ask AI</button>
+      <button type="button" disabled={selectedRecords.length !== 1} onClick={() => onOpenContent(selectedRecords[0].id)}><Maximize2 size={20}/>{t('Expand', '展开')}</button>
+      {selectedRecords.length === 1 && dailyDisplayCard(selectedRecords[0].card).kind === 'image' && <button type="button" onClick={() => { setEditing(selectedRecords[0].id); setImageNoteRequest(value => value + 1); }}><StickyNote size={20}/>{t('Note', '笔记')}</button>}
+      <button type="button" disabled={!selectedRecords.some(content => dailyDisplayCard(content.card).kind === 'note')} onClick={() => selectedRecords.filter(content => dailyDisplayCard(content.card).kind === 'note').forEach(content => onPatch(content.id, { width: 360, height: undefined }))}><Minimize2 size={20}/>{t('Fit content', '适应内容')}</button>
+      <DropdownMenu>
+        <DropdownMenuTrigger disabled={busy} aria-label={t('Add to board', '加入画板')}><Layers2 size={20}/>{t('Add to board', '加入画板')}</DropdownMenuTrigger>
+        <DropdownMenuContent data-daily-ui className="lumior-menu canvas-selection-menu" side="bottom" align="start" sideOffset={8}>
+          {!boards.length && <DropdownMenuItem disabled>{t('Create a board first', '请先新建一个画板')}</DropdownMenuItem>}
+          {boards.map(board => <DropdownMenuItem key={board.id} onClick={() => { for (const content of selectedRecords) onLink(content.id, board.id); setNotice(t('Added to board', '已加入画板')); }}><Layers2 size={16}/>{board.title}</DropdownMenuItem>)}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger disabled={busy} aria-label={t('More card actions', '更多卡片操作')}><MoreHorizontal size={20}/>{t('More', '更多')}</DropdownMenuTrigger>
+        <DropdownMenuContent data-daily-ui className="lumior-menu canvas-selection-menu" side="bottom" align="end" sideOffset={8}>
+          <DropdownMenuItem onClick={() => onRecycle(selectedRecords.map(content => content.id))}><MaterialIcon name="delete" size={20}/>{t('Move to trash', '移入回收站')}</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>}
+    <div className="daily-ai-host" data-daily-ui>
+      <AiPanel canvas hideReferenceButton generalAssistantLabel showSuggestions={false} onContextCardsChange={setAiIds} contextCardIds={contextIds} onBusyChange={setBusy}
+        composerPlaceholder={t('Ask anything, or choose cards and Ask AI…', '有什么想法？也可以选中卡片后 Ask AI…')} visible={visible} mode="sidebar" onMode={noFocus}
+        boardId="workspace:daily" boardTitle={t('Daily', '日常')} request={{ ...request, nonce: askNonce, cardIds: aiIds, intent: 'reference' }} cards={contextCards}
+        onCreateCard={(title, body, blocks) => { const rect = canvasRoot.current?.getBoundingClientRect(); onSaveAnswer(title, body, blocks, rect ? toPoint(rect.left + rect.width * .65, rect.top + rect.height * .35) : undefined); setNotice(t('Saved to Daily', '已把成果保存到日常')); }}
+        onCitation={citation => onOpenContent(citation.cardId)} onDropSelection={noDrop} onResearchFocus={noFocus}/>
+    </div>
+    {!!imports && <output className="daily-import-status" data-daily-ui>{t('Importing files…', '正在导入文件…')}</output>}
+    {notice && <output className="daily-notice" data-daily-ui>{notice}</output>}
+    <div className="daily-bottom-controls" data-daily-ui>
+      <div className="daily-zoom" aria-label={t('Canvas view', '画布视图')}>
+        <button type="button" onClick={() => zoom(1 / CANVAS_ZOOM_STEP)} aria-label={t('Zoom out', '缩小')}><img src="/assets/board-chrome/zoom-out.svg" width="16" height="16" alt=""/></button>
+        <button className="daily-zoom-value" type="button" onClick={() => zoom(CANVAS_ZOOM_BASE / view.zoom)} aria-label={t('Reset zoom to 100%', '重置缩放为 100%')}>{canvasZoomPercent(view.zoom)}%</button>
+        <button type="button" onClick={() => zoom(CANVAS_ZOOM_STEP)} aria-label={t('Zoom in', '放大')}><img src="/assets/board-chrome/zoom-in.svg" width="16" height="16" alt=""/></button>
+        <span className="daily-zoom-divider" aria-hidden="true"/>
+        <button type="button" onClick={locate} aria-label={t('Locate center', '定位到中心')} title={t('Locate center', '定位到中心')}><MaterialIcon name="location_searching" size={20}/></button>
+      </div>
+      {records.length > displayed.length && <button className="daily-load-more" type="button" onClick={() => setLimit(value => value + 24)}>{t('Load more', '加载更多')}<Plus size={14}/></button>}
+    </div>
+  </main>;
+}

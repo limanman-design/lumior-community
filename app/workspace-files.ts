@@ -1,3 +1,4 @@
+import { validDailyCapture, type DailyCapture } from './daily-model.ts';
 import { validNoteReferenceEdits } from './note-reference-edits.ts';
 import { validNoteAiChange } from './note-ai-change.ts';
 import {validBibliography} from '../lib/bibliography.ts';
@@ -13,7 +14,7 @@ export type { WorkspaceFilesNavigation, WorkspaceFileScopeNavigation, WorkspaceF
 
 export type WorkspaceContentRole = 'literature' | 'notePage' | 'note' | 'summary' | 'video' | 'image' | 'text';
 export type WorkspaceContentVariant = { boardId: string; cardId: string; card: Card };
-export type WorkspaceContent = { id: string; role: WorkspaceContentRole; card: Card; sourceContentId?: string; authors?: string[]; year?: number; variants?: WorkspaceContentVariant[] };
+export type WorkspaceContent = { daily?: DailyCapture; id: string; role: WorkspaceContentRole; card: Card; sourceContentId?: string; authors?: string[]; year?: number; variants?: WorkspaceContentVariant[] };
 export type WorkspaceFolder = { id: string; title: string; parentId: string | null };
 export type WorkspaceFileEntry = { id: string; kind: 'content' | 'board'; contentId?: string; boardId?: string; folderId: string | null; pinnedAt?: number; lastOpenedAt?: number; addedAt?: number };
 export type RecycledContent = {
@@ -207,7 +208,7 @@ export function validWorkspaceFiles(value: unknown): value is WorkspaceFiles {
       && (!value.obsidianSource || value.obsidianSource.libraryId === value.storedDocument.libraryId && value.obsidianSource.path === value.storedDocument.path)));
   const unique = (ids: string[]) => new Set(ids).size === ids.length;
   if (files.deletedContentIds !== undefined && (!Array.isArray(files.deletedContentIds) || !files.deletedContentIds.every(string) || !unique(files.deletedContentIds))) return false;
-  const invalidContent = (content: WorkspaceContent) => !content || !string(content.id) || !roles.has(content.role) || !card(content.card) || content.sourceContentId !== undefined && !string(content.sourceContentId) || content.authors !== undefined && (!Array.isArray(content.authors) || !content.authors.every(author => typeof author === 'string')) || content.year !== undefined && (!Number.isInteger(content.year) || content.year < 0) || content.variants !== undefined && (!Array.isArray(content.variants) || content.variants.some(variant => !variant || !string(variant.boardId) || !string(variant.cardId) || !card(variant.card)));
+  const invalidContent = (content: WorkspaceContent) => !content || !string(content.id) || !roles.has(content.role) || content.daily !== undefined && !validDailyCapture(content.daily) || !card(content.card) || content.sourceContentId !== undefined && !string(content.sourceContentId) || content.authors !== undefined && (!Array.isArray(content.authors) || !content.authors.every(author => typeof author === 'string')) || content.year !== undefined && (!Number.isInteger(content.year) || content.year < 0) || content.variants !== undefined && (!Array.isArray(content.variants) || content.variants.some(variant => !variant || !string(variant.boardId) || !string(variant.cardId) || !card(variant.card)));
   if (files.contents.some(invalidContent) || !unique(files.contents.map(content => content.id))) return false;
   if (files.folders.some(folder => !folder || !string(folder.id) || typeof folder.title !== 'string' || !folder.title.trim() || folder.parentId !== null && !string(folder.parentId)) || !unique(files.folders.map(folder => folder.id))) return false;
   const folders = new Map(files.folders.map(folder => [folder.id, folder]));

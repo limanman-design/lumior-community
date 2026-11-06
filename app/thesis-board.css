@@ -23,11 +23,6 @@
 .thesis-chat-consent{display:flex;align-items:flex-start;gap:8px;margin:12px 0;padding:12px;border-radius:12px;background:var(--ui-fill-subtle);color:var(--muted-foreground,var(--ui-text-secondary));font-size:12px;line-height:1.6}
 .thesis-chat-consent input{flex:none;margin-top:3px;accent-color:var(--primary,var(--ui-brand))}
 
-.thesis-chat-tools{display:flex;justify-content:flex-end;padding:4px 12px}
-.thesis-chat-tools button{font:inherit;font-size:12px;color:var(--ui-text-muted);background:transparent;border:0;border-radius:var(--lumior-menu-item-radius);padding:6px 8px;cursor:pointer}
-.thesis-chat-tools button:is(:hover,:focus-visible){background:var(--ui-fill-hover);color:var(--ui-text)}
-.thesis-chat-tools button:focus-visible{outline:1px solid var(--ui-brand)}
-.thesis-chat-tools button:disabled{cursor:default}
 .thesis-progress-list{display:grid;gap:8px;margin:12px 0}
 .thesis-progress-list p{margin:4px 0;color:var(--ui-text-muted);font-size:12px}
 

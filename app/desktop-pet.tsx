@@ -117,7 +117,7 @@ export function DesktopPetPanel({ onBusyChange }: { onBusyChange: (busy: boolean
       <button className="pet-reset-animation" type="button" disabled={!supported || busy} onClick={() => { const next = { ...petAnimationDefaults }; setOptions(next); applyOptions(next); }}>{t('Reset animation', '恢复默认动画')}</button>
       <p>{t('Changes are saved automatically and kept the next time you open Lumior.', '调整后自动保存，下次启动仍会保留。')}</p>
     </div>}
-    <div className="pet-settings-help"><p>{t('Click to write, drag to move, or right-click for more.', '点击开始速记，拖动调整位置，右键打开更多操作。')}</p><p>{t('Notes go to Home and Recents. Unfinished drafts are kept automatically.', '笔记保存到首页根目录并进入最近列表，未完成的草稿会自动保留。')}</p><p>{t('The pet stays when you close the main window. Quit Lumior from the app menu to close both.', '关闭主窗口后，桌宠会继续陪伴；从应用菜单退出 Lumior 时一并关闭。')}</p></div>
+    <div className="pet-settings-help"><p>{t('Click to write, drag to move, or right-click for more.', '点击开始速记，拖动调整位置，右键打开更多操作。')}</p><p>{t('New notes appear in Daily. Unfinished drafts are kept automatically.', '新笔记会出现在「日常」，未完成的草稿会自动保留。')}</p><p>{t('The pet stays when you close the main window. Quit Lumior from the app menu to close both.', '关闭主窗口后，桌宠会继续陪伴；从应用菜单退出 Lumior 时一并关闭。')}</p></div>
     {(failed || state?.error) && <p className="pet-settings-error" role="alert">{state?.error || t('Could not apply the change. Please retry.', '设置未能应用，请重试。')}</p>}
   </section>;
 }

@@ -5,15 +5,17 @@ import type { ThesisSkillId } from '../lib/thesis/model';
 import { boardThesisSession, thesisSourcePath } from './thesis-board';
 import { prepareThesisNotes } from './prepare-thesis-notes';
 import { waitForReading } from './document-reading-store';
+import { thesisContextPath } from '../lib/thesis/card-roles';
 
-export async function runBoardThesis(board: Board, chatId: string, skill: ThesisSkillId, question: string, signal: AbortSignal, progress: (message: string, cardId?: string) => void, model = defaultThesisModel.id as string): Promise<ThesisRunResult> {
+export async function runBoardThesis(board: Board, chatId: string, skill: ThesisSkillId, question: string, signal: AbortSignal, progress: (message: string, cardId?: string) => void, model = defaultThesisModel.id as string, referenceIds: readonly string[] = []): Promise<ThesisRunResult> {
   const selected = findThesisModel(model);
   if (!selected) throw new Error('请选择论文助手支持的模型。');
   if (!hasThesisConsent(board.thesis, selected.provider)) throw new Error('请先确认当前模型服务商的资料处理说明。');
-  const { snapshot, texts } = await prepareThesisNotes(board, skill, signal, progress);
+  const { snapshot, texts } = await prepareThesisNotes(board, skill, signal, progress, {}, referenceIds, chatId);
   if (skill === 'mba-lit' && board.thesis?.proposals['thesis/lit-matrix.md'])
     snapshot.boardContext += ' 本次读文献沿用文献矩阵的待采纳工作稿，防止重复处理；它尚未替换用户卡片，继续更新仍是待采纳建议，不能宣称已采纳。';
-  for (const [id, role] of Object.entries(board.thesis!.sources)) {
+  for (const id of new Set([...Object.keys(board.thesis!.sources), ...referenceIds])) {
+    const role = board.thesis!.sources[id];
     if (signal.aborted) throw new DOMException('已停止', 'AbortError');
     const card = board.cards.find(item => item.id === id);
     if (!card) continue;
@@ -26,8 +28,8 @@ export async function runBoardThesis(board: Board, chatId: string, skill: Thesis
       text = document.pages!.map(page => `=== PDF p.${page.page} ===\n${page.text || '【此页未提取到文字】'}`).join('\n\n');
       if (document.emptyPages.length) progress(`${card.title} 有 ${document.emptyPages.length} 页未提取到文字，已标记缺页。`);
     }
-    const path = thesisSourcePath(id, role, card);
-    snapshot.files[path] = { path, text: `原文件：${card.pdf?.name || card.title}\n\n${text}`, pages, modifiedAt: Date.parse(card.updatedAt || '') || 0, uploaded: true, mediaType: card.pdf ? 'application/pdf' : 'text/markdown' };
+    const paths = [...(role ? [thesisSourcePath(id, role, card)] : []), ...(referenceIds.includes(id) ? [thesisContextPath(id, !!card.pdf)] : [])];
+    for (const path of paths) snapshot.files[path] = { path, text: path.startsWith('thesis/context/') ? text : `原文件：${card.pdf?.name || card.title}\n\n${text}`, pages, modifiedAt: Date.parse(card.updatedAt || '') || 0, uploaded: true, mediaType: card.pdf ? 'application/pdf' : 'text/markdown' };
   }
   if (signal.aborted) throw new DOMException('已停止', 'AbortError');
   progress('资料已准备，正在运行论文助手…');

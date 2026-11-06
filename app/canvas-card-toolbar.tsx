@@ -126,7 +126,6 @@ export function CanvasCardToolbar({ card, compact = false, onAction, onFitConten
         {compact && imageNote && <DropdownMenuItem onClick={onImageNote}><StickyNote />{t('Add note', '添加笔记')}</DropdownMenuItem>}
         {compact && card.kind === 'note' && <DropdownMenuItem onClick={onFitContent}><Minimize2 />{t('Fit to content', '适应内容大小')}</DropdownMenuItem>}
         {compact && (card.pdfExcerpt || imageNote || card.kind === 'note') && <DropdownMenuSeparator />}
-        {(card.kind === 'pdf' || card.kind === 'note' || card.kind === 'text') && <><DropdownMenuItem onClick={() => onAction('thesis-source:refs')}>作为论文文献</DropdownMenuItem><DropdownMenuItem onClick={() => onAction('thesis-source:template')}>作为学院模板</DropdownMenuItem><DropdownMenuItem onClick={() => onAction('thesis-source:rubric')}>作为评审要求</DropdownMenuItem><DropdownMenuItem onClick={() => onAction('thesis-source:material')}>作为企业／背景资料</DropdownMenuItem><DropdownMenuItem onClick={() => onAction('thesis-source:')}>设为普通资料</DropdownMenuItem><DropdownMenuSeparator /></>}
         <DropdownMenuItem onClick={() => onAction('duplicate')}><Copy />{t('Duplicate card', '复制卡片')}</DropdownMenuItem>
         {imageNote && <><DropdownMenuItem onClick={() => onAction('copy-image')}><Copy />{t('Copy image', '复制图片')}<kbd>⌘/Ctrl C</kbd></DropdownMenuItem><DropdownMenuItem onClick={() => onAction('cut-image')}><Scissors />{t('Cut image', '剪切图片')}<kbd>⌘/Ctrl X</kbd></DropdownMenuItem></>}
         <DropdownMenuItem onClick={() => onAction('connect')}><Link2 />{t('Connect to a card', '连接到卡片')}</DropdownMenuItem>

@@ -3,6 +3,7 @@
 import {
   Fragment,
   type ReactNode,
+  type ClipboardEvent,
   useCallback,
   useEffect,
   useRef,
@@ -112,6 +113,9 @@ type ProviderStatus = {
 };
 const modelName = (item: ModelOption) => item.displayName || item.name;
 type Props = {
+  capture?: { attachments?: ReactNode; hasAttachments: boolean; onAttach: () => void; onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void };
+  hideReferenceButton?: boolean;
+  generalAssistantLabel?: boolean;
   fixedModelLabel?: string;
   modelScope?: 'research' | 'thesis';
   canvas?: boolean;
@@ -136,7 +140,7 @@ type Props = {
   onOpenCard: (id: string) => void;
 };
 export function AiComposer({
-  modelScope = 'research', fixedModelLabel, canvas = false, toolbar, focusRequest = 0, placeholder,
+  hideReferenceButton = false, generalAssistantLabel = false, capture, modelScope = 'research', fixedModelLabel, canvas = false, toolbar, focusRequest = 0, placeholder,
   portalContainer,
   draft,
   onDraft,
@@ -155,7 +159,9 @@ export function AiComposer({
 }: Props) {
   const { t } = useI18n();
   const activeSkill = getAiSkill(skill);
-  const skillLabel = activeSkill ? t(activeSkill.name.en, activeSkill.name.zh) : t('Assistant unavailable', '助手暂不可用');
+  const capturing = !!capture;
+  const canSend = ready && !busy && (capturing || !!activeSkill) && (!!draft.trim() || !!capture?.hasAttachments);
+  const skillLabel = activeSkill ? generalAssistantLabel && activeSkill.id === 'research' ? t('General assistant', '通用助手') : t(activeSkill.name.en, activeSkill.name.zh) : t('Assistant unavailable', '助手暂不可用');
   const [focusNewConversation, setFocusNewConversation] = useState(false);
   const desktop = useDesktopRuntime();
   const input = useRef<HTMLTextAreaElement>(null),
@@ -329,6 +335,7 @@ export function AiComposer({
     fetchModels(refreshProvider);
   }, [fetchModels]);
   useEffect(() => {
+    if (capturing) return;
     fetchModels();
     const refreshSettings = () => loadModels();
     window.addEventListener(desktopAiSettingsChangedEvent, refreshSettings);
@@ -339,7 +346,7 @@ export function AiComposer({
         refreshSettings,
       );
     };
-  }, [fetchModels, loadModels]);
+  }, [capturing, fetchModels, loadModels]);
   useEffect(() => {
     if (picker) pickerInput.current?.focus();
   }, [picker]);
@@ -438,18 +445,20 @@ export function AiComposer({
             {selected.map(card => <AiFileAttachment key={card.id} title={card.title} kind={card.kind} excerpt={!!card.pdfExcerpt} card={card} onOpen={() => onOpenCard(card.id)} onRemove={() => onRefs(refs.filter(id => id !== card.id))} />)}
           </div>
         )}
-        {!activeSkill && <output className="ai-skill-unavailable">{t('This assistant is unavailable. Choose an assistant to start a new conversation.', '此助手暂不可用，请选择可用助手新建对话。')}</output>}
+        {capture?.attachments}
+        {!capturing && !activeSkill && <output className="ai-skill-unavailable">{t('This assistant is unavailable. Choose an assistant to start a new conversation.', '此助手暂不可用，请选择可用助手新建对话。')}</output>}
         <textarea
           ref={input}
           disabled={!ready}
           rows={1}
-          maxLength={6000}
-          aria-label={t('Message AI Tutor', '向 AI 导师发送消息')}
+          maxLength={capturing ? 100000 : 6000}
+          aria-label={capturing ? t('Capture a thought', '记下一点想法') : t('Message AI Tutor', '向 AI 导师发送消息')}
+          onPaste={capture?.onPaste}
           placeholder={placeholder || t('Use ‘@’ to mention cards', '用“@”提及卡片')}
           value={draft}
           onChange={(event) => {
             onDraft(event.target.value);
-            if (event.target.value.endsWith('@')) {
+            if (!capturing && event.target.value.endsWith('@')) {
               setPicker(true);
               setQuery('');
             }
@@ -462,24 +471,25 @@ export function AiComposer({
               !picker
             ) {
               event.preventDefault();
-              if (ready && !busy && activeSkill && draft.trim()) onSend();
+              if (canSend) onSend();
             }
           }}
         />
         <div className="ai-compose-actions">
-          <button
+          {!hideReferenceButton && <button
             className="ai-add-reference"
-            aria-label={t('Reference a card', '引用卡片')}
+            aria-label={capturing ? t('Add images', '添加图片') : t('Reference a card', '引用卡片')}
             disabled={!ready}
             aria-expanded={picker}
             onClick={() => {
+              if (capture) { capture.onAttach(); return; }
               setPicker(!picker);
               setQuery('');
             }}
           >
             <img src="/assets/composer/plus.svg" alt="" />
-          </button>
-          <DropdownMenu modal={false} onOpenChange={open => { if (open) setFocusNewConversation(false); }}>
+          </button>}
+          {capturing ? <span className="ai-skill-trigger">/ {t('Capture', '随手记')}</span> : <DropdownMenu modal={false} onOpenChange={open => { if (open) setFocusNewConversation(false); }}>
             <DropdownMenuTrigger
               className="ai-skill-trigger"
               data-selected={!!activeSkill}
@@ -509,13 +519,13 @@ export function AiComposer({
                 }}
               >
                 <span className="ai-skill-check" aria-hidden="true">{item.id === skill && <Check size={18} />}</span>
-                <span>{t(item.name.en, item.name.zh)}</span>
+                <span>{generalAssistantLabel && item.id === 'research' ? t('General assistant', '通用助手') : t(item.name.en, item.name.zh)}</span>
               </DropdownMenuItem>)}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
           <span className="ai-compose-spacer" />
           {toolbar}
-          <DropdownMenu
+          {!capturing && <DropdownMenu
             onOpenChange={(open) => {
               if (open) {
                 setMoreOpenAi(false);
@@ -720,8 +730,8 @@ export function AiComposer({
                 </div>
               )}
             </DropdownMenuContent>
-          </DropdownMenu>
-          {busy ? (
+          </DropdownMenu>}
+          {busy && !capturing ? (
             <button
               className="ai-send ai-stop"
               aria-label={t('Stop response', '停止回答')}
@@ -732,15 +742,15 @@ export function AiComposer({
           ) : (
             <button
               className="ai-send"
-              aria-label={t('Send message', '发送消息')}
-              disabled={!ready || !activeSkill || !draft.trim()}
+              aria-label={capturing ? t('Save capture', '保存记录') : t('Send message', '发送消息')}
+              disabled={!canSend}
               onClick={onSend}
             >
               <img
                 className="research-icon"
                 alt=""
                 src={
-                  draft.trim()
+                  draft.trim() || capture?.hasAttachments
                     ? '/assets/pdf-ui/send-active.svg'
                     : '/assets/research-ui/send.svg'
                 }

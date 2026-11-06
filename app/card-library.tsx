@@ -221,7 +221,7 @@ function LibraryContent({
     >();
     for (const board of boards)
       for (const card of board.cards) {
-        if (card.kind === 'text' || card.kind === 'database') continue;
+        if (card.kind === 'text' || card.kind === 'database' || card.tags?.includes('daily-preview')) continue;
         const key = cardIdentity(card);
         const entry = indexed.get(key);
         if (entry) entry.locations.push({ board, card });
@@ -230,7 +230,7 @@ function LibraryContent({
     // A registry card owns the shared content; board copies contribute locations.
     // Standalone NotePages and summaries require no synthetic owner board.
     for (const card of contentCards || []) {
-      if (card.kind === 'text' || card.kind === 'database') continue;
+      if (card.kind === 'text' || card.kind === 'database' || card.tags?.includes('daily-preview')) continue;
       const key = cardIdentity(card);
       const entry = indexed.get(key);
       if (entry) entry.card = card;
