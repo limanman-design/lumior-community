@@ -1,3 +1,5 @@
+import { validateCustomAiConfig, type CustomAiConfig } from './custom-ai-config.ts';
+import { secureCustomAiFetch } from './custom-ai-transport.ts';
 import { aiProviders, isResearchModel, qualifiedModelId, type AiProvider } from './ai-providers.ts';
 
 export type AiCatalogError = 'authentication' | 'permission' | 'rate_limited' | 'timeout' | 'network' | 'invalid_response' | 'empty' | 'upstream';
@@ -10,7 +12,7 @@ export type AiCatalogModel = { id: string; name: string; provider: AiProvider; m
 type CatalogResult = { models: AiCatalogModel[]; catalog: AiCatalogStatus };
 type Pending = { controller: AbortController; promise: Promise<CatalogResult>; consumers: number; settled: boolean };
 type CacheEntry = {
-  key: string; fallback: string; expires: number; result?: CatalogResult;
+  key: string; fallback: string; custom?: CustomAiConfig; expires: number; result?: CatalogResult;
   successful?: { models: AiCatalogModel[]; at: number }; pending?: Pending;
 };
 
@@ -47,7 +49,9 @@ export function createAiModelCatalog(fetcher: typeof fetch = fetch, { now = Date
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(timeoutMs)]);
     try {
       const definition = aiProviders.find(item => item.id === provider)!;
-      const response = await fetcher(`${definition.baseUrl}/models`, { headers: { Authorization: `Bearer ${entry.key}` }, signal });
+      const custom = provider === 'custom' ? validateCustomAiConfig(entry.custom) : undefined;
+      const transport = custom && fetcher === fetch ? secureCustomAiFetch : fetcher;
+      const response = await transport(`${custom?.baseUrl || definition.baseUrl}/models`, { redirect: 'error', credentials: 'omit', headers: { Authorization: `Bearer ${entry.key}` }, signal });
       signal.throwIfAborted();
       if (!response.ok) {
         // Never include upstream response bodies, exception text, or credentials.
@@ -55,7 +59,15 @@ export function createAiModelCatalog(fetcher: typeof fetch = fetch, { now = Date
         throw new CatalogFailure(response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : response.status === 429 ? 'rate_limited' : 'upstream');
       }
       let data: unknown;
-      try { data = await response.json(); } catch (error) {
+      try {
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('Empty model list.');
+        const decoder = new TextDecoder(); let raw = '', bytes = 0;
+        try { while (true) { const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
+          if (bytes > 1_000_000) throw new Error('Model list too large.'); raw += decoder.decode(part.value, { stream: true }); }
+          data = JSON.parse(raw + decoder.decode());
+        } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+      } catch (error) {
         if (signal.aborted) throw error;
         throw new CatalogFailure('invalid_response');
       }
@@ -98,12 +110,12 @@ export function createAiModelCatalog(fetcher: typeof fetch = fetch, { now = Date
       caches.get(provider)?.pending?.controller.abort();
       caches.delete(provider);
     },
-    async get(provider: AiProvider, key: string, fallback: string, { refresh = false, signal }: { refresh?: boolean; signal?: AbortSignal } = {}): Promise<CatalogResult> {
+    async get(provider: AiProvider, key: string, fallback: string, { refresh = false, signal, custom }: { refresh?: boolean; signal?: AbortSignal; custom?: CustomAiConfig } = {}): Promise<CatalogResult> {
       if (signal?.aborted) throw new DOMException('Model list request cancelled.', 'AbortError');
       let entry = caches.get(provider);
-      if (!entry || entry.key !== key || entry.fallback !== fallback) {
+      if (!entry || entry.key !== key || entry.fallback !== fallback || JSON.stringify(entry.custom) !== JSON.stringify(custom)) {
         entry?.pending?.controller.abort();
-        entry = { key, fallback, expires: 0 };
+        entry = { key, fallback, custom, expires: 0 };
         caches.set(provider, entry);
       }
       if (!refresh && entry.result && entry.expires > now()) {

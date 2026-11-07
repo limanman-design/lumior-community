@@ -36,7 +36,7 @@ const clientRoot = path.join(root, 'dist/client');
 await cp(clientRoot, path.join(generated, 'web/client'), { recursive: true, filter: source => !forbidden.has(path.basename(source)) && includeDesktopAsset(source, clientRoot) });
 const losslessAssetOptimization = await optimizeDesktopPngs(path.join(generated, 'web/client'));
 await cp(path.join(root, 'dist/server'), path.join(generated, 'web/server'), { recursive: true, filter: source => !forbidden.has(path.basename(source)) });
-for (const name of ['backend.mjs', 'security.cjs', 'ai-settings.cjs', 'trial-access.cjs', 'network.cjs']) await cp(path.join(desktop, 'runtime', name), path.join(generated, name));
+for (const name of ['backend.mjs', 'security.cjs', 'ai-settings.cjs', 'custom-ai-config.cjs', 'trial-access.cjs', 'network.cjs']) await cp(path.join(desktop, 'runtime', name), path.join(generated, name));
 if (distribution === 'official') await writeTrialServiceBuild(generated, trialGatewayUrl);
 await writeDistributionBuild(generated, distribution);
 await cp(path.join(root, 'scripts/node-worker-env-loader.mjs'), path.join(generated, 'node-worker-env-loader.mjs'));

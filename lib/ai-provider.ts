@@ -1,3 +1,5 @@
+import { validateCustomAiConfig, type CustomAiConfig } from './custom-ai-config.ts';
+import { secureCustomAiFetch } from './custom-ai-transport.ts';
 import { sseData } from './ai-stream.ts';
 import { record } from './ai-research.ts';
 import { defaultAiReasoningEffort, type AiReasoningEffort } from './ai-reasoning.ts';
@@ -22,8 +24,13 @@ function providerError(provider: AiProvider, status: number) {
   return `${name} 暂时无法完成研究请求，请稍后重试。`;
 }
 
-/** Server-only credentials can only be sent to fixed, official provider hosts. */
-export function providerResearchCall(provider: AiProvider, key: string, model: string, signal: AbortSignal, fetcher: typeof fetch = fetch, reasoningEffort: AiReasoningEffort = defaultAiReasoningEffort): ModelCall {
+/** Official keys stay on fixed hosts. Custom keys use their separately configured, guarded transport. */
+export function providerResearchCall(provider: AiProvider, key: string, model: string, signal: AbortSignal, fetcher: typeof fetch = fetch, reasoningEffort: AiReasoningEffort = defaultAiReasoningEffort , custom?: CustomAiConfig): ModelCall {
+  if (provider === 'custom') {
+    custom = validateCustomAiConfig(custom);
+    if (fetcher === fetch) fetcher = secureCustomAiFetch;
+    if (custom.protocol === 'responses') return openaiResearchCall(key, model, signal, fetcher, custom, reasoningEffort);
+  }
   if (provider === 'openai') return openaiResearchCall(key, model, signal, fetcher);
   const definition = aiProviders.find(item => item.id === provider)!;
   return async (messages, tools, toolChoice) => {
@@ -36,14 +43,14 @@ export function providerResearchCall(provider: AiProvider, key: string, model: s
     const request = createModelRequestLimit(provider, model, signal);
     try {
       request.signal.throwIfAborted();
-      const response = await fetcher(`${definition.baseUrl}/chat/completions`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      const response = await fetcher(`${custom?.baseUrl || definition.baseUrl}/chat/completions`, {
+        method: 'POST', redirect: 'error', credentials: 'omit', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
         signal: request.signal,
         body: JSON.stringify({ model, stream: true, ...(thinking ? { thinking: { type: 'enabled' } } : {}),
           ...(supportsReasoningEffort(provider, model) ? { reasoning_effort: reasoningEffort } : {}),
           ...(isKimiK3(provider, model)
             ? { max_completion_tokens: maxModelOutputTokens(provider, model) }
-            : { max_tokens: maxModelOutputTokens(provider, model) }),
+            : { max_tokens: provider === 'custom' ? 8192 : maxModelOutputTokens(provider, model) }),
           messages: messages.map(({ responseItems: _responseItems, ...message }) => message),
           ...(provider === 'glm' && tools && /^glm-(?:5|4\.[67])/.test(model) ? { tool_stream: true } : {}),
           ...(tools ? { tools, ...(toolChoice ? { tool_choice: toolChoice } : {}) } : {}) }),
@@ -54,12 +61,15 @@ export function providerResearchCall(provider: AiProvider, key: string, model: s
           if (record(detail.error).type === 'engine_overloaded_error')
             throw new Error('Kimi 服务当前繁忙，请稍后重试。');
         }
+        void response.body?.cancel().catch(() => {});
         throw new Error(providerError(provider, response.status));
       }
-      let content = '', reasoning = '', reason = '';
+      let content = '', reasoning = '', reason = '', received = 0;
       const calls = new Map<number, ToolCall>();
       for await (const data of sseData(response.body, request.signal)) {
         if (data === '[DONE]') break;
+        received += data.length;
+        if (received > 4_000_000) throw new Error('模型研究响应过大，尚未完成核对。');
         const chunk = record(JSON.parse(data));
         if (chunk.error) throw new Error('模型研究请求失败，请重试。');
         const choice = record(Array.isArray(chunk.choices) ? chunk.choices[0] : null), delta = record(choice.delta);
@@ -84,7 +94,7 @@ export function providerResearchCall(provider: AiProvider, key: string, model: s
       if (toolCalls.some(call => !call.id || !call.function.name)) throw new Error('模型工具请求不完整，请重试。');
       if (!content.trim() && !toolCalls.length) throw new Error('模型没有返回正文或工具请求，未将本次响应标为完成；请重试。');
       return { message: { role: 'assistant', content, ...(reasoning ? { reasoning_content: reasoning } : {}), ...(toolCalls.length ? { tool_calls: toolCalls } : {}) }, reason };
-    } catch (error) { throw request.error(error); }
+    } catch (error) { throw request.error(provider === 'custom' ? new Error('自定义 AI 服务调用失败，请检查地址、协议、模型、额度与网络。') : error); }
     finally { request.dispose(); }
   };
 }
@@ -101,24 +111,42 @@ function responseInput(messages: ModelMessage[]) {
 }
 
 /** Responses supports tool research for modern OpenAI models, including GPT-6. */
-function openaiResearchCall(key: string, model: string, signal: AbortSignal, fetcher: typeof fetch): ModelCall {
+function openaiResearchCall(key: string, model: string, signal: AbortSignal, fetcher: typeof fetch, custom?: CustomAiConfig, effort: AiReasoningEffort = defaultAiReasoningEffort): ModelCall {
   return async (messages, tools, toolChoice) => {
     const input = responseInput(messages);
     if (new TextEncoder().encode(JSON.stringify(input)).byteLength > 700_000) throw new Error('本轮证据超过模型上下文容量，查证尚未完成；请拆分研究问题后继续。');
     const request = createModelRequestLimit('openai', model, signal);
     try {
       request.signal.throwIfAborted();
-      const response = await fetcher('https://api.openai.com/v1/responses', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      const response = await fetcher(`${custom?.baseUrl || 'https://api.openai.com/v1'}/responses`, {
+        method: 'POST', redirect: 'error', credentials: 'omit', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
         signal: request.signal,
-        body: JSON.stringify({ model, input, store: false, include: ['reasoning.encrypted_content'], max_output_tokens: maxModelOutputTokens('openai', model),
+        body: JSON.stringify({ model, input, store: false, ...(custom ? { stream: true, reasoning: { effort }, max_output_tokens: 8192 } : { include: ['reasoning.encrypted_content'], max_output_tokens: maxModelOutputTokens('openai', model) }),
           ...(tools ? { tools: tools.map(tool => ({ type: 'function', ...record(record(tool).function), strict: false })), ...(toolChoice ? { tool_choice: toolChoice } : {}) } : {}) }),
       });
-      if (!response.ok) throw new Error(providerError('openai', response.status));
-      const raw = await response.text();
-      if (raw.length > 4_000_000) throw new Error('模型研究响应过大，尚未完成核对。');
-      let data: Record<string, unknown>;
-      try { data = record(JSON.parse(raw)); } catch { throw new Error('OpenAI 返回的研究响应格式不正确，请重试。'); }
+      if (!response.ok) { void response.body?.cancel().catch(() => {}); throw new Error(providerError('openai', response.status)); }
+      let data: Record<string, unknown> = {};
+      if (custom && response.headers.get('content-type')?.includes('text/event-stream') && response.body) {
+        let bytes = 0, completed = false;
+        for await (const raw of sseData(response.body, request.signal)) {
+          if (raw === '[DONE]') break;
+          bytes += raw.length;
+          if (bytes > 4_000_000) throw new Error('模型研究响应过大，尚未完成核对。');
+          const event = record(JSON.parse(raw));
+          if (['error', 'response.failed', 'response.incomplete'].includes(String(event.type))) throw new Error('自定义服务响应未完成。');
+          if (event.type === 'response.completed') { data = record(event.response); completed = true; break; }
+        }
+        if (!completed) throw new Error('自定义服务连接中断。');
+      } else {
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('模型没有返回响应。');
+        let bytes = 0, raw = ''; const decoder = new TextDecoder();
+        try { while (true) { const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
+          if (bytes > 4_000_000) throw new Error('模型研究响应过大，尚未完成核对。'); raw += decoder.decode(part.value, { stream: true }); }
+          raw += decoder.decode();
+          try { data = record(JSON.parse(raw)); } catch { throw new Error('OpenAI 返回的研究响应格式不正确，请重试。'); }
+        } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+      }
       if (data.status !== 'completed' || data.error) throw new Error('OpenAI 本轮研究尚未完成，可能达到容量限制或被中断；请拆分问题后重试。');
       const output = (Array.isArray(data.output) ? data.output : []).map(record);
       const calls: ToolCall[] = [];
@@ -137,7 +165,7 @@ function openaiResearchCall(key: string, model: string, signal: AbortSignal, fet
       // Retain encrypted reasoning and call IDs inside this request only; never
       // publish them or save them into the user's conversation history.
       return { message: { role: 'assistant', content, ...(calls.length ? { tool_calls: calls } : {}), responseItems: output }, reason: calls.length ? 'tool_calls' : 'stop' };
-    } catch (error) { throw request.error(error); }
+    } catch (error) { throw request.error(custom ? new Error('自定义 AI 服务调用失败，请检查地址、Responses 协议、模型、额度与网络。') : error); }
     finally { request.dispose(); }
   };
 }

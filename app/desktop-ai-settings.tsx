@@ -18,6 +18,7 @@ import { useI18n } from './i18n';
 import { DesktopTrialTicket } from './desktop-trial-ticket';
 import { TrialNightHighway } from './trial-night-highway';
 import './desktop-ai-settings.css';
+import { validateCustomAiConfig, type CustomAiConfig } from '../lib/custom-ai-config';
 
 const visibleAiProviders = aiProviders.filter((item) => item.id !== 'glm');
 
@@ -65,9 +66,13 @@ export function DesktopAiSettingsPanel({
         ]),
       ) as Record<AiProvider, { apiKey: string; model: string }>,
   );
+  const [customDraft, setCustomDraft] = useState<CustomAiConfig>({ name: 'Aizex', baseUrl: 'https://ca.memofun.net/v1', protocol: 'responses' });
   const { apiKey, model } = drafts[provider];
   const entry = aiProviders.find((item) => item.id === provider)!;
+  const providerName = provider === 'custom' ? t('Custom service', '自定义服务') : entry.name;
   const providerSettings = settingsForProvider(settings, provider);
+  const savedCustom = settings?.providers?.custom?.custom;
+  const destinationChanged = !!savedCustom && (customDraft.baseUrl.replace(/\/+$/, '') !== savedCustom.baseUrl || customDraft.protocol !== savedCustom.protocol);
   const updateDraft = (value: Partial<{ apiKey: string; model: string }>) => {
     setDrafts((current) => ({
       ...current,
@@ -78,7 +83,7 @@ export function DesktopAiSettingsPanel({
   };
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [failed, setFailed] = useState<'read' | 'save' | 'model' | 'key' | ''>(
+  const [failed, setFailed] = useState<'read' | 'save' | 'model' | 'key' | 'custom' | ''>(
     '',
   );
   const [saved, setSaved] = useState(false);
@@ -153,6 +158,7 @@ export function DesktopAiSettingsPanel({
       (next) => {
         if (cancelled) return;
         setSettings(next);
+        if (next.providers?.custom?.custom) setCustomDraft(next.providers.custom.custom);
         setProvider(visibleProvider(initialProvider || next.provider));
         setDrafts(
           Object.fromEntries(
@@ -181,7 +187,7 @@ export function DesktopAiSettingsPanel({
       setFailed('model');
       return;
     }
-    if (!removeKey && !providerSettings.configured && !apiKey.trim()) {
+    if (!removeKey && (!providerSettings.configured || provider === 'custom' && destinationChanged) && !apiKey.trim()) {
       setFailed('key');
       return;
     }
@@ -191,6 +197,9 @@ export function DesktopAiSettingsPanel({
       return;
     }
     const update: DesktopAiSettingsUpdate = { provider, model: nextModel };
+    if (provider === 'custom') {
+      try { update.custom = validateCustomAiConfig(removeKey ? savedCustom || customDraft : customDraft); } catch { setFailed('custom'); return; }
+    }
     if (removeKey) update.apiKey = '';
     else if (apiKey.trim()) update.apiKey = apiKey.trim();
     setSaving(true);
@@ -200,6 +209,7 @@ export function DesktopAiSettingsPanel({
     try {
       const next = await bridge.saveAiSettings(update);
       setSettings(next);
+      if (next.providers?.custom?.custom) setCustomDraft(next.providers.custom.custom);
       setDrafts((current) => ({
         ...current,
         [provider]: {
@@ -318,6 +328,7 @@ export function DesktopAiSettingsPanel({
     setTicketTearing(false);
   };
   const edited =
+    (provider === 'custom' && JSON.stringify(customDraft) !== JSON.stringify(savedCustom)) ||
     apiKey.trim().length > 0 ||
     model.trim() !== providerSettings.model ||
     provider !== (settings?.provider || 'deepseek');
@@ -428,7 +439,7 @@ export function DesktopAiSettingsPanel({
                     autoComplete="off"
                     autoCapitalize="none"
                     spellCheck={false}
-                    maxLength={128}
+                    maxLength={provider === 'custom' ? 200 : 128}
                     value={invitation}
                     disabled={disabled || !gatewayConfigured}
                     placeholder={t('Enter your invitation code', '输入邀请码')}
@@ -651,8 +662,8 @@ export function DesktopAiSettingsPanel({
           )}
           <p>
             {t(
-              'Connect DeepSeek, Kimi or OpenAI for AI chat. Each service keeps its own key and model. Usage is billed by the provider.',
-              '为 AI 对话接入 DeepSeek、Kimi 或 OpenAI。各服务的密钥与模型独立保存，使用费用由对应服务商收取。',
+              'Connect DeepSeek, Kimi, OpenAI or a custom service for AI chat. Each service keeps its own key and model. Usage is billed by the provider.',
+              '为 AI 对话接入 DeepSeek、Kimi、OpenAI 或自定义服务。各服务的密钥与模型独立保存，使用费用由对应服务商收取。',
             )}
           </p>
           <fieldset
@@ -671,7 +682,7 @@ export function DesktopAiSettingsPanel({
                   setSaved(false);
                 }}
               >
-                <span>{item.name}</span>
+                <span>{item.id === 'custom' ? t('Custom service', '自定义服务') : item.name}</span>
                 <small>
                   {settingsForProvider(settings, item.id).configured
                     ? t('Connected', '已配置')
@@ -694,7 +705,7 @@ export function DesktopAiSettingsPanel({
                       ? t(
                           '{provider} key saved on this device',
                           '本机已保存 {provider} 密钥',
-                          { provider: entry.name },
+                          { provider: providerName },
                         )
                       : t('API key required', '需要填写 API Key')}
               </strong>
@@ -723,8 +734,27 @@ export function DesktopAiSettingsPanel({
               void save();
             }}
           >
+            {provider === 'custom' && <>
+              <div className="desktop-ai-field">
+                <label htmlFor={`${id}-custom-name`}>{t('Service name', '服务名称')}</label>
+                <input id={`${id}-custom-name`} value={customDraft.name} maxLength={64} disabled={disabled} onChange={event => { setCustomDraft(value => ({ ...value, name: event.target.value })); setSaved(false); }}/>
+              </div>
+              <div className="desktop-ai-field">
+                <label htmlFor={`${id}-custom-url`}>{t('API base URL', 'API 地址')}</label>
+                <input id={`${id}-custom-url`} value={customDraft.baseUrl} maxLength={512} disabled={disabled} autoCapitalize="none" spellCheck={false} placeholder="https://ca.memofun.net/v1" onChange={event => { setCustomDraft(value => ({ ...value, baseUrl: event.target.value })); setSaved(false); }}/>
+              </div>
+              <div className="desktop-ai-field">
+                <label htmlFor={`${id}-custom-protocol`}>{t('API protocol', '接口协议')}</label>
+                <select id={`${id}-custom-protocol`} value={customDraft.protocol} disabled={disabled} onChange={event => { setCustomDraft(value => ({ ...value, protocol: event.target.value as CustomAiConfig['protocol'] })); setSaved(false); }}>
+                  <option value="responses">Responses</option><option value="chat-completions">Chat Completions</option>
+                </select>
+                <p>{t('Aizex: Responses. SiliconFlow: Chat Completions, https://api.siliconflow.cn/v1. Enter the exact model ID from your service.', 'Aizex 选择 Responses；硅基流动选择 Chat Completions，地址 https://api.siliconflow.cn/v1。模型 ID 请填写服务商提供的完整名称。')}</p>
+              </div>
+              <p className="desktop-ai-privacy">{t('Requests send your question and included materials to this service. Use a service you trust. Only public HTTPS addresses are allowed; changing the address or protocol requires entering a key again.', '请求会将问题和所附资料发送给此服务，请使用你信任的服务商。仅支持公网 HTTPS 地址；更换地址或协议后需重新填写 Key。')}</p>
+              {destinationChanged && <output>{t('Enter the key for the new destination; the previous key will not be reused.', '请填写新服务对应的 Key，旧密钥不会自动用于新地址。')}</output>}
+            </>}
             <div className="desktop-ai-field">
-              <label htmlFor={`${id}-key`}>{entry.name} API Key</label>
+              <label htmlFor={`${id}-key`}>{providerName} API Key</label>
               <input
                 id={`${id}-key`}
                 type="password"
@@ -743,7 +773,7 @@ export function DesktopAiSettingsPanel({
                     : t(
                         'Enter your {provider} API key',
                         '输入你的 {provider} API Key',
-                        { provider: entry.name },
+                        { provider: providerName },
                       )
                 }
                 aria-describedby={`${id}-privacy`}
@@ -761,13 +791,13 @@ export function DesktopAiSettingsPanel({
             <div className="desktop-ai-field">
               <label htmlFor={`${id}-model`}>
                 {t('Default {provider} model', '默认 {provider} 模型', {
-                  provider: entry.name,
+                  provider: providerName,
                 })}
               </label>
               <input
                 id={`${id}-model`}
                 type="text"
-                maxLength={128}
+                maxLength={provider === 'custom' ? 200 : 128}
                 autoComplete="off"
                 autoCapitalize="none"
                 spellCheck={false}
@@ -783,7 +813,7 @@ export function DesktopAiSettingsPanel({
                 {t(
                   'Enter a model ID supported by your {provider} account, such as {model}. Auto uses this service when your own API keys are selected.',
                   '填写你的 {provider} 账号支持的模型 ID，例如 {model}。使用自己的 API Key 时，Auto 会使用此服务。',
-                  { provider: entry.name, model: entry.defaultModel },
+                  { provider: providerName, model: entry.defaultModel },
                 )}
               </p>
             </div>
@@ -827,24 +857,26 @@ export function DesktopAiSettingsPanel({
                   ? t(
                       '{provider} settings saved. Auto will use this service; other saved keys are unchanged.',
                       '{provider} 设置已保存，Auto将使用该服务；其他服务的密钥保持不变。',
-                      { provider: entry.name },
+                      { provider: providerName },
                     )
                   : t(
                       '{provider} settings saved. Choose “Use my API keys” to use this service with Auto.',
                       '{provider} 设置已保存。选择“使用自己的 API Key”后，Auto 将使用此服务。',
-                      { provider: entry.name },
+                      { provider: providerName },
                     )
                 : t(
                     'The saved {provider} key was removed. Other saved keys are unchanged.',
                     '已移除 {provider} 密钥，其他服务的密钥保持不变。',
-                    { provider: entry.name },
+                    { provider: providerName },
                   )}
             </output>
           )}
           {failed && (
             <div className="desktop-ai-error" role="alert">
               <p>
-                {failed === 'read'
+                {failed === 'custom'
+                  ? t('Enter a public HTTPS API base URL without credentials, query parameters or a specific endpoint.', '请填写公网 HTTPS API 基础地址，不要包含账号密码、查询参数或 /responses 等具体接口。')
+                  : failed === 'read'
                   ? t(
                       'AI settings could not be read. Please try again.',
                       '无法读取 AI 设置，请重试。',
@@ -853,13 +885,13 @@ export function DesktopAiSettingsPanel({
                     ? t(
                         'Enter a valid {provider} model ID, such as {model}.',
                         '请输入有效的 {provider} 模型 ID，例如 {model}。',
-                        { provider: entry.name, model: entry.defaultModel },
+                        { provider: providerName, model: entry.defaultModel },
                       )
                     : failed === 'key'
                       ? t(
                           'Enter your {provider} API key before saving.',
                           '请填写你的 {provider} API Key 后保存。',
-                          { provider: entry.name },
+                          { provider: providerName },
                         )
                       : t(
                           'AI setup did not finish. Try again or restart Lumior.',

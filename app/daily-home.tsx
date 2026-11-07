@@ -1,7 +1,8 @@
 'use client';
 /* oxlint-disable next/no-img-element -- Captures use the user's original local assets. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from 'react';
-import { ArrowRight, Layers2, Maximize2, Minimize2, MoreHorizontal, Plus, Sparkles, StickyNote, Upload, X } from 'lucide-react';
+import { ArrowRight, Download, Layers2, Maximize2, Minimize2, MoreHorizontal, Plus, Sparkles, StickyNote, Upload, X } from 'lucide-react';
+import type { ImportedCard } from './file-import';
 import type { Board, Card } from './canvas-model';
 import type { WorkspaceContent, WorkspaceFiles } from './workspace-files';
 import { dailyBoardIds, dailyClues, dailyContents, dailyDisplayCard, dailyImageSize, dailyPreviewImage, dailyRecordStreak, type DailyClue } from './daily-model';
@@ -17,6 +18,11 @@ import './canvas-selection-toolbar.css';
 import './daily-home.css';
 import { ImagesBadge } from '@/components/ui/images-badge';
 import { WakeOrb } from './wake-orb';
+import { dailyDeleteShortcut } from './daily-input';
+import { clipboardImages } from './image-input';
+import { getDesktopBridge } from './desktop-bridge';
+import { cardDownloadSource, downloadCardAttachment } from './card-download';
+import { parseVideoUrl, isBilibiliShortUrl, resolveVideoUrl } from './video-url';
 
 export type DailyCardEditor = { imageNoteRequest: number; editing: boolean; onChange: (patch: Partial<Card>) => void; onEdit: (editing: boolean) => void };
 type Point = { x: number; y: number };
@@ -25,6 +31,7 @@ type Props = {
   files: WorkspaceFiles; boards: Board[]; visible: boolean;
   onImport: (files: File[], point: Point) => Promise<string | undefined> | undefined;
   onNewNote: (point: Point) => string;
+  onVideo: (card: ImportedCard, point: Point) => void;
   onPatch: (id: string, patch: Partial<Card>) => void;
   onPositions: (positions: Record<string, Point>) => void;
   onSaveAnswer: (title: string, body: string, blocks?: Card['blocks'], point?: Point) => void;
@@ -38,7 +45,7 @@ const noFocus = () => {};
 const noDrop = () => false;
 const request = { nonce: 0, cardId: null, boardId: 'workspace:daily' };
 
-export function DailyHome({ files, boards, visible, onNewNote, onPatch, onPositions, onImport, onSaveAnswer, onOpenContent, onOpenBoard, onRecycle, onLink, onDismiss, onPosition, renderCard }: Props) {
+export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch, onPositions, onImport, onSaveAnswer, onOpenContent, onOpenBoard, onRecycle, onLink, onDismiss, onPosition, renderCard }: Props) {
   const { t, locale } = useI18n();
   const [notice, setNotice] = useState('');
   useEffect(() => {
@@ -66,6 +73,80 @@ export function DailyHome({ files, boards, visible, onNewNote, onPatch, onPositi
     catch (error) { setNotice(error instanceof Error ? error.message : t('Could not import files.', '文件导入失败。')); }
     finally { setImports(value => value - 1); }
   };
+  const pendingPastes = useRef(new Set<AbortController>());
+  const nativePaste = useRef<{ handled: boolean } | null>(null);
+  useEffect(() => () => { for (const controller of pendingPastes.current) controller.abort(); pendingPastes.current.clear(); }, [visible]);
+  useEffect(() => {
+    if (!visible) return;
+    const blockedTarget = (target: EventTarget | null) => {
+      if (document.querySelector('[role="dialog"][aria-modal="true"],[role="menu"]')) return true;
+      if (!(target instanceof Element)) return true;
+      if (target.closest('input,textarea,[contenteditable="true"],[role="textbox"],.ai-panel,.video-media,video,[role="dialog"],[role="menu"]')) return true;
+      return target !== document.body && target !== document.documentElement && !canvasRoot.current?.contains(target);
+    };
+    const pasteNativeImages = (target: EventTarget | null) => {
+      const readImages = getDesktopBridge()?.getClipboardImages;
+      if (!readImages || busy || editing || blockedTarget(target) || nativePaste.current) return;
+      const rect = canvasRoot.current?.getBoundingClientRect();
+      if (!rect) return;
+      const center = toPoint(rect.left + rect.width / 2, rect.top + rect.height * .42);
+      const attempt = { handled: false }; nativePaste.current = attempt;
+      const controller = new AbortController(); pendingPastes.current.add(controller);
+      void readImages().then(images => {
+        if (attempt.handled || controller.signal.aborted || !images.length) return;
+        attempt.handled = true;
+        return importFiles(images.map(image => new File([new Uint8Array(image.bytes)], image.name, { type: image.type })), { x: center.x - 180, y: center.y - 100 });
+      }).catch(() => { if (!attempt.handled && !controller.signal.aborted) setNotice(t('Could not paste the image. Copy it again and retry.', '图片粘贴失败，请重新复制图片后重试。')); })
+        .finally(() => { pendingPastes.current.delete(controller); if (nativePaste.current === attempt) nativePaste.current = null; });
+    };
+    const down = (event: KeyboardEvent) => {
+      if (!event.defaultPrevented && !event.isComposing && !event.repeat && (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'v') pasteNativeImages(event.target);
+      if (!selected.length || !dailyDeleteShortcut(event, busy || !!editing || blockedTarget(event.target))) return;
+      event.preventDefault(); onRecycle(selected); setSelected([]); setEditing(null); setClueId(null);
+    };
+    const paste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented || busy || editing || blockedTarget(event.target)) return;
+      if (nativePaste.current) {
+        if (nativePaste.current.handled) { event.preventDefault(); return; }
+        nativePaste.current.handled = true;
+      }
+      const data = event.clipboardData;
+      const rect = canvasRoot.current?.getBoundingClientRect();
+      if (!data || !rect) return;
+      const center = toPoint(rect.left + rect.width / 2, rect.top + rect.height * .42);
+      const offset = pendingPastes.current.size * 28;
+      const point = { x: center.x - 180 + offset, y: center.y - 100 + offset };
+      const images = clipboardImages(data);
+      if (images.length) { event.preventDefault(); void importFiles(images, point); return; }
+      const text = data.getData('text/plain').trim();
+      const video = !!parseVideoUrl(text) || isBilibiliShortUrl(text);
+      const readImages = getDesktopBridge()?.getClipboardImages;
+      if (!video && !readImages) return;
+      event.preventDefault();
+      const controller = new AbortController(); pendingPastes.current.add(controller);
+      const run = async () => {
+        if (readImages) {
+          const nativeImages = await readImages();
+          if (controller.signal.aborted) return;
+          if (nativeImages.length) {
+            await importFiles(nativeImages.map(image => new File([new Uint8Array(image.bytes)], image.name, { type: image.type })), point);
+            return;
+          }
+        }
+        if (!video || controller.signal.aborted) return;
+        setNotice(t('Resolving video link…', '正在解析视频链接…'));
+        const card = await resolveVideoUrl(text, controller.signal);
+        if (controller.signal.aborted || !card) return;
+        onVideo(card, point);
+        setLimit(value => value + 1); setNotice(t('Video card created', '已创建视频卡'));
+      };
+      void run().catch(() => { if (!controller.signal.aborted) setNotice(t('Could not paste this content. Copy the image or full video URL and try again.', '粘贴失败，请重新复制图片或完整视频网址后重试。')); })
+        .finally(() => pendingPastes.current.delete(controller));
+    };
+    const removeNativePaste = getDesktopBridge()?.onClipboardPaste?.(() => pasteNativeImages(document.activeElement));
+    window.addEventListener('keydown', down); window.addEventListener('paste', paste);
+    return () => { removeNativePaste?.(); window.removeEventListener('keydown', down); window.removeEventListener('paste', paste); };
+  });
   const records = useMemo(() => dailyContents(files).filter(content => !dailyBoardIds(content.id, boards).length), [files, boards]);
   const links = useMemo(() => new Map(records.map(content => [content.id, dailyBoardIds(content.id, boards)])), [records, boards]);
   const clues = useMemo(() => dailyClues(records, boards), [records, boards]);
@@ -194,27 +275,27 @@ export function DailyHome({ files, boards, visible, onNewNote, onPatch, onPositi
     </div>
     {!!selectedRecords.length && <div className="daily-top-toolbar canvas-selection-toolbar" role="toolbar" aria-label={t('Selected card actions', '所选卡片操作')} data-daily-ui>
       {selectedRecords.length > 1 && <span className="canvas-selection-count">{t('{count} selected', '已选 {count} 张', { count: selectedRecords.length })}</span>}
-      <button type="button" className="canvas-selection-chat" disabled={busy} onClick={() => askAI()}><WakeOrb compact/>Ask AI</button>
-      <button type="button" disabled={selectedRecords.length !== 1} onClick={() => onOpenContent(selectedRecords[0].id)}><Maximize2 size={20}/>{t('Expand', '展开')}</button>
+      <button type="button" className="canvas-selection-chat" disabled={busy} onClick={() => askAI()}><WakeOrb compact/>{t('Ask AI', '问 AI')}</button>
+      {selectedRecords.length === 1 && <button type="button" onClick={() => onOpenContent(selectedRecords[0].id)}><Maximize2 size={20}/>{t('Expand', '展开')}</button>}
       {selectedRecords.length === 1 && dailyDisplayCard(selectedRecords[0].card).kind === 'image' && <button type="button" onClick={() => { setEditing(selectedRecords[0].id); setImageNoteRequest(value => value + 1); }}><StickyNote size={20}/>{t('Note', '笔记')}</button>}
-      <button type="button" disabled={!selectedRecords.some(content => dailyDisplayCard(content.card).kind === 'note')} onClick={() => selectedRecords.filter(content => dailyDisplayCard(content.card).kind === 'note').forEach(content => onPatch(content.id, { width: 360, height: undefined }))}><Minimize2 size={20}/>{t('Fit content', '适应内容')}</button>
-      <DropdownMenu>
+      {selectedRecords.some(content => dailyDisplayCard(content.card).kind === 'note') && <button type="button" onClick={() => selectedRecords.filter(content => dailyDisplayCard(content.card).kind === 'note').forEach(content => onPatch(content.id, { width: 360, height: undefined }))}><Minimize2 size={20}/>{t('Fit content', '适应内容')}</button>}
+      {!!boards.length && <DropdownMenu>
         <DropdownMenuTrigger disabled={busy} aria-label={t('Add to board', '加入画板')}><Layers2 size={20}/>{t('Add to board', '加入画板')}</DropdownMenuTrigger>
         <DropdownMenuContent data-daily-ui className="lumior-menu canvas-selection-menu" side="bottom" align="start" sideOffset={8}>
-          {!boards.length && <DropdownMenuItem disabled>{t('Create a board first', '请先新建一个画板')}</DropdownMenuItem>}
           {boards.map(board => <DropdownMenuItem key={board.id} onClick={() => { for (const content of selectedRecords) onLink(content.id, board.id); setNotice(t('Added to board', '已加入画板')); }}><Layers2 size={16}/>{board.title}</DropdownMenuItem>)}
         </DropdownMenuContent>
-      </DropdownMenu>
+      </DropdownMenu>}
       <DropdownMenu>
         <DropdownMenuTrigger disabled={busy} aria-label={t('More card actions', '更多卡片操作')}><MoreHorizontal size={20}/>{t('More', '更多')}</DropdownMenuTrigger>
         <DropdownMenuContent data-daily-ui className="lumior-menu canvas-selection-menu" side="bottom" align="end" sideOffset={8}>
+          {selectedRecords.length === 1 && cardDownloadSource(selectedRecords[0].card) && <DropdownMenuItem onClick={() => { void downloadCardAttachment(selectedRecords[0].card).catch(() => setNotice(t('Could not download the original file. It may be missing or unavailable.', '原文件下载失败，附件可能已缺失或暂时无法读取。'))); }}><Download size={20}/>{t('Download original', '下载原文件')}</DropdownMenuItem>}
           <DropdownMenuItem onClick={() => onRecycle(selectedRecords.map(content => content.id))}><MaterialIcon name="delete" size={20}/>{t('Move to trash', '移入回收站')}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>}
     <div className="daily-ai-host" data-daily-ui>
       <AiPanel canvas hideReferenceButton generalAssistantLabel showSuggestions={false} onContextCardsChange={setAiIds} contextCardIds={contextIds} onBusyChange={setBusy}
-        composerPlaceholder={t('Ask anything, or choose cards and Ask AI…', '有什么想法？也可以选中卡片后 Ask AI…')} visible={visible} mode="sidebar" onMode={noFocus}
+        composerPlaceholder={t('Ask anything, or choose cards and Ask AI…', '有什么想法？也可以选中卡片后问 AI…')} visible={visible} mode="sidebar" onMode={noFocus}
         boardId="workspace:daily" boardTitle={t('Daily', '日常')} request={{ ...request, nonce: askNonce, cardIds: aiIds, intent: 'reference' }} cards={contextCards}
         onCreateCard={(title, body, blocks) => { const rect = canvasRoot.current?.getBoundingClientRect(); onSaveAnswer(title, body, blocks, rect ? toPoint(rect.left + rect.width * .65, rect.top + rect.height * .35) : undefined); setNotice(t('Saved to Daily', '已把成果保存到日常')); }}
         onCitation={citation => onOpenContent(citation.cardId)} onDropSelection={noDrop} onResearchFocus={noFocus}/>

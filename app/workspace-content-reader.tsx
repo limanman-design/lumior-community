@@ -40,6 +40,7 @@ export type WorkspaceContentReaderProps = {
   onImageAiTarget?: (target: HTMLDivElement | null) => void;
   onEditMetadata?: () => void;
   onRecycleContent?: (id: string) => void;
+  onDownload?: (card: Card) => void;
 };
 
 /** Adapts canonical content to the existing readers, without creating a stored board. */
@@ -65,6 +66,7 @@ export function WorkspaceContentReader({
   onImageAiTarget,
   onEditMetadata,
   onRecycleContent,
+  onDownload,
 }: WorkspaceContentReaderProps) {
   const { t } = useI18n();
   const { card } = content;
@@ -104,6 +106,7 @@ export function WorkspaceContentReader({
     onAddToBoard,
     onEditMetadata,
     onRecycleContent,
+    onDownload,
   });
   const readerOptions = {
     card,

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowUpRight,
+  Download,
   FileText,
   MoreHorizontal,
   Plus,
@@ -24,6 +25,7 @@ import type { Board, Card } from './canvas-model';
 import type { WorkspaceContent } from './workspace-files';
 import { useI18n } from './i18n';
 import { MaterialIcon } from './material-icon';
+import { cardDownloadSource } from './card-download';
 
 type ContentMoreOptions = {
   content?: WorkspaceContent;
@@ -34,6 +36,7 @@ type ContentMoreOptions = {
   onAddToBoard?: (id: string) => void;
   onEditMetadata?: () => void;
   onRecycleContent?: (id: string) => void;
+  onDownload?: (card: Card) => void;
 };
 
 /** Share actions across canonical readers and existing canvas reading overlays. */
@@ -46,6 +49,7 @@ export function useWorkspaceContentMore({
   onAddToBoard,
   onEditMetadata,
   onRecycleContent,
+  onDownload,
 }: ContentMoreOptions) {
   const { t } = useI18n();
   const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLElement | null>(
@@ -114,7 +118,8 @@ export function useWorkspaceContentMore({
           !canShowReferences &&
           !onEditMetadata &&
           !onAddToBoard &&
-          !onRecycleContent && (
+          !onRecycleContent &&
+          !(onDownload && cardDownloadSource(card)) && (
             <DropdownMenuItem disabled>
               {t('No other actions', '暂无其他操作')}
             </DropdownMenuItem>
@@ -167,6 +172,7 @@ export function useWorkspaceContentMore({
             {t('Show as NotePage', '显示为 NotePage')}
           </DropdownMenuItem>
         )}
+        {onDownload && cardDownloadSource(card) && <DropdownMenuItem onClick={() => onDownload(card)}><Download size={14} aria-hidden="true" />{t('Download original', '下载原文件')}</DropdownMenuItem>}
         {onEditMetadata && (
           <DropdownMenuItem
             className="workspace-content-edit-metadata"

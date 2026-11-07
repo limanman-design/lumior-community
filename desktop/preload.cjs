@@ -59,6 +59,12 @@ contextBridge.exposeInMainWorld('lumiorDesktop', Object.freeze({
   },
   getSystemLocale: () => ipcRenderer.invoke('lumior:locale:get'),
   getClipboardImages: () => ipcRenderer.invoke('lumior:clipboard:images'),
+  onClipboardPaste: handler => {
+    if (typeof handler !== 'function') throw new Error('A paste handler is required.');
+    const listener = () => handler();
+    ipcRenderer.on('lumior:clipboard:paste', listener);
+    return () => ipcRenderer.removeListener('lumior:clipboard:paste', listener);
+  },
   getAiSettings: () => ipcRenderer.invoke('lumior:ai:get'),
   saveAiSettings: settings => ipcRenderer.invoke('lumior:ai:save', settings),
   activateAiTrial: code => ipcRenderer.invoke('lumior:ai:trial:activate', code),

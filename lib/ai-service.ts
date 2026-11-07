@@ -43,13 +43,13 @@ export function createAiService(readSettings: () => AiSettings, fetcher: typeof 
       }
     }
     const current = providerConfig(settings, provider);
-    const providers = aiProviders.map(item => ({ id: item.id, name: item.name, configured: configured(providerConfig(settings, item.id).key), model: providerConfig(settings, item.id).model }));
+    const providers = aiProviders.map(item => ({ id: item.id, name: providerConfig(settings, item.id).custom?.name || item.name, configured: configured(providerConfig(settings, item.id).key), model: providerConfig(settings, item.id).model }));
     const refreshProvider = new URL(request.url).searchParams.get('refreshModels');
     if (refreshProvider !== null && !isAiProvider(refreshProvider)) return json({ error: '请选择需要刷新的服务商。' }, 400);
     try {
       const groups = await Promise.all(providers.map(item => {
         if (!item.configured) { catalogs.clear(item.id); return Promise.resolve(null); }
-        return catalogs.get(item.id, providerConfig(settings, item.id).key!, item.model, { refresh: refreshProvider === item.id, signal: request.signal });
+        return catalogs.get(item.id, providerConfig(settings, item.id).key!, item.model, { refresh: refreshProvider === item.id, signal: request.signal, custom: providerConfig(settings, item.id).custom });
       }));
       return json({ usageMode: 'personal', configured: configured(current.key), provider, model: current.model,
         models: groups.flatMap(group => group?.models || []),
@@ -112,7 +112,7 @@ export function createAiService(readSettings: () => AiSettings, fetcher: typeof 
     const controller = new AbortController();
     const signal = AbortSignal.any([request.signal, controller.signal, AbortSignal.timeout(1_200_000)]);
     try {
-      if (!account && model !== defaultModel && !(await catalogs.get(provider, key!, defaultModel, { signal })).models.some(value => value.model === model)) { release(); return json({ error: '该模型不可用，请重新选择。' }, 400); }
+      if (!account && model !== defaultModel && !(await catalogs.get(provider, key!, defaultModel, { signal, custom: providerConfig(settings, provider).custom })).models.some(value => value.model === model)) { release(); return json({ error: '该模型不可用，请重新选择。' }, 400); }
       const question = body.question.trim();
       const output = new ReadableStream<Uint8Array>({
         async start(out) {
