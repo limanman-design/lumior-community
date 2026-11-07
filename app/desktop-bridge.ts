@@ -1,3 +1,4 @@
+import type { CustomAiConfig } from '../lib/custom-ai-config';
 import { useSyncExternalStore } from 'react';
 import type { AiProvider } from '@/lib/ai-providers';
 import type { DesktopQuickNote } from './desktop-quick-note';
@@ -40,12 +41,13 @@ export type DesktopAiSettings = {
   model: string;
   encryptionAvailable: boolean;
   provider?: AiProvider;
-  providers?: Record<AiProvider, { configured: boolean; model: string }>;
+  providers?: Record<AiProvider, { configured: boolean; model: string; custom?: CustomAiConfig }>;
   usageMode?: DesktopAiUsageMode;
   trial?: { activated: boolean; gatewayConfigured: boolean };
 };
 
 export type DesktopAiSettingsUpdate = {
+  custom?: CustomAiConfig;
   apiKey?: string;
   model: string;
   provider?: AiProvider;
@@ -97,6 +99,7 @@ export type DesktopBridge = {
   getSystemLocale?: () => Promise<{ languages: string[]; region: string }>;
   /** Invoke only from an explicit paste when ClipboardEvent has no image File. */
   getClipboardImages?: () => Promise<DesktopClipboardImage[]>;
+  onClipboardPaste?: (callback: () => void) => () => void;
   onBeforeClose?: (save: () => Promise<void>) => () => void;
   getAiSettings: () => Promise<DesktopAiSettings>;
   saveAiSettings: (

@@ -1,7 +1,8 @@
 'use client';
 
 import { useLayoutEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { BookOpen, Copy, Scissors, Focus, Link2, Maximize2, Minimize2, MoreHorizontal, StickyNote } from 'lucide-react';
+import { BookOpen, Copy, Scissors, Download, Focus, Link2, Maximize2, Minimize2, MoreHorizontal, StickyNote } from 'lucide-react';
+import { cardDownloadSource } from './card-download';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Card } from './canvas-model';
@@ -127,6 +128,7 @@ export function CanvasCardToolbar({ card, compact = false, onAction, onFitConten
         {compact && card.kind === 'note' && <DropdownMenuItem onClick={onFitContent}><Minimize2 />{t('Fit to content', '适应内容大小')}</DropdownMenuItem>}
         {compact && (card.pdfExcerpt || imageNote || card.kind === 'note') && <DropdownMenuSeparator />}
         <DropdownMenuItem onClick={() => onAction('duplicate')}><Copy />{t('Duplicate card', '复制卡片')}</DropdownMenuItem>
+        {cardDownloadSource(card) && <DropdownMenuItem onClick={() => onAction('download')}><Download />{t('Download original', '下载原文件')}</DropdownMenuItem>}
         {imageNote && <><DropdownMenuItem onClick={() => onAction('copy-image')}><Copy />{t('Copy image', '复制图片')}<kbd>⌘/Ctrl C</kbd></DropdownMenuItem><DropdownMenuItem onClick={() => onAction('cut-image')}><Scissors />{t('Cut image', '剪切图片')}<kbd>⌘/Ctrl X</kbd></DropdownMenuItem></>}
         <DropdownMenuItem onClick={() => onAction('connect')}><Link2 />{t('Connect to a card', '连接到卡片')}</DropdownMenuItem>
         <DropdownMenuItem onClick={() => onAction('fit')}><Focus />{t('Focus card', '定位卡片')}</DropdownMenuItem>

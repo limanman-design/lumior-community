@@ -87,7 +87,7 @@ void test('activation persists an encrypted pending claim before the request and
 void test('personal mode and clearing trial preserve all four provider credentials and configured models', async () => {
   await withDirectory(async directory => {
     const store = createCredentialStore(directory, safeStorage, { gatewayUrl, fetcher: async () => receipt() });
-    for (const provider of AI_PROVIDERS) await store.save({ provider: provider.id, model: provider.model, apiKey: `synthetic-${provider.id}-key` });
+    for (const provider of AI_PROVIDERS.filter(item => item.id !== 'custom')) await store.save({ provider: provider.id, model: provider.model, apiKey: `synthetic-${provider.id}-key` });
     await store.activateTrial(code);
     const activated = await store.config();
     await store.setUsageMode('personal');

@@ -18,7 +18,7 @@ const messages = [{ role: 'system', content: 'Use evidence.' }, { role: 'user', 
 const functionTool = { type: 'function', function: { name: 'read_document', description: 'Read source', parameters: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } } };
 const plan = JSON.stringify({ task: 'summary', card_ids: [], queries: ['Evidence'], requirements: ['Answer the question'] });
 const request = body => new Request('http://localhost:3001/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Test question', sources: [{ cardId: 'card', title: 'Reference', text: 'Evidence' }], ...body }) });
-const allSettings = () => ({ provider: 'deepseek', model: 'deepseek-flash', key: 'private-deepseek-key', providers: Object.fromEntries(aiProviders.map(provider => [provider.id, { key: `private-${provider.id}-key`, model: provider.defaultModel }])) });
+const allSettings = () => ({ provider: 'deepseek', model: 'deepseek-flash', key: 'private-deepseek-key', providers: Object.fromEntries(aiProviders.map(provider => [provider.id, { key: provider.id === 'custom' ? '' : `private-${provider.id}-key`, model: provider.defaultModel }])) });
 function researchResponse(payload) {
   if (payload.tools?.[0]?.function?.name === 'plan_research') return new Response(event({ choices: [{ delta: { reasoning_content: 'private research reasoning', tool_calls: [{ index: 0, id: 'plan-call', type: 'function', function: { name: 'plan_research', arguments: plan } }] }, finish_reason: 'tool_calls' }] }), { headers: { 'Content-Type': 'text/event-stream' } });
   return completion();
@@ -274,10 +274,10 @@ void test('catalogs combine four providers, filter nonresearch models, and isola
   });
   const get = () => service.GET(new Request('http://localhost:3001/api/ai')).then(response => response.json());
   const first = await get();
-  assert.equal(first.configured, true); assert.deepEqual(first.providers.map(item => item.id), ['deepseek', 'glm', 'kimi', 'openai']); assert.ok(first.providers.every(item => item.configured));
+  assert.equal(first.configured, true); assert.deepEqual(first.providers.map(item => item.id), ['deepseek', 'glm', 'kimi', 'openai', 'custom']); assert.ok(first.providers.filter(item => item.id !== 'custom').every(item => item.configured));
   assert.deepEqual(first.models.map(item => item.id), ['deepseek-flash', 'glm:glm-4.7', 'kimi:kimi-k2.6', 'openai:gpt-4.1-mini']);
   assert.equal(calls.length, 4); assert.ok(!JSON.stringify(first).includes('private-'));
-  for (const provider of aiProviders) assert.equal(calls.find(call => call.url === `${provider.baseUrl}/models`).authorization, `Bearer private-${provider.id}-key`);
+  for (const provider of aiProviders.filter(item => item.id !== 'custom')) assert.equal(calls.find(call => call.url === `${provider.baseUrl}/models`).authorization, `Bearer private-${provider.id}-key`);
   await get(); assert.equal(calls.length, 4);
   settings.providers.kimi.key = 'rotated-kimi-secret';
   await get(); assert.equal(calls.length, 5); assert.equal(calls.at(-1).url, 'https://api.moonshot.cn/v1/models'); assert.equal(calls.at(-1).authorization, 'Bearer rotated-kimi-secret');

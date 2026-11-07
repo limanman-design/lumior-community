@@ -376,6 +376,12 @@ async function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), partition: SESSION_PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, spellcheck: true },
   });
   const current = window;
+  // Observe the user's paste shortcut before Chromium/menu handling. File-only
+  // OS clipboards may emit no DOM paste event; never consume the native action.
+  current.webContents.on('before-input-event', (_event, input) => {
+    if (input.type === 'keyDown' && !input.isAutoRepeat && !input.isComposing && !input.alt && !input.shift
+      && (input.meta || input.control) && input.key.toLowerCase() === 'v') current.webContents.send('lumior:clipboard:paste');
+  });
   if (process.platform === 'win32') {
     current.setMenuBarVisibility(false);
     const syncWindowState = () => current.webContents.send('lumior:window:state', { maximized: current.isMaximized(), fullscreen: current.isFullScreen() });

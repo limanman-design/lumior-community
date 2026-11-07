@@ -1,10 +1,12 @@
-export type AiProvider = 'deepseek' | 'glm' | 'kimi' | 'openai';
+import { validateCustomAiConfig, type CustomAiConfig } from './custom-ai-config.ts';
+export type AiProvider = 'deepseek' | 'glm' | 'kimi' | 'openai' | 'custom';
 
 export const aiProviders = [
   { id: 'deepseek', name: 'DeepSeek', defaultModel: 'deepseek-flash', baseUrl: 'https://api.deepseek.com' },
   { id: 'glm', name: 'GLM', defaultModel: 'glm-4.7', baseUrl: 'https://open.bigmodel.cn/api/paas/v4' },
   { id: 'kimi', name: 'Kimi', defaultModel: 'kimi-k2.6', baseUrl: 'https://api.moonshot.cn/v1' },
   { id: 'openai', name: 'OpenAI', defaultModel: 'gpt-4.1-mini', baseUrl: 'https://api.openai.com/v1' },
+  { id: 'custom', name: 'Custom service', defaultModel: 'gpt-6.1-sol', baseUrl: '' },
 ] as const;
 
 export function isAiProvider(value: unknown): value is AiProvider {
@@ -12,6 +14,7 @@ export function isAiProvider(value: unknown): value is AiProvider {
 }
 
 export function isProviderModel(provider: AiProvider, model: unknown): model is string {
+  if (provider === 'custom') return typeof model === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,199}$/.test(model) && !model.includes('..') && !model.includes('//');
   if (typeof model !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(model)) return false;
   if (provider === 'deepseek') return /^deepseek-[a-zA-Z0-9._-]+$/.test(model);
   if (provider === 'glm') return /^glm-[a-zA-Z0-9._-]+$/.test(model);
@@ -50,13 +53,14 @@ export function maxModelOutputTokens(provider: AiProvider, model: string): numbe
 
 export function isResearchModel(provider: AiProvider, model: string): boolean {
   if (!isProviderModel(provider, model)) return false;
+  if (provider === 'custom') return true;
   if (provider === 'kimi' && /^moonshot-v1-(?:8k|32k)(?:-|$)/.test(model)) return false;
   if (provider !== 'openai') return !/(?:audio|vision|embedding|tts|ocr|^glm-\d+(?:\.\d+)?v(?:-|$))/.test(model);
   return /^(?:gpt-4\.1|gpt-4o(?:-|$)|gpt-[56](?:[.-]|$)|o[134](?:[.-]|$))/.test(model)
     && !/(?:audio|realtime|transcribe|tts|image|search|instruct|codex|^o1-(?:mini|preview)(?:-|$))/.test(model);
 }
 
-export type AiProviderConfig = { key?: string; model: string };
+export type AiProviderConfig = { key?: string; model: string; custom?: CustomAiConfig };
 export type AiSettings = AiProviderConfig & {
   usageMode?: 'personal' | 'trial';
   trial?: { token?: string; gatewayUrl?: string; allowLocalTest?: boolean };
@@ -66,11 +70,12 @@ export type AiSettings = AiProviderConfig & {
 };
 
 export function aiSettingsFromEnv(values: Record<string, string | undefined>): AiSettings {
-  const names = { deepseek: 'DEEPSEEK', glm: 'GLM', kimi: 'KIMI', openai: 'OPENAI' } as const;
+  const names = { deepseek: 'DEEPSEEK', glm: 'GLM', kimi: 'KIMI', openai: 'OPENAI', custom: 'LUMIOR_CUSTOM' } as const;
   const providers = Object.fromEntries(aiProviders.map(item => [item.id, {
     key: (values[`${names[item.id]}_API_KEY`] || (item.id === 'kimi' ? values.MOONSHOT_API_KEY : undefined))?.trim(),
     model: values[`${names[item.id]}_MODEL`]?.trim() || item.defaultModel,
   }])) as Record<AiProvider, AiProviderConfig>;
+  if (values.LUMIOR_CUSTOM_AI_CONFIG) providers.custom.custom = validateCustomAiConfig(JSON.parse(values.LUMIOR_CUSTOM_AI_CONFIG));
   const provider = isAiProvider(values.LUMIOR_AI_PROVIDER) ? values.LUMIOR_AI_PROVIDER : 'deepseek';
   const allowLocalTest = values.LUMIOR_DESKTOP_TEST_MODE === '1' && ['43271', '43272'].includes(values.LUMIOR_DESKTOP_TEST_PORT || '') && !!values.LUMIOR_DESKTOP_DATA_DIR?.trim();
   return { provider, providers, ...providers[provider], usageMode: values.LUMIOR_AI_USAGE_MODE === 'trial' ? 'trial' : 'personal',
@@ -80,6 +85,6 @@ export function aiSettingsFromEnv(values: Record<string, string | undefined>): A
 
 export function providerConfig(settings: AiSettings, provider: AiProvider): AiProviderConfig {
   if (settings.providers?.[provider]) return settings.providers[provider];
-  if ((settings.provider || 'deepseek') === provider) return { key: settings.key, model: settings.model };
+  if ((settings.provider || 'deepseek') === provider) return { key: settings.key, model: settings.model, ...(settings.custom ? { custom: settings.custom } : {}) };
   return { model: aiProviders.find(item => item.id === provider)!.defaultModel };
 }

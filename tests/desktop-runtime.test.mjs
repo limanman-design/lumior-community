@@ -66,7 +66,7 @@ void test('credential save preserves the old key, encrypts disk content and neve
     assert.equal(initial.encryptionAvailable, true);
     assert.equal(initial.usageMode, 'personal');
     assert.deepEqual(initial.trial, { activated: false, gatewayConfigured: false });
-    assert.deepEqual(Object.keys(initial.providers), ['deepseek', 'glm', 'kimi', 'openai']);
+    assert.deepEqual(Object.keys(initial.providers), ['deepseek', 'glm', 'kimi', 'openai', 'custom']);
     const state = await store.save({ apiKey: 'synthetic-test-key', model: 'deepseek-flash' });
     assert.equal(state.configured, true);
     assert.deepEqual(state.providers.deepseek, { configured: true, model: 'deepseek-flash' });

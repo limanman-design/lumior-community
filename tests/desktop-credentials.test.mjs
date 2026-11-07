@@ -46,7 +46,7 @@ void test('legacy encrypted DeepSeek credentials migrate on write without losing
 
 void test('concurrent provider saves and removal preserve every other provider and select the latest provider', async () => {
   await withStore(async (store, filename) => {
-    const saves = AI_PROVIDERS.map(({ id, model }) => store.save({ provider: id, model, apiKey: `synthetic-${id}-key` }));
+    const saves = AI_PROVIDERS.filter(item => item.id !== 'custom').map(({ id, model }) => store.save({ provider: id, model, apiKey: `synthetic-${id}-key` }));
     await Promise.all(saves);
     assert.equal((await store.get()).provider, 'openai');
     const readWhileWriting = store.save({ provider: 'glm', model: 'glm-4.6', apiKey: '' });
