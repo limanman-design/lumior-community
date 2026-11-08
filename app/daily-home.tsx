@@ -1,11 +1,11 @@
 'use client';
 /* oxlint-disable next/no-img-element -- Captures use the user's original local assets. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from 'react';
-import { ArrowRight, Download, Layers2, Maximize2, Minimize2, MoreHorizontal, Plus, Sparkles, StickyNote, Upload, X } from 'lucide-react';
+import { ArrowRight, Download, Layers2, Maximize2, Minimize2, MoreHorizontal, Plus, StickyNote, Upload } from 'lucide-react';
 import type { ImportedCard } from './file-import';
 import type { Board, Card } from './canvas-model';
 import type { WorkspaceContent, WorkspaceFiles } from './workspace-files';
-import { dailyBoardIds, dailyClues, dailyContents, dailyDisplayCard, dailyImageSize, dailyPreviewImage, dailyRecordStreak, type DailyClue } from './daily-model';
+import { dailyBoardIds, dailyCardOpacity, dailyContents, dailyDisplayCard, dailyImageSize, dailyPreviewImage, dailyRecordStreak, type DailyClue } from './daily-model';
 import { canvasGridStyle } from './canvas-grid';
 import { CANVAS_ZOOM_BASE, CANVAS_ZOOM_STEP, canvasZoomPercent } from './canvas-zoom';
 import { useDailyCanvas } from './use-daily-canvas';
@@ -13,15 +13,22 @@ import { arrangeDailyCards, dailyCardTilt } from './daily-layout';
 import { MaterialIcon } from './material-icon';
 import { AiPanel } from './ai-panel';
 import { useI18n } from './i18n';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import './canvas-selection-toolbar.css';
 import './daily-home.css';
 import { ImagesBadge } from '@/components/ui/images-badge';
 import { WakeOrb } from './wake-orb';
+import { connectionInput, connectionPreviewImages } from './daily-connections';
+import { DailyConnectionDialog } from './daily-connection-dialog';
+import { usePdfAnnotations } from './pdf-annotations';
+import { removableDailyExamples } from './daily-preview';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useDailyConnections } from './use-daily-connections';
 import { dailyDeleteShortcut } from './daily-input';
 import { clipboardImages } from './image-input';
 import { getDesktopBridge } from './desktop-bridge';
 import { cardDownloadSource, downloadCardAttachment } from './card-download';
+import { importXiaohongshuPaste } from './xiaohongshu-paste';
 import { parseVideoUrl, isBilibiliShortUrl, resolveVideoUrl } from './video-url';
 
 export type DailyCardEditor = { imageNoteRequest: number; editing: boolean; onChange: (patch: Partial<Card>) => void; onEdit: (editing: boolean) => void };
@@ -33,10 +40,12 @@ type Props = {
   onNewNote: (point: Point) => string;
   onVideo: (card: ImportedCard, point: Point) => void;
   onPatch: (id: string, patch: Partial<Card>) => void;
+  onUse: (ids: string[]) => void;
   onPositions: (positions: Record<string, Point>) => void;
   onSaveAnswer: (title: string, body: string, blocks?: Card['blocks'], point?: Point) => void;
   onOpenContent: (id: string) => void; onOpenBoard: (id: string) => void;
   onRecycle: (ids: string[]) => void;
+  onClearExamples: () => {count:number;undo:()=>void} | null;
   onLink: (id: string, boardId: string) => void;
   onPosition: (id: string, position: { x: number; y: number }) => void;
   onDismiss: (id: string, boardId: string) => void;
@@ -45,9 +54,11 @@ const noFocus = () => {};
 const noDrop = () => false;
 const request = { nonce: 0, cardId: null, boardId: 'workspace:daily' };
 
-export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch, onPositions, onImport, onSaveAnswer, onOpenContent, onOpenBoard, onRecycle, onLink, onDismiss, onPosition, renderCard }: Props) {
-  const { t, locale } = useI18n();
+export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch, onUse, onPositions, onImport, onSaveAnswer, onOpenContent, onRecycle, onClearExamples, onLink, onDismiss, onPosition, renderCard }: Props) {
+  const { t, locale, language } = useI18n();
   const [notice, setNotice] = useState('');
+  const [cleared,setCleared]=useState<{count:number;undo:()=>void}|null>(null);
+  useEffect(()=>{if(!cleared)return;const timer=setTimeout(()=>setCleared(null),15000);return()=>clearTimeout(timer);},[cleared]);
   useEffect(() => {
     if (notice !== t('Saved to Daily', '已记下') && notice !== t('Saved to Daily', '已把成果保存到日常') && notice !== t('Added to board', '已加入画板')) return;
     const timer = setTimeout(() => setNotice(''), 4000);
@@ -61,7 +72,7 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
   const [askNonce, setAskNonce] = useState(0);
   const [busy, setBusy] = useState(false);
   const [clueId, setClueId] = useState<string | null>(null);
-  const { root: canvasRoot, view, positions, dragging, locate, zoom, start, toPoint, events } = useDailyCanvas(visible, onPosition);
+  const { root: canvasRoot, view, positions, dragging, locate, zoom, start, toPoint, events } = useDailyCanvas(visible, (id, point) => { onPosition(id, point); onUse([id]); });
   const dragDepth = useRef(0);
   const [fileOver, setFileOver] = useState(false);
   const [imports, setImports] = useState(0);
@@ -119,9 +130,10 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
       const images = clipboardImages(data);
       if (images.length) { event.preventDefault(); void importFiles(images, point); return; }
       const text = data.getData('text/plain').trim();
+      const share = importXiaohongshuPaste(text);
       const video = !!parseVideoUrl(text) || isBilibiliShortUrl(text);
       const readImages = getDesktopBridge()?.getClipboardImages;
-      if (!video && !readImages) return;
+      if (!video && !share && !readImages) return;
       event.preventDefault();
       const controller = new AbortController(); pendingPastes.current.add(controller);
       const run = async () => {
@@ -133,7 +145,9 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
             return;
           }
         }
-        if (!video || controller.signal.aborted) return;
+        if (controller.signal.aborted) return;
+        if (share) { onVideo(share, point); setLimit(value => value + 1); setNotice(t('Xiaohongshu note created', '已创建小红书笔记卡')); return; }
+        if (!video) return;
         setNotice(t('Resolving video link…', '正在解析视频链接…'));
         const card = await resolveVideoUrl(text, controller.signal);
         if (controller.signal.aborted || !card) return;
@@ -149,8 +163,12 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
   });
   const records = useMemo(() => dailyContents(files).filter(content => !dailyBoardIds(content.id, boards).length), [files, boards]);
   const links = useMemo(() => new Map(records.map(content => [content.id, dailyBoardIds(content.id, boards)])), [records, boards]);
-  const clues = useMemo(() => dailyClues(records, boards), [records, boards]);
+  const discoveryInput = useMemo(() => connectionInput(records, boards, language), [records, boards, language]);
+  const discovery = useDailyConnections(discoveryInput, visible, busy || !!editing || dragging || imports > 0);
+  const clues = discovery.connections.filter(item => !records.find(content => content.id === item.contentId)?.daily?.dismissedBoards?.includes(item.boardId));
   const clue = clues.find(item => item.id === clueId);
+  const {marks:exampleMarks}=usePdfAnnotations();
+  const exampleIds = useMemo(()=>removableDailyExamples(files,boards,exampleMarks),[files,boards,exampleMarks]);
   const displayed = records.slice(0, limit);
   const contextCards = useMemo(() => files.contents.filter(content => aiIds.includes(content.id)).map(content => content.card), [files.contents, aiIds]);
   const contextIds = useMemo(() => contextCards.map(card => card.id), [contextCards]);
@@ -168,16 +186,18 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
   const weekday = new Date(now).toLocaleDateString(locale, { weekday: 'long' });
   const time = new Date(now).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
   const streak = dailyRecordStreak(files.contents, now);
-  const summaryImages = [...new Map(records.flatMap(content => { const src = dailyPreviewImage(content.card); return src ? [[content.id, { id: content.id, src, alt: content.card.title }] as const] : []; })).values()];
+  const relatedIds = new Set(clues.map(item => item.contentId));
+  const summaryImages = connectionPreviewImages(records, clues);
   const selectedRecords = records.filter(content => selected.includes(content.id));
   const remainingSelection = selected.filter(id => records.some(content => content.id === id));
   if (remainingSelection.length !== selected.length) setSelected(remainingSelection);
   const toggle = (id: string) => {
     if (busy) return;
     const next = selected.includes(id) ? selected.filter(item => item !== id) : [...selected, id];
+    if (next.includes(id)) onUse([id]);
     setSelected(next); setEditing(null); setClueId(null); setNotice('');
   };
-  const askAI = (ids = selected) => { if (busy) return; setAiIds(ids); setAskNonce(value => value + 1); setEditing(null); };
+  const askAI = (ids = selected) => { if (busy) return; onUse(ids); setAiIds(ids); setAskNonce(value => value + 1); setEditing(null); };
   const blankTarget = (target: EventTarget) => !(target as HTMLElement).closest('[data-daily-ui],.daily-card-shell,button,a,input,textarea');
   const compare = (item: DailyClue) => {
     if (busy) return;
@@ -224,14 +244,14 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
     const size = imageSizes[content.id];
     const displayCard = size && size.src === base.image ? { ...base, width: size.width, height: size.height } : base;
     return <div className="daily-card-shell" key={content.id} data-selected={chosen} data-fixed={!!content.daily?.position} data-moving={!!positions[content.id]} data-editing={editing === content.id}
-      style={{ left: position.x, top: position.y, width: displayCard.width, height: heights[content.id] || displayCard.height || 260, '--daily-tilt': `${dailyCardTilt(content.id)}deg` } as CSSProperties}
+      style={{ left: position.x, top: position.y, width: displayCard.width, height: heights[content.id] || displayCard.height || 260, '--daily-tilt': `${dailyCardTilt(content.id)}deg`, '--daily-opacity': dailyCardOpacity(content, now) } as CSSProperties}
       onLoadCapture={event => { const image = event.target; if (!(image instanceof HTMLImageElement) || !image.parentElement?.classList.contains('image-picture-frame') || !base.image) return;
         const bounds = dailyImageSize(image.naturalWidth, image.naturalHeight);
         setImageSizes(previous => previous[content.id]?.src === base.image && previous[content.id]?.width === bounds.width && previous[content.id]?.height === bounds.height ? previous : { ...previous, [content.id]: { src: base.image!, ...bounds } }); }}>
-      <div inert={editing !== content.id} data-daily-ui={editing === content.id ? true : undefined} className="daily-card-content">{renderCard(displayCard, chosen, measure, { imageNoteRequest: editing === content.id ? imageNoteRequest : 0, editing: editing === content.id, onChange: patch => onPatch(content.id, patch), onEdit: value => setEditing(value ? content.id : null) })}</div>
+      <div inert={editing !== content.id} data-daily-ui={editing === content.id ? true : undefined} className="daily-card-content">{renderCard(displayCard, chosen, measure, { imageNoteRequest: editing === content.id ? imageNoteRequest : 0, editing: editing === content.id, onChange: patch => { onUse([content.id]); onPatch(content.id, patch); }, onEdit: value => setEditing(value ? content.id : null) })}</div>
       {editing !== content.id && <button type="button" className="daily-card-hit" aria-label={t('Select {title}', '选择 {title}', { title: content.card.title })} aria-pressed={chosen}
         disabled={busy} onPointerDown={event => start(event, content.id, position)} onClick={() => toggle(content.id)}
-        onDoubleClick={event => { event.stopPropagation(); if (displayCard.kind === 'note') { setSelected([content.id]); setEditing(content.id); } else onOpenContent(content.id); }} onKeyDown={event => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); onOpenContent(content.id); } }}
+        onDoubleClick={event => { event.stopPropagation(); onUse([content.id]); if (displayCard.kind === 'note') { setSelected([content.id]); setEditing(content.id); } else onOpenContent(content.id); }} onKeyDown={event => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); onUse([content.id]); onOpenContent(content.id); } }}
         title={t('Select · Double-click to edit or open', '单击选中 · 双击编辑或打开')}/>}
     </div>;
   };
@@ -239,23 +259,17 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
   const summary = <section ref={summaryRef} className="daily-center" aria-label={t('Today’s thoughts', '今天的想法')}>
         <p className="daily-date"><time dateTime={new Date(now).toISOString()}>{date}<span>·</span>{weekday}<span>·</span>{time}</time></p>
         <div className="daily-summary">
-          <p className="daily-knowledge-line">{t('You have', '有')} <span className="daily-image-badge" data-daily-ui><ImagesBadge images={summaryImages} label={t('Preview captured images', '展开记录缩略图')} selected={selected} onSelect={toggle}/></span><strong>{pending}</strong>{t(' pieces of knowledge to organize.', ' 条知识等你整理，')}</p>
+          <p className="daily-knowledge-line"><span className="daily-knowledge-lead">{clues.length ? t('Found', '发现') : t('Here are', '这里有')} <span className="daily-image-badge" data-daily-ui><ImagesBadge images={summaryImages.slice(0, 8)} label={clues.length ? t('Explore connected captures', '查看有关联的碎片') : t('Recently added images', '最近加入的图片')} selected={selected} onSelect={id=>{const relation=clues.find(item=>item.contentId===id);if(relation){setClueId(relation.id);onUse([id]);}else toggle(id);}}/></span><strong>{clues.length ? relatedIds.size : pending}</strong></span>{clues.length ? t(' captures that may connect with what you know.', ' 条碎片，可能与已有知识产生联系。') : t(' pieces of knowledge.', ' 条知识。')}</p>
           <p className="daily-streak-line">{t('You’ve recorded for ', '已经连续记录 ')}<em>{streak}</em>{t(' days.', ' 天。')}</p>
         </div>
         {!!clues.length && <div className="daily-clues" data-daily-ui aria-label={t('Connections to explore', '可以继续的想法')}>
-          {clues.map(item => <button key={item.id} type="button" className="daily-clue" aria-expanded={clueId === item.id} onClick={() => setClueId(clueId === item.id ? null : item.id)}>
+          {clues.map(item => <button key={item.id} type="button" className="daily-clue" aria-expanded={clueId === item.id} onClick={() => {setClueId(item.id);onUse([item.contentId]);}}>
             <span className="daily-clue-icon"><Layers2 size={17}/></span>
-            <span><strong>{t('A connection with “{board}”', '和「{board}」有个交集', { board: item.boardTitle })}</strong><small>{t('Shared terms: {terms}', '都提到了 {terms}', { terms: item.terms.join('、') })}</small></span>
+            <span><strong>{t('A connection with “{source}”', '与「{source}」可能有关', { source: item.sourceTitle||item.boardTitle })}</strong><small>{item.boardTitle} · {item.relation}</small></span>
             <ArrowRight size={16}/>
           </button>)}
         </div>}
-        {clue && <section className="daily-clue-detail" data-daily-ui aria-label={t('Connection evidence', '关联依据')}>
-          <div className="daily-clue-detail-head"><span>{t('Look at them together', '放在一起看')}</span><button type="button" onClick={() => setClueId(null)} aria-label={t('Close', '关闭')}><X size={15}/></button></div>
-          <button className="daily-evidence" type="button" onClick={() => onOpenContent(clue.contentId)}><small>{t('Your new capture', '新记下的内容')}</small><strong>{files.contents.find(content => content.id === clue.contentId)?.card.title}</strong></button>
-          <button className="daily-evidence" type="button" onClick={() => clue.sourceId ? onOpenContent(clue.sourceId) : onOpenBoard(clue.boardId)}><small>{clue.boardTitle}</small><strong>{clue.sourceTitle || t('Board title shares these terms', '画板名称包含这些词')}</strong></button>
-          <p>{t('These terms appear in both. Compare the sources to see whether the ideas connect.', '这些词同时出现在两边，是否有关联，还可以结合原文继续看看。')}</p>
-          <div className="daily-clue-actions"><button type="button" disabled={busy || !clue.sourceId} onClick={() => compare(clue)}>{t('Think together', '一起想想')}<Sparkles size={13}/></button><button type="button" onClick={() => { onLink(clue.contentId, clue.boardId); setClueId(null); }}>{t('Add to board', '放入画板')}</button><button type="button" onClick={() => { onDismiss(clue.contentId, clue.boardId); setClueId(null); }}>{t('Dismiss', '暂不提醒')}</button></div>
-        </section>}
+
 
       </section>;
 
@@ -267,6 +281,25 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
     onDragOver={event => { if (Array.from(event.dataTransfer.types).includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } }}
     onDragLeave={event => { if (Array.from(event.dataTransfer.types).includes('Files')) { dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setFileOver(false); } }}
     onDrop={event => { dragDepth.current = 0; setFileOver(false); if (event.defaultPrevented || !event.dataTransfer.files.length) return; event.preventDefault(); event.stopPropagation(); void importFiles(Array.from(event.dataTransfer.files), toPoint(event.clientX, event.clientY)); }}>
+    <div className="daily-page-menu" data-daily-ui>
+      <DropdownMenu>
+        <DropdownMenuTrigger aria-label={t('Daily menu','日常菜单')} className="daily-menu-trigger"><MoreHorizontal size={20}/></DropdownMenuTrigger>
+        <DropdownMenuContent className="lumior-menu daily-settings-menu" align="end" sideOffset={8} data-daily-ui>
+          <DropdownMenuCheckboxItem closeOnClick checked={discovery.enabled} disabled={!discovery.configured&&!discovery.enabled} onCheckedChange={discovery.toggle}>{t('AI discovery','AI 关联发现')}</DropdownMenuCheckboxItem>
+          {discovery.enabled&&discovery.failed&&<DropdownMenuItem onClick={discovery.retry}>{t('Retry discovery','重试关联发现')}</DropdownMenuItem>}
+          {!!exampleIds.length&&<><DropdownMenuSeparator/><DropdownMenuItem disabled={busy||!!imports||!!editing} onClick={()=>{const receipt=onClearExamples();if(receipt){setCleared(receipt);setSelected([]);setClueId(null);setEditing(null);}}}>{t('Clear example content','清除示例内容')}</DropdownMenuItem></>}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+    {cleared&&<output className="daily-cleared-notice" data-daily-ui>{t('Cleared {count} example cards','已清除 {count} 张示例卡片',{count:cleared.count})}<button type="button" onClick={()=>{cleared.undo();setCleared(null);}}>{t('Undo','撤销')}</button></output>}
+    <Dialog open={visible&&discovery.intro} onOpenChange={open=>{if(!open)discovery.closeIntro();}}>
+      <DialogContent className="daily-discovery-intro" data-daily-ui>
+        <DialogTitle>{t('Enable AI discovery?','开启 AI 关联发现？')}</DialogTitle>
+        <DialogDescription>{t('After you enter Daily or add or edit content, your current AI service can look for connections with existing boards. This uses your current AI quota. It checks titles and up to 600 characters of text from the latest 12 captures and 6 cards in each of up to 8 boards; it does not read complete PDFs or visit links. You can turn it off in the Daily menu at any time.','进入日常或新增、编辑内容后，使用当前 AI 服务寻找与已有画板的联系，会消耗当前 AI 额度。范围为最近 12 条碎片、最近 8 个画板各 6 张卡片的标题及前 600 字；不会读取完整 PDF 或访问链接。可随时在日常菜单关闭。')}</DialogDescription>
+        <div><button type="button" onClick={discovery.closeIntro}>{t('Not now','暂不开启')}</button><button type="button" disabled={!discovery.configured} onClick={discovery.confirm}>{t('Enable','开启')}</button></div>
+      </DialogContent>
+    </Dialog>
+    {visible&&clue&&<DailyConnectionDialog key={clue.contentId} connections={clues} initialId={clue.id} files={files} boards={boards} busy={busy} renderCard={renderCard} onClose={()=>setClueId(null)} onOpen={id=>{setClueId(null);onUse([id]);onOpenContent(id);}} onCompare={compare} onLink={item=>{onLink(item.contentId,item.boardId);setClueId(null);setNotice(t('Added to board','已加入画板'));}} onDismiss={item=>{onDismiss(item.contentId,item.boardId);setClueId(null);}}/>}
     {fileOver && <div className="file-drop-overlay"><Upload size={36}/><strong>{t('Drop files into Daily', '松开以添加到日常')}</strong><span>{t('PDF · Images · Video', 'PDF · 图片 · 视频')}</span></div>}
     <div className="daily-content-plane"><div className="daily-world" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
       {summary}
@@ -276,7 +309,7 @@ export function DailyHome({ files, boards, visible, onNewNote, onVideo, onPatch,
     {!!selectedRecords.length && <div className="daily-top-toolbar canvas-selection-toolbar" role="toolbar" aria-label={t('Selected card actions', '所选卡片操作')} data-daily-ui>
       {selectedRecords.length > 1 && <span className="canvas-selection-count">{t('{count} selected', '已选 {count} 张', { count: selectedRecords.length })}</span>}
       <button type="button" className="canvas-selection-chat" disabled={busy} onClick={() => askAI()}><WakeOrb compact/>{t('Ask AI', '问 AI')}</button>
-      {selectedRecords.length === 1 && <button type="button" onClick={() => onOpenContent(selectedRecords[0].id)}><Maximize2 size={20}/>{t('Expand', '展开')}</button>}
+      {selectedRecords.length === 1 && <button type="button" onClick={() => { onUse([selectedRecords[0].id]); onOpenContent(selectedRecords[0].id); }}><Maximize2 size={20}/>{t('Expand', '展开')}</button>}
       {selectedRecords.length === 1 && dailyDisplayCard(selectedRecords[0].card).kind === 'image' && <button type="button" onClick={() => { setEditing(selectedRecords[0].id); setImageNoteRequest(value => value + 1); }}><StickyNote size={20}/>{t('Note', '笔记')}</button>}
       {selectedRecords.some(content => dailyDisplayCard(content.card).kind === 'note') && <button type="button" onClick={() => selectedRecords.filter(content => dailyDisplayCard(content.card).kind === 'note').forEach(content => onPatch(content.id, { width: 360, height: undefined }))}><Minimize2 size={20}/>{t('Fit content', '适应内容')}</button>}
       {!!boards.length && <DropdownMenu>

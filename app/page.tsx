@@ -1,8 +1,8 @@
 'use client';
 import { DailyHome, type DailyCardEditor } from './daily-home';
 import { downloadCardAttachment } from './card-download';
-import { seedDailyPreview } from './daily-preview';
-import { positionDailyCapture, positionDailyCaptures, organizeDailyCapture, dismissDailyClue, markDailyCapture } from './daily-model';
+import { seedDailyPreview, removableDailyExamples } from './daily-preview';
+import { touchDailyCaptures, positionDailyCapture, positionDailyCaptures, organizeDailyCapture, dismissDailyClue, markDailyCapture } from './daily-model';
 import { cancelConnectionGesture, finishCanvasGesture, type CapturedCanvasGesture } from './canvas-gesture';
 import { boardNoteChangePreview, resolveBoardNoteChange } from './board-note-ai-change';
 
@@ -134,6 +134,7 @@ import {contentLinkId,openContentLinkEvent} from './content-links';
 import {parseNoteSource,openNoteSourceEvent} from './note-source';
 import {NoteSourceProvider} from './note-source-context';
 import {importLocalFileBatch,type LocalImportProgress} from './local-file-import';
+import {importXiaohongshuPaste} from './xiaohongshu-paste';
 import {parseVideoUrl,isBilibiliShortUrl,resolveVideoUrl} from './video-url';
 import './media-card-creation.css';
 import dynamic from 'next/dynamic';
@@ -398,8 +399,9 @@ function Workspace(){
    if(editableTarget(event.target)||(event.target instanceof Element&&event.target.closest('.workspace-sidebar,.workspace-board-sheet,.ai-panel,.canvas-side-panel,.pdf-viewer,.research-source-panel,.image-side-panel,[role=dialog],[role=menu]')))return;
    const target=importDestination(),data=event.clipboardData,files=clipboardImages(data);
    if(files.length){event.preventDefault();importLocalFiles(files,target,'image');return;}
-   const text=data.getData('text/plain').trim(),html=data.getData('text/html');
+   const text=data.getData('text/plain').trim(),html=data.getData('text/html'),share=importXiaohongshuPaste(text);
    const pasteLink=()=>{
+    if(share){addImportedCard(share,0,target.point,target.boardId);flash(t('Xiaohongshu note created','已创建小红书笔记卡'));return;}
     if(parseVideoUrl(text)||isBilibiliShortUrl(text)){
      const controller=new AbortController();videoPasteControllers.current.add(controller);
      if(isBilibiliShortUrl(text))flash(t('Resolving video link…','正在解析视频链接…'));
@@ -410,7 +412,7 @@ function Workspace(){
    if(readImages){
     event.preventDefault();
     void readImages().then(images=>{if(images.length)importLocalFiles(images.map(image=>new File([new Uint8Array(image.bytes)],image.name,{type:image.type})),target,'image');else pasteLink();}).catch(()=>flash(t('Could not paste the image. Copy it again and retry.','图片粘贴失败，请重新复制图片后重试。')));
-   }else{if(parseVideoUrl(text)||isBilibiliShortUrl(text))event.preventDefault();pasteLink();}
+   }else{if(share||parseVideoUrl(text)||isBilibiliShortUrl(text))event.preventDefault();pasteLink();}
   };
   window.addEventListener('paste',paste);return()=>window.removeEventListener('paste',paste);
  });
@@ -641,8 +643,8 @@ function Workspace(){
  };
  const addDailyVideo=(card:ImportedCard,position:Point)=>{
   const now=Date.now(),id=crypto.randomUUID(),timestamp=new Date(now).toISOString();
-  const item:Card={...card,id,x:0,y:0,width:360,height:270,createdAt:timestamp,updatedAt:timestamp,creationDateSource:'actual' as const};
-  const next=markDailyCapture(addWorkspaceContent(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),item,null,'video',now),id,'daily',now);
+  const item:Card={...card,id,x:0,y:0,width:360,height:card.kind==='note'?undefined:270,createdAt:timestamp,updatedAt:timestamp,creationDateSource:'actual' as const};
+  const next=markDailyCapture(addWorkspaceContent(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),item,null,card.kind==='note'?'notePage':'video',now),id,'daily',now);
   changeWorkspaceFiles(positionDailyCapture(next,id,position));
  };
  const saveDailyAnswer=(title:string,body:string,blocks?:Card['blocks'],position?:Point)=>{
@@ -701,6 +703,18 @@ function Workspace(){
    setDeletedBoards(nextDeleted);if(snapshotRef.current)snapshotRef.current={...snapshotRef.current,deletedBoards:nextDeleted};
    flash(t('File and available whiteboard references restored','文件及可恢复的画板引用已恢复'));
   }catch{const next=pruneRecycledContents(current);if(next!==current)changeWorkspaceFiles(next);flash(t('Could not restore this file. It may have expired or its references may conflict.','暂时无法恢复，文件可能已过保留期或引用发生冲突。'));}
+ };
+ const clearDailyExamples=()=>{
+  const current=syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current);
+  const protectedBoards=[...savedBoards.current,...(snapshotRef.current?.deletedBoards??deletedBoards).map(item=>item.board)];
+  const ids=removableDailyExamples(current,protectedBoards,pdfMarks);if(!ids.length)return null;
+  recycleFileContents(ids);
+  const receipts=(workspaceFilesRef.current?.recycledContents||[]).filter(item=>ids.includes(item.content.id));
+  if(!receipts.length)return null;
+  return {count:receipts.length,undo:()=>{for(const receipt of receipts){
+   const stillThere=workspaceFilesRef.current?.recycledContents?.find(item=>item.content.id===receipt.content.id&&item.deletedAt===receipt.deletedAt);
+   if(stillThere)restoreFileContent(receipt.content.id);
+  }}};
  };
  const chooseHomeFiles=(folderId:string|null)=>{homeImportFolder.current=folderId;homeFileInput.current?.click();};
  const importHomeFiles=(incoming:File[],folderId:string|null,daily=false,dailyPoint?:Point)=>{if(!incoming.length)return;const controller=new AbortController();fileImportControllers.current.add(controller);setFileImports(count=>count+1);const run=async()=>{try{const {importFile}=await import('./file-import');const {cards,errors}=await importLocalFileBatch(incoming,importFile,{signal:controller.signal,onProgress:setFileImportProgress});if(controller.signal.aborted)return;let current=syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current);const destination=folderId&&current.folders.some(folder=>folder.id===folderId)?folderId:null;for(const imported of cards){if(imported.kind==='database')continue;const now=new Date().toISOString(),id=crypto.randomUUID();const role=imported.kind==='pdf'?'literature':imported.kind==='note'?'notePage':imported.kind;const card:Card={...imported,id,x:0,y:0,width:360,createdAt:now,updatedAt:now,creationDateSource:'actual',contentRole:role};current=addWorkspaceContent(current,card,destination,role);if(daily){current=markDailyCapture(current,id,'daily');if(dailyPoint){const index=cards.indexOf(imported);current=positionDailyCapture(current,id,{x:dailyPoint.x+index*36,y:dailyPoint.y+index*36});}}}changeWorkspaceFiles(current);const message=errors.length?t('Imported {count} files. {errors}','已导入 {count} 个文件。{errors}',{count:cards.length,errors:errors.map(error=>`${error.name}: ${error.message}`).join(' / ')}):t('Imported {count} files','已导入 {count} 个文件',{count:cards.length});flash(message);return message;}catch(error){flash((error as Error).message);if(daily)throw error;return (error as Error).message;}finally{fileImportControllers.current.delete(controller);setFileImports(count=>Math.max(0,count-1));setFileImportProgress(null);}};const result=fileQueue.current.catch(()=>{}).then(run);fileQueue.current=result.then(()=>{},()=>{});return result;};
@@ -913,7 +927,7 @@ function Workspace(){
  <div className="workspace-stage">
  <div className="workspace-content"><div style={{display:"contents"}} inert={false}><CanvasSidebarTools/>
  {databasesOpen&&(selectedDatabase?<DatabasePage key={selectedDatabase.id} database={selectedDatabase} onAddToBoard={(databaseId,viewId)=>setDatabasePicker({databaseId,viewId,boardId:boardRef.current.id})} onUpdate={updateDatabase} onUpload={uploadDatabaseFiles} saveStatus={saveStatus} autoRename={renameDatabaseId===selectedDatabase.id} onRenameEnd={()=>setRenameDatabaseId(null)}/>:<DatabaseEmpty onNew={newDatabase}/>)}
- {storageReady&&<DailyHome renderCard={renderDailyCard} files={workspaceFiles} boards={libraryBoards} visible={activePage==='daily'} onNewNote={newDailyNote} onVideo={addDailyVideo} onPatch={patchFileContent} onPositions={positions=>changeWorkspaceFiles(positionDailyCaptures(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),positions))} onImport={(incoming,point)=>importHomeFiles(incoming,null,true,point)} onSaveAnswer={saveDailyAnswer} onOpenContent={id=>openContent(id,null)} onOpenBoard={selectTab} onRecycle={recycleFileContents} onLink={(id,target)=>{const owner=savedBoards.current.find(item=>item.id===target);if(owner){if(!owner.cards.some(card=>cardIdentity(card)===id))referenceFile(id,target);else changeWorkspaceFiles(organizeDailyCapture(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),id));}}} onPosition={(id,position)=>changeWorkspaceFiles(positionDailyCapture(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),id,position))} onDismiss={(id,target)=>changeWorkspaceFiles(dismissDailyClue(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),id,target))}/>}
+ {storageReady&&<DailyHome onClearExamples={clearDailyExamples} renderCard={renderDailyCard} files={workspaceFiles} boards={libraryBoards} visible={activePage==='daily'} onNewNote={newDailyNote} onVideo={addDailyVideo} onUse={ids=>{if(workspaceFilesRef.current)changeWorkspaceFiles(touchDailyCaptures(workspaceFilesRef.current,ids));}} onPatch={patchFileContent} onPositions={positions=>changeWorkspaceFiles(positionDailyCaptures(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),positions))} onImport={(incoming,point)=>importHomeFiles(incoming,null,true,point)} onSaveAnswer={saveDailyAnswer} onOpenContent={id=>openContent(id,null)} onOpenBoard={selectTab} onRecycle={recycleFileContents} onLink={(id,target)=>{const owner=savedBoards.current.find(item=>item.id===target);if(owner){if(!owner.cards.some(card=>cardIdentity(card)===id))referenceFile(id,target);else changeWorkspaceFiles(organizeDailyCapture(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),id));}}} onPosition={(id,position)=>changeWorkspaceFiles(positionDailyCapture(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),id,position))} onDismiss={(id,target)=>changeWorkspaceFiles(dismissDailyClue(syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current),id,target))}/>}
  {showBoards&&homeBrowser.home}
  {homeBrowser.dialogs}
  {activeFile&&<WorkspaceContentReader onDownload={downloadAttachment} onRecycleContent={recycleFileContent} key={activeFile.id} content={activeFile} initialTranslation={translationId===activeFile.card.id} aiOpen={aiMode!=='closed'} onAi={toggleReaderAi} informationOpen={readerInformationOpen} onShowInformation={showInformationSidebar} onImageAiTarget={setImageAiTarget} citation={citation?.cardId===activeFile.card.id?citation:undefined} contents={workspaceFiles.contents} boards={libraryBoards} sidebarOpen={open&&!isMobile} onExpandSidebar={toggleSidebar} onChange={patch=>patchFileContent(activeFile.id,patch)} onRelatedContentChange={patchFileContent} onClose={closeContent} onOpenContent={openContent} onAddToBoard={homeBrowser.addToBoard} onEditMetadata={()=>homeBrowser.editContentMetadata(activeFile.id)} onPdfNoteChange={(source,id,note)=>updateRegistryPdfNote(source,id,note)}/> }

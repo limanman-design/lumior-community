@@ -1,5 +1,5 @@
-import type { Card } from './canvas-model';
-import { addWorkspaceContent, type WorkspaceFiles } from './workspace-files.ts';
+import type { Board, Card } from './canvas-model';
+import { addWorkspaceContent, contentIdentity, type WorkspaceFiles } from './workspace-files.ts';
 import { dailyContents, markDailyCapture } from './daily-model.ts';
 
 const samples = [
@@ -55,4 +55,15 @@ export function seedDailyPreview(files: WorkspaceFiles, now = Date.now()): Works
     next = markDailyCapture(addWorkspaceContent(next, card, null, card.kind === 'pdf' ? 'literature' : 'video', at), card.id, 'daily', at);
   }
   return next;
+}
+
+/** Only exact built-in examples are removable; edits and board references are protected. */
+export function removableDailyExamples(files: WorkspaceFiles, boards: readonly Board[], marks: Record<string, readonly unknown[]> = {}): string[] {
+  const originals=seedDailyPreview({version:1,contents:[],entries:[],folders:[]},1700000000000).contents;
+  const linked=new Set([...boards.flatMap(board=>board.cards.map(contentIdentity)),...files.contents.flatMap(content=>[content.sourceContentId,content.card.sourceContentId,content.card.pdfExcerpt?.sourceId].filter((id):id is string=>!!id))]);
+  const editable=(card:Card)=>JSON.stringify({title:card.title,body:card.body,blocks:card.blocks||[],image:card.image,video:card.video,pdf:card.pdf,tags:card.tags,detail:card.detail,sourceName:card.sourceName,imageRotation:card.imageRotation,authors:card.authors,year:card.year,citationEdits:card.citationEdits,storedDocument:card.storedDocument,aiNoteChange:card.aiNoteChange});
+  return dailyContents(files).filter(content=>{
+    const original=originals.find(item=>item.id===content.id);
+    return original && !content.card.bibliography?.manualFields?.length && !Object.values(content.card.bibliography?.origins||{}).includes('manual') && !(content.card.pdf && marks[content.card.pdf.url]?.length) && !linked.has(content.id) && content.daily?.organizedAt===undefined && editable(content.card)===editable(original.card);
+  }).map(content=>content.id);
 }

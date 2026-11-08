@@ -25,7 +25,7 @@ export function ImagesBadge({ images, label, selected, onSelect }: { images: Bad
       animate={{ x: open ? index % 6 * 50 : Math.min(index, 2) * 11, y: open ? Math.floor(index / 6) * 50 : 0,
         rotate: reduced || open ? 0 : [-8, -3, 4][index % 3], opacity: open || index < 3 ? 1 : 0 }}
       transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 280, damping: 24 }}>
-      <img src={item.src} alt="" draggable={false}/>
+      {item.src ? <img src={item.src} alt="" draggable={false}/> : <span className="images-badge-text" aria-hidden="true">{item.alt.slice(0,2)}</span>}
     </motion.button>)}
     {open && overflow > 0 && <button type="button" className="images-badge-item images-badge-more" style={{ left: shown.length * 50 }} aria-label={`${label} +${overflow}`} onClick={() => setAll(true)}>+{overflow}</button>}
   </span>;
