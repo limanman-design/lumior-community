@@ -57,13 +57,31 @@ export function seedDailyPreview(files: WorkspaceFiles, now = Date.now()): Works
   return next;
 }
 
-/** Only exact built-in examples are removable; edits and board references are protected. */
+// Content preparation uses these exact originals after release; never seed them automatically.
+export const dailyConnectionExampleBoardId = 'lumior-connection-examples-v1';
+export function dailyConnectionExampleCards(): Card[] {
+  return [
+    ['glimpse', '看得见的下一步', '《A Short Hike》没有强制路线，但每个转角都能看到下一个目标。也许让人持续探索的不是任务清单，而是刚好露出一点的线索。'],
+    ['question', '把摘记改成一个问题', '读完一段材料，先写下“这能解释什么现象”，再把它和已有笔记比较。比起照抄结论，我更容易记住自己提出的问题。'],
+    ['observe', '先观察，再解释', '散步时看到同一片水面在不同光线下完全不一样。下次想固定观察位置，每天记录光线、风和水纹，再比较变化。'],
+    ['old-14', '两周前的灵感', '给项目留一小块可以自由探索的地方，不要求每条路都有明确的产出。'],
+    ['old-35', '留白也可以是一种节奏', '一个暂时没有答案的问题，可以先留在这里。等新的经历发生，再回来看看。'],
+    ['source-explore', '探索设计：用局部线索唤起好奇心', '环境中的地标、遮挡和远景可以提示玩家下一步的方向。线索应当足够可见，但不提前揭示全部结果，让玩家自己选择路线。这为低压力的探索提供了入口。'],
+    ['source-question', '主动阅读：用问题连接旧知识', '阅读后用自己的话提出一个问题，再找已有记录作为解释或反例。这样可以检验理解，发现新材料与已有知识之间的关系，而不只是增加摘录数量。'],
+    ['source-observe', '观察笔记：固定条件，比较变化', '自然观察先区分直接看见的现象和自己的解释。固定地点与观察时段，记录天气等条件，再跨日期比较，有助于识别变化和提出可验证的问题。'],
+  ].map(([key,title,body])=>({id:`lumior-connection-example-${key}`,kind:'note',contentRole:'notePage',title,body,x:0,y:0,width:360,tags:['lumior-connection-example']}));
+}
+
+/** Only exact built-in examples are removable; edits and non-example references are protected. */
 export function removableDailyExamples(files: WorkspaceFiles, boards: readonly Board[], marks: Record<string, readonly unknown[]> = {}): string[] {
-  const originals=seedDailyPreview({version:1,contents:[],entries:[],folders:[]},1700000000000).contents;
-  const linked=new Set([...boards.flatMap(board=>board.cards.map(contentIdentity)),...files.contents.flatMap(content=>[content.sourceContentId,content.card.sourceContentId,content.card.pdfExcerpt?.sourceId].filter((id):id is string=>!!id))]);
+  const examples=dailyConnectionExampleCards();
+  const originals=[...seedDailyPreview({version:1,contents:[],entries:[],folders:[]},1700000000000).contents,...examples.map(card=>({id:card.id,card}))];
+  const exampleIds=new Set(examples.map(card=>card.id));
+  const linked=new Set([...boards.flatMap(board=>board.cards.filter(card=>board.id!==dailyConnectionExampleBoardId||!exampleIds.has(contentIdentity(card))).map(contentIdentity)),...files.contents.flatMap(content=>[content.sourceContentId,content.card.sourceContentId,content.card.pdfExcerpt?.sourceId].filter((id):id is string=>!!id))]);
   const editable=(card:Card)=>JSON.stringify({title:card.title,body:card.body,blocks:card.blocks||[],image:card.image,video:card.video,pdf:card.pdf,tags:card.tags,detail:card.detail,sourceName:card.sourceName,imageRotation:card.imageRotation,authors:card.authors,year:card.year,citationEdits:card.citationEdits,storedDocument:card.storedDocument,aiNoteChange:card.aiNoteChange});
-  return dailyContents(files).filter(content=>{
+  const dailyIds=new Set(dailyContents(files).map(content=>content.id));
+  return files.contents.filter(content=>dailyIds.has(content.id)||exampleIds.has(content.id)).filter(content=>{
     const original=originals.find(item=>item.id===content.id);
-    return original && !content.card.bibliography?.manualFields?.length && !Object.values(content.card.bibliography?.origins||{}).includes('manual') && !(content.card.pdf && marks[content.card.pdf.url]?.length) && !linked.has(content.id) && content.daily?.organizedAt===undefined && editable(content.card)===editable(original.card);
+    return original && !content.card.bibliography?.manualFields?.length && !Object.values(content.card.bibliography?.origins||{}).includes('manual') && !(content.card.pdf && marks[content.card.pdf.url]?.length) && !linked.has(content.id) && content.daily?.organizedAt===undefined && editable(content.card)===editable(original.card) && boards.every(board=>board.cards.filter(card=>contentIdentity(card)===content.id).every(card=>editable(card)===editable(original.card)));
   }).map(content=>content.id);
 }

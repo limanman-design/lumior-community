@@ -1,11 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {seedDailyPreview,removableDailyExamples} from '../app/daily-preview.ts';
+import {seedDailyPreview,removableDailyExamples,dailyConnectionExampleCards,dailyConnectionExampleBoardId} from '../app/daily-preview.ts';
 import {syncWorkspaceFiles,addWorkspaceContent,patchWorkspaceContent} from '../app/workspace-files.ts';
 import {recycleWorkspaceContents,restoreWorkspaceContent} from '../app/workspace-file-recycle.ts';
 import {markDailyCapture,positionDailyCapture} from '../app/daily-model.ts';
 const now=Date.now();
 const seed=()=>seedDailyPreview(syncWorkspaceFiles(undefined,[]),now);
+void test('paired examples recycle together with their demo-board references and can be restored',()=>{
+ const cards=dailyConnectionExampleCards();
+ let files=syncWorkspaceFiles(undefined,[]);
+ for(const [index,card] of cards.entries()){
+  files=addWorkspaceContent(files,card,null,'notePage',now);
+  if(index<5)files=markDailyCapture(files,card.id,'daily',now);
+ }
+ const boards=[{id:dailyConnectionExampleBoardId,title:'Connections',edges:[],cards:cards.slice(5)}];
+ files=syncWorkspaceFiles(files,boards);
+ const ids=removableDailyExamples(files,boards);assert.equal(ids.length,8);
+ const recycled=recycleWorkspaceContents(files,boards,ids,now);
+ assert.equal(recycled.files.recycledContents.length,8);assert.equal(recycled.boards[0].cards.length,0);
+ const restored=restoreWorkspaceContent(recycled.files,recycled.boards,cards[5].id,now+1);
+ assert.equal(restored.boards[0].cards[0].id,cards[5].id);
+ const ownBoard={id:'my-board',title:'My work',edges:[],cards:[cards[5]]};
+ assert.ok(!removableDailyExamples(files,[...boards,ownBoard]).includes(cards[5].id));
+ const edited=[{...boards[0],cards:[{...cards[5],body:'My own interpretation'}]}];
+ assert.ok(!removableDailyExamples(files,edited).includes(cards[5].id));
+});
 void test('clear examples protects edited and linked cards, custom copies and user captures',()=>{
  let files=seed();const [first,second,third]=files.contents;
  files=patchWorkspaceContent(files,[],first.id,{body:'My own text'}).files;
