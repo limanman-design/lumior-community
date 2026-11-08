@@ -1,20 +1,23 @@
 'use strict';
 /* oxlint-disable typescript/no-require-imports -- Shared with the CommonJS desktop entry. */
+const { validateCustomAiConfig } = require('./custom-ai-config.cjs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { randomBytes } = require('node:crypto');
 const { AI_PROVIDERS, isAiProvider, isProviderModel, validateApiKey } = require('./ai-settings.cjs');
 const { normalizeTrialGatewayUrl, normalizeInvitationCode, isTrialToken, redeemInvitation } = require('./trial-access.cjs');
 function validateSettings(input) {
-  if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !['apiKey', 'model', 'provider'].includes(key))) throw new Error('Invalid AI settings.');
+  if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !['apiKey', 'model', 'provider', 'custom'].includes(key))) throw new Error('Invalid AI settings.');
   if (input.provider !== undefined && !isAiProvider(input.provider)) throw new Error('Choose a valid AI service.');
   const model = typeof input.model === 'string' ? input.model.trim() : input.model;
-  if (typeof model !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(model)) throw new Error('Enter a valid model name.');
+  if (typeof model !== 'string' || !(input.provider === 'custom' ? isProviderModel('custom', model) : /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(model))) throw new Error('Enter a valid model name.');
   if (input.provider !== undefined && !isProviderModel(input.provider, model)) {
     const name = AI_PROVIDERS.find(provider => provider.id === input.provider).name;
     throw new Error(`Enter a valid ${name} model name.`);
   }
+  if (input.custom !== undefined && input.provider !== 'custom') throw new Error('Custom configuration requires the custom service.');
   return {
+    ...(input.custom !== undefined ? { custom: validateCustomAiConfig(input.custom) } : {}),
     model,
     ...(input.provider !== undefined ? { provider: input.provider } : {}),
     ...(input.apiKey !== undefined ? { apiKey: validateApiKey(input.apiKey) } : {}),
@@ -44,10 +47,13 @@ function createCredentialStore(directory, safeStorage, { gatewayUrl = '', allowL
       return migrated;
     }
     if (record.version !== 2 || !isAiProvider(record.provider) || !record.providers || typeof record.providers !== 'object' || Array.isArray(record.providers) || Object.keys(record.providers).some(provider => !isAiProvider(provider))) throw new Error('Saved AI settings could not be read.');
+    // Add the new slot without rewriting old keys or trial credentials.
+    if (!record.providers.custom) record.providers.custom = { model: 'gpt-6.1-sol' };
     for (const { id } of AI_PROVIDERS) {
       const settings = record.providers[id];
       if (!settings || typeof settings !== 'object' || Array.isArray(settings) || typeof settings.model !== 'string' || (settings.encryptedKey !== undefined && typeof settings.encryptedKey !== 'string')) throw new Error('Saved AI settings could not be read.');
-      validateSettings({ provider: id, model: settings.model });
+      validateSettings({ provider: id, model: settings.model, ...(settings.custom !== undefined ? { custom: settings.custom } : {}) });
+      if (id === 'custom' && settings.encryptedKey && !settings.custom) throw new Error('Saved custom service is incomplete.');
     }
     if (record.usageMode === undefined) record.usageMode = 'personal';
     if (!['personal', 'trial'].includes(record.usageMode)) throw new Error('Saved AI settings could not be read.');
@@ -58,7 +64,7 @@ function createCredentialStore(directory, safeStorage, { gatewayUrl = '', allowL
     return record;
   }
   function publicSettings(record) {
-    const providers = Object.fromEntries(AI_PROVIDERS.map(({ id }) => [id, { configured: !!record.providers[id].encryptedKey, model: record.providers[id].model }]));
+    const providers = Object.fromEntries(AI_PROVIDERS.map(({ id }) => [id, { configured: !!record.providers[id].encryptedKey, model: record.providers[id].model, ...(id === 'custom' && record.providers[id].custom ? { custom: record.providers[id].custom } : {}) }]));
     const provider = effectiveProvider(record);
     return { ...providers[provider], provider, providers, usageMode: record.usageMode,
       trial: { activated: !!record.trial?.encryptedToken, gatewayConfigured: !!gatewayUrl }, encryptionAvailable: safeStorage.isEncryptionAvailable() };
@@ -83,8 +89,8 @@ function createCredentialStore(directory, safeStorage, { gatewayUrl = '', allowL
     const record = await read();
     if ((AI_PROVIDERS.some(({ id }) => record.providers[id].encryptedKey) || record.trial?.encryptedToken) && !safeStorage.isEncryptionAvailable()) throw new Error('System encryption is unavailable. Unlock your account and try again.');
     const providers = Object.fromEntries(AI_PROVIDERS.map(({ id }) => {
-      const { model, encryptedKey } = record.providers[id];
-      return [id, { model, key: encryptedKey ? safeStorage.decryptString(Buffer.from(encryptedKey, 'base64')) : '' }];
+      const { model, encryptedKey, custom } = record.providers[id];
+      return [id, { model, ...(id === 'custom' && custom ? { custom } : {}), key: encryptedKey ? safeStorage.decryptString(Buffer.from(encryptedKey, 'base64')) : '' }];
     }));
     const token = record.trial?.encryptedToken ? decrypt(record.trial.encryptedToken) : '';
     if (token && !isTrialToken(token)) throw new Error('Saved trial credentials could not be read.');
@@ -99,6 +105,13 @@ function createCredentialStore(directory, safeStorage, { gatewayUrl = '', allowL
       validateSettings({ ...input, provider });
       record.provider = provider;
       const settings = record.providers[provider];
+      if (provider === 'custom') {
+        const custom = input.custom || settings.custom;
+        if (!custom) throw new Error('Configure the custom service first.');
+        const changed = settings.custom && (settings.custom.baseUrl !== custom.baseUrl || settings.custom.protocol !== custom.protocol);
+        if (changed && settings.encryptedKey && input.apiKey === undefined) throw new Error('Enter a new key when changing the API address or protocol.');
+        settings.custom = custom;
+      }
       settings.model = input.model;
       if (input.apiKey !== undefined) {
         if (!input.apiKey) delete settings.encryptedKey;

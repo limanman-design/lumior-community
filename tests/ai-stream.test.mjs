@@ -29,7 +29,7 @@ void test('unconfigured AI distinguishes desktop settings from web preview confi
   const unconfigured = await (await desktop.GET(new Request('http://localhost:3001/api/ai'))).json();
   assert.equal(unconfigured.configured, false); assert.equal(unconfigured.provider, 'deepseek');
   assert.equal(unconfigured.model, 'deepseek-flash'); assert.deepEqual(unconfigured.models, []);
-  assert.deepEqual(unconfigured.providers.map(item => item.id), ['deepseek', 'glm', 'kimi', 'openai']);
+  assert.deepEqual(unconfigured.providers.map(item => item.id), ['deepseek', 'glm', 'kimi', 'openai', 'custom']);
   assert.ok(unconfigured.providers.every(item => !item.configured));
   assert.equal(called, false);
 });

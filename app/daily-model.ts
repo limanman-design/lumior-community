@@ -2,14 +2,39 @@ import type { Board, Card } from './canvas-model';
 import type { WorkspaceContent, WorkspaceFiles } from './workspace-files';
 import { contentIdentity } from './workspace-files.ts';
 
-export type DailyCapture = { source: 'daily' | 'pet' | 'assistant'; at: number; organizedAt?: number; dismissedBoards?: string[]; position?: { x: number; y: number } };
+export type DailyCapture = { source: 'daily' | 'pet' | 'assistant'; at: number; lastUsedAt?: number; organizedAt?: number; dismissedBoards?: string[]; position?: { x: number; y: number } };
 export function validDailyCapture(value: unknown): value is DailyCapture {
   if (!value || typeof value !== 'object') return false;
   const capture = value as DailyCapture;
   return ['daily', 'pet', 'assistant'].includes(capture.source) && Number.isSafeInteger(capture.at) && capture.at >= 0
     && (capture.organizedAt === undefined || Number.isSafeInteger(capture.organizedAt) && capture.organizedAt >= 0)
+    && (capture.lastUsedAt === undefined || Number.isSafeInteger(capture.lastUsedAt) && capture.lastUsedAt >= 0)
     && (capture.position === undefined || validDailyPosition(capture.position))
     && (capture.dismissedBoards === undefined || Array.isArray(capture.dismissedBoards) && capture.dismissedBoards.every(id => typeof id === 'string' && !!id));
+}
+
+/** Visual quieting only: never changes membership, order, or saved positions. */
+export function dailyCardOpacity(content: WorkspaceContent, now = Date.now()): number {
+  if (!content.daily || !Number.isFinite(now)) return 1;
+  const editedAt = Date.parse(content.card.updatedAt || '');
+  const lastUsed = Math.max(content.daily.at, content.daily.lastUsedAt || 0, Number.isFinite(editedAt) ? editedAt : 0);
+  const days = Math.max(0, now - lastUsed) / 86400000;
+  const progress = Math.min(1, Math.max(0, (days - 7) / 21));
+  return 1 - .6 * progress;
+}
+
+/** Hover is deliberately transient; only intentional use renews a capture. */
+export function touchDailyCaptures(files: WorkspaceFiles, ids: readonly string[], at = Date.now()): WorkspaceFiles {
+  if (!Number.isSafeInteger(at) || at < 0) return files;
+  const wanted = new Set(ids);
+  let changed = false;
+  const contents = files.contents.map(content => {
+    if (!wanted.has(content.id) || !content.daily || content.daily.organizedAt !== undefined
+      || at <= (content.daily.lastUsedAt ?? content.daily.at)) return content;
+    changed = true;
+    return { ...content, daily: { ...content.daily, lastUsedAt: at } };
+  });
+  return changed ? { ...files, contents } : files;
 }
 export function markDailyCapture(files: WorkspaceFiles, id: string, source: DailyCapture['source'], at = Date.now()): WorkspaceFiles {
   if (!validDailyCapture({ source, at })) throw new Error('Invalid daily capture.');

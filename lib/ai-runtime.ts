@@ -1,3 +1,4 @@
+import type { CustomAiConfig } from './custom-ai-config.ts';
 import { providerResearchCall, type ModelCall } from './ai-provider.ts';
 import { aiProviders, isResearchModel, parseModelSelection, providerConfig, type AiSettings, type AiProvider } from './ai-providers.ts';
 import { defaultAiReasoningEffort, type AiReasoningEffort } from './ai-reasoning.ts';
@@ -31,12 +32,12 @@ export async function resolveAiAccess(settings: AiSettings, selection?: string, 
   return { settings, ...chosen, key };
 }
 
-export function personalAiCall(provider: AiAccess['provider'], key: string, model: string, signal: AbortSignal, fetcher: typeof fetch, policy: AiEffortPolicy = defaultAiReasoningEffort): ModelCall {
+export function personalAiCall(provider: AiAccess['provider'], key: string, model: string, signal: AbortSignal, fetcher: typeof fetch, policy: AiEffortPolicy = defaultAiReasoningEffort, custom?: CustomAiConfig): ModelCall {
   const calls = new Map<AiReasoningEffort, ModelCall>();
   return (messages, tools, choice) => {
     signal.throwIfAborted();
     const effort = typeof policy === 'function' ? policy(tools) : policy;
-    if (!calls.has(effort)) calls.set(effort, providerResearchCall(provider, key, model, signal, fetcher, effort));
+    if (!calls.has(effort)) calls.set(effort, providerResearchCall(provider, key, model, signal, fetcher, effort, custom));
     return calls.get(effort)!(messages, tools, choice);
   };
 }
@@ -47,5 +48,5 @@ export function personalAiCall(provider: AiAccess['provider'], key: string, mode
 export async function createAiTask(access: AiAccess, signal: AbortSignal, fetcher: typeof fetch = fetch, policy: AiEffortPolicy = defaultAiReasoningEffort, kind: 'research' | 'translation' = 'research'): Promise<TrialTask> {
   signal.throwIfAborted();
   if (access.account) return createTrialTask(access.settings, access.account, kind, access.provider, access.model, signal, fetcher, policy);
-  return { call: personalAiCall(access.provider, access.key!, access.model, signal, fetcher, policy), finish: async () => {} };
+  return { call: personalAiCall(access.provider, access.key!, access.model, signal, fetcher, policy, providerConfig(access.settings, access.provider).custom), finish: async () => {} };
 }

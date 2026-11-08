@@ -101,3 +101,6 @@ Lumior-backup-*.json
 # Keep the non-secret build manifest; ignore other local hosting state
 /.openai/*
 !/.openai/hosting.json
+
+# Local content curation workspace (never publish user data).
+/日常示例工作区/

@@ -112,3 +112,14 @@ background-image:radial-gradient(circle,color-mix(in srgb,var(--ui-white) calc(v
 .daily-home .daily-card-shell[data-editing=true] .resize-edge{display:none}
 .daily-home{cursor:default}
 .daily-home .daily-card-shell[data-editing=true] .image-resize-corner{display:none}
+
+/* Older captures recede without disappearing or moving. Deliberate use renews them. */
+.daily-card-shell{opacity:var(--daily-opacity,1);transition:transform 180ms var(--control-ease,ease-out),opacity 320ms ease-out}
+.daily-card-shell:is(:hover,:focus-within),.daily-card-shell[data-selected=true],.daily-card-shell[data-editing=true],.daily-card-shell[data-moving=true]{opacity:1}
+@media(prefers-reduced-motion:reduce){.daily-card-shell{transition:none}}
+
+.daily-clue-detail blockquote{margin:8px 0;padding-left:10px;border-left:2px solid var(--ui-line);color:var(--ui-text-secondary);font-size:12px;line-height:1.6}
+
+.daily-page-menu{position:absolute;top:8px;right:8px;z-index:43;cursor:default}.daily-menu-trigger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--ui-line-subtle);border-radius:12px;background:var(--lumior-glass-surface);color:var(--ui-text-secondary);backdrop-filter:var(--lumior-glass-blur)}.daily-menu-trigger:hover{background:var(--ui-fill-hover)}.daily-settings-menu{min-width:190px}
+.daily-cleared-notice{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);z-index:46;display:flex;align-items:center;gap:16px;padding:10px 16px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-surface);color:var(--ui-text);font-size:13px;box-shadow:0 6px 20px var(--ui-shadow-soft)}.daily-cleared-notice button{color:var(--ui-text);text-decoration:underline;text-underline-offset:3px}
+.daily-discovery-intro[data-slot=dialog-content]{max-width:min(440px,calc(100vw - 32px));padding:24px;gap:20px;background:var(--ui-surface);color:var(--ui-text)}.daily-discovery-intro [data-slot=dialog-description]{line-height:1.8;color:var(--ui-text-secondary)}.daily-discovery-intro>div{display:flex;justify-content:flex-end;gap:8px}.daily-discovery-intro>div button{padding:8px 16px;border-radius:var(--lumior-control-radius,12px);background:var(--ui-fill-hover)}.daily-discovery-intro>div button:last-child{background:var(--action-primary);color:var(--action-primary-foreground)}

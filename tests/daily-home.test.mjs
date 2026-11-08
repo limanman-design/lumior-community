@@ -201,3 +201,56 @@ test('portrait and landscape images fit both limits with their original ratio an
     assert.ok(Math.abs((size.width - 2) / (size.height - 2) - w / h) < .00001);
   }
 });
+
+void test('Daily quiets unused captures after one week without hiding them or changing layout', async () => {
+  const { dailyCardOpacity } = await import('../app/daily-model.ts');
+  const day = 86400000, at = Date.UTC(2026, 0, 1);
+  const files = capture(empty(), 'quiet', at);
+  const content = files.contents[0];
+  content.daily.position = { x: -240, y: 100 };
+  const before = JSON.stringify(files);
+  assert.equal(dailyCardOpacity(content, at + 7 * day), 1);
+  assert.equal(dailyCardOpacity(content, at + 14 * day), .8);
+  assert.equal(dailyCardOpacity(content, at + 28 * day), .4);
+  assert.equal(dailyCardOpacity(content, at + 365 * day), .4);
+  assert.equal(dailyCardOpacity(content, at - day), 1);
+  assert.equal(dailyCardOpacity(content, NaN), 1);
+  assert.equal(dailyContents(files).length, 1);
+  assert.equal(JSON.stringify(files), before);
+});
+
+void test('using a capture renews opacity and survives save, backup and board synchronization', async () => {
+  const { dailyCardOpacity, touchDailyCaptures } = await import('../app/daily-model.ts');
+  const { createWorkspaceBackup, readWorkspaceBackup } = await import('../app/workspace-backup.ts');
+  const at = Date.UTC(2026, 0, 1), now = at + 40 * 86400000;
+  const original = capture(capture(empty(), 'quiet', at), 'other', at + 1);
+  const touched = touchDailyCaptures(original, ['quiet'], now);
+  assert.equal(dailyCardOpacity(touched.contents.find(c => c.id === 'quiet'), now), 1);
+  assert.equal(touched.contents.find(c => c.id === 'quiet').daily.at, at);
+  assert.equal(touched.contents.find(c => c.id === 'other'), original.contents.find(c => c.id === 'other'));
+  assert.deepEqual(dailyContents(touched).map(c => c.id), dailyContents(original).map(c => c.id));
+  assert.strictEqual(touchDailyCaptures(touched, ['missing'], now), touched);
+  assert.strictEqual(touchDailyCaptures(touched, ['quiet'], now - 1), touched);
+  assert.strictEqual(touchDailyCaptures(touched, ['quiet'], NaN), touched);
+  const snapshot = { version: 1, boards: [], deletedBoards: [], activeId: '', nextUntitledIndex: 1, files: syncWorkspaceFiles(touched, []) };
+  const restored = readWorkspace(JSON.stringify(snapshot));
+  assert.ok(restored);
+  assert.equal(restored.files.contents.find(c => c.id === 'quiet').daily.lastUsedAt, now);
+  const backup = await createWorkspaceBackup(snapshot, { getFile: async () => undefined }, () => {});
+  const prepared = await readWorkspaceBackup(backup, () => {});
+  assert.equal(prepared.snapshot.files.contents.find(c => c.id === 'quiet').daily.lastUsedAt, now);
+  for (const lastUsedAt of [-1, NaN, 1.5, '2026', null]) {
+    assert.equal(validWorkspaceFiles({ ...touched, contents: [{ ...touched.contents[0], daily: { ...touched.contents[0].daily, lastUsedAt } }] }), false);
+  }
+});
+
+void test('editing a legacy capture renews it even without new activity metadata', async () => {
+  const { dailyCardOpacity } = await import('../app/daily-model.ts');
+  const at = Date.UTC(2026, 0, 1), now = at + 40 * 86400000;
+  const content = capture(empty(), 'legacy', at).contents[0];
+  assert.equal(dailyCardOpacity(content, now), .4);
+  content.card.updatedAt = new Date(now).toISOString();
+  assert.equal(dailyCardOpacity(content, now), 1);
+  content.card.updatedAt = 'invalid';
+  assert.equal(dailyCardOpacity(content, now), .4);
+});

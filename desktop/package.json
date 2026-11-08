@@ -56,6 +56,7 @@
       "runtime/window-appearance.cjs",
       "runtime/clipboard-images.cjs",
       "runtime/ai-settings.cjs",
+      "runtime/custom-ai-config.cjs",
       "runtime/backend.mjs",
       "runtime/network.cjs",
       "runtime/credentials.cjs",

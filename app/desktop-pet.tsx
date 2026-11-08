@@ -11,7 +11,7 @@ import { petAnimationDefaults, petAnimationRanges, type PetAnimationOptions, typ
 type PetAnimation = { ready: Promise<unknown>; start: () => void; destroy: () => void; setOptions: (options: PetAnimationOptions) => void; setEyes: (eyes: string | null) => void };
 type PetPlayerModule = { LumiorPet: new (canvas: HTMLCanvasElement, data: unknown, options: PetAnimationOptions) => PetAnimation };
 
-function PetPreview({ size, options }: { size: number; options: PetAnimationOptions }) {
+export function PetPreview({ size, options }: { size: number; options: PetAnimationOptions }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<PetAnimation | null>(null), latest = useRef(options);
   useEffect(() => { latest.current = options; }, [options]);

@@ -23,7 +23,7 @@ export function encodeAiEvent(event: AiStreamEvent) {
 // Network chunks can split SSE frames, UTF-8 characters and CRLF boundaries.
 export async function* sseData(stream: ReadableStream<Uint8Array>, signal?: AbortSignal): AsyncGenerator<string> {
   const reader = stream.getReader(), decoder = new TextDecoder();
-  let buffer = '', lines: string[] = [];
+  let buffer = '', lines: string[] = [], eventSize = 0;
   const abort = () => { void reader.cancel().catch(() => {}); };
   signal?.addEventListener('abort', abort, { once: true });
   try {
@@ -36,10 +36,15 @@ export async function* sseData(stream: ReadableStream<Uint8Array>, signal?: Abor
       while ((newline = buffer.indexOf('\n')) !== -1) {
         const line = buffer.slice(0, newline).replace(/\r$/, '');
         buffer = buffer.slice(newline + 1);
-        if (!line) { if (lines.length) yield lines.join('\n'); lines = []; }
-        else if (line.startsWith('data:')) lines.push(line.slice(5).replace(/^ /, ''));
+        if (line.length > 1_000_000) throw new Error('模型响应格式异常，请重试。');
+        if (!line) { if (lines.length) yield lines.join('\n'); lines = []; eventSize = 0; }
+        else if (line.startsWith('data:')) {
+          eventSize += line.length;
+          if (eventSize > 1_000_000) throw new Error('模型响应格式异常，请重试。');
+          lines.push(line.slice(5).replace(/^ /, ''));
+        }
       }
-      if (buffer.length > 1_000_000) throw new Error('模型响应格式异常，请重试。');
+      if (buffer.length + eventSize > 1_000_000) throw new Error('模型响应格式异常，请重试。');
       if (done) {
         if (buffer.startsWith('data:')) lines.push(buffer.slice(5).replace(/^ /, '').replace(/\r$/, ''));
         if (lines.length) yield lines.join('\n');

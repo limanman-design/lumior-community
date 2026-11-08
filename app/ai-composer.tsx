@@ -189,7 +189,7 @@ export function AiComposer({
     defaultProvider,
   );
   const activeModel = models.find((item) => item.id === model);
-  const defaultProviderName = aiProviders.find(
+  const defaultProviderName = defaultProvider === 'custom' ? t('Custom service', '自定义服务') : aiProviders.find(
     (item) => item.id === defaultProvider,
   )!.name;
   const defaultModelOption = models.find(
@@ -276,7 +276,7 @@ export function AiComposer({
           (status) =>
             isAiProvider(status.id) &&
             status.id !== 'glm' &&
-            status.id !== 'openai',
+            status.id !== 'openai' && status.id !== 'custom',
         );
         const nextProviders =
           nextMode === 'trial'
@@ -290,7 +290,7 @@ export function AiComposer({
                 (item) =>
                   data.providers?.find((status) => status.id === item.id) || {
                     id: item.id,
-                    name: item.name,
+                    name: item.id === 'custom' ? t('Custom service', '自定义服务') : item.name,
                     configured:
                       item.id === sourceProvider && data.configured === true,
                     model:
@@ -328,7 +328,7 @@ export function AiComposer({
       .finally(() => {
         if (!abort.signal.aborted) setLoading(false);
       });
-  }, [modelScope]);
+  }, [modelScope, t]);
   const loadModels = useCallback((refreshProvider?: AiProvider) => {
     setLoading(true);
     setConfigError('');

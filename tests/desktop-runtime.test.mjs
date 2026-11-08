@@ -9,6 +9,19 @@ const require = createRequire(import.meta.url);
 const { authorizeRequest, cleanBackendEnvironment, DESKTOP_ORIGIN, isAppUrl, externalUrl, desktopConfiguration, createSecurity } = require('../desktop/runtime/security.cjs');
 const { createCredentialStore } = require('../desktop/runtime/credentials.cjs');
 
+void test('packaged desktop runtime includes every relative CommonJS dependency', async()=>{
+ const metadata=JSON.parse(await readFile(new URL('../desktop/package.json',import.meta.url),'utf8'));
+ const files=new Set(metadata.build.files.filter(file=>!file.includes('*')));
+ for(const file of files){
+  if(!file.endsWith('.cjs'))continue;
+  const source=await readFile(new URL('../desktop/'+file,import.meta.url),'utf8');
+  for(const match of source.matchAll(/require\(['"](\.[^'"]+)['"]\)/g)){
+   const dependency=path.posix.normalize(path.posix.join(path.posix.dirname(file),match[1]));
+   assert.ok(files.has(dependency),`${file} requires unpackaged ${dependency}`);
+  }
+ }
+});
+
 void test('installed applications ignore development mode and preview has a separate guarded origin', () => {
   const env = { LUMIOR_DESKTOP_DEV: '1', LUMIOR_DESKTOP_TEST_MODE: '1', LUMIOR_DESKTOP_TEST_PORT: '43272' };
   assert.deepEqual(desktopConfiguration(true, env), { development: false, port: 43171 });
@@ -66,7 +79,7 @@ void test('credential save preserves the old key, encrypts disk content and neve
     assert.equal(initial.encryptionAvailable, true);
     assert.equal(initial.usageMode, 'personal');
     assert.deepEqual(initial.trial, { activated: false, gatewayConfigured: false });
-    assert.deepEqual(Object.keys(initial.providers), ['deepseek', 'glm', 'kimi', 'openai']);
+    assert.deepEqual(Object.keys(initial.providers), ['deepseek', 'glm', 'kimi', 'openai', 'custom']);
     const state = await store.save({ apiKey: 'synthetic-test-key', model: 'deepseek-flash' });
     assert.equal(state.configured, true);
     assert.deepEqual(state.providers.deepseek, { configured: true, model: 'deepseek-flash' });

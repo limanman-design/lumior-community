@@ -3,10 +3,10 @@ import { defaultAiReasoningEffort, type AiReasoningEffort } from './ai-reasoning
 import type { ModelCall, ModelResult, ToolCall } from './ai-provider.ts';
 
 export type TrialStatus = 'active' | 'exhausted' | 'expired' | 'revoked';
-export type TrialProvider = { id: Exclude<AiProvider, 'openai'>; name: string; model: string; displayName?: string };
+export type TrialProvider = { id: Exclude<AiProvider, 'openai' | 'custom'>; name: string; model: string; displayName?: string };
 export type TrialAccount = {
   userId: string; expiresAt: string; budgetMicros: number; spentMicros: number; reservedMicros: number; remainingMicros: number;
-  providers: TrialProvider[]; defaultProvider: Exclude<AiProvider, 'openai'>; defaultModel?: string;
+  providers: TrialProvider[]; defaultProvider: Exclude<AiProvider, 'openai' | 'custom'>; defaultModel?: string;
   limits: { userConcurrent: number; globalConcurrent: number; dailyTasks: number; maxCalls: number; maxRequestBytes?: number; maxMessages?: number }; status: TrialStatus;
 };
 const record = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -88,10 +88,10 @@ export function parseTrialAccount(value: unknown): TrialAccount {
     || !['userConcurrent', 'globalConcurrent', 'dailyTasks', 'maxCalls'].every(field => integer(limits[field], 10_000) && Number(limits[field]) > 0)
     || (limits.maxRequestBytes !== undefined && (!integer(limits.maxRequestBytes, 240_000) || limits.maxRequestBytes < 30_000))
     || (limits.maxMessages !== undefined && (!integer(limits.maxMessages, 256) || limits.maxMessages < 64))
-    || providers.length > 12 || providers.some(provider => !isAiProvider(provider.id) || provider.id === 'openai' || typeof provider.model !== 'string' || !isResearchModel(provider.id, provider.model) || typeof provider.name !== 'string' || !provider.name.trim() || provider.name.length > 64
+    || providers.length > 12 || providers.some(provider => !isAiProvider(provider.id) || (provider.id === 'openai' || provider.id === 'custom') || typeof provider.model !== 'string' || !isResearchModel(provider.id, provider.model) || typeof provider.name !== 'string' || !provider.name.trim() || provider.name.length > 64
       || (provider.displayName !== undefined && (typeof provider.displayName !== 'string' || !provider.displayName.trim() || provider.displayName.length > 80)))
     || new Set(providers.map(provider => `${String(provider.id)}:${String(provider.model)}`)).size !== providers.length
-    || !isAiProvider(data.defaultProvider) || data.defaultProvider === 'openai'
+    || !isAiProvider(data.defaultProvider) || (data.defaultProvider === 'openai' || data.defaultProvider === 'custom')
     || (providers.length > 0 && !providers.some(provider => provider.id === data.defaultProvider))
     || (data.defaultModel !== undefined && (typeof data.defaultModel !== 'string' || (providers.length > 0 && !providers.some(provider => provider.id === data.defaultProvider && provider.model === data.defaultModel))))) throw new TrialError(unavailable);
   return { userId: data.userId, expiresAt: data.expiresAt, status: data.status as TrialStatus,

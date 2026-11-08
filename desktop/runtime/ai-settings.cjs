@@ -2,17 +2,21 @@
 /* oxlint-disable typescript/no-require-imports -- Shared with the CommonJS desktop entry. */
 const { normalizeTrialGatewayUrl, isolatedTrialTest, isTrialToken } = require('./trial-access.cjs');
 
+const { validateCustomAiConfig } = require('./custom-ai-config.cjs');
+
 const AI_PROVIDERS = Object.freeze([
   Object.freeze({ id: 'deepseek', name: 'DeepSeek', model: 'deepseek-flash', prefix: 'DEEPSEEK' }),
   Object.freeze({ id: 'glm', name: 'GLM', model: 'glm-4.7', prefix: 'GLM' }),
   Object.freeze({ id: 'kimi', name: 'Kimi', model: 'kimi-k2.6', prefix: 'KIMI' }),
   Object.freeze({ id: 'openai', name: 'OpenAI', model: 'gpt-4.1-mini', prefix: 'OPENAI' }),
+  Object.freeze({ id: 'custom', name: 'Custom service', model: 'gpt-6.1-sol', prefix: 'LUMIOR_CUSTOM' }),
 ]);
 
 function isAiProvider(value) {
   return typeof value === 'string' && AI_PROVIDERS.some(provider => provider.id === value);
 }
 function isProviderModel(provider, model) {
+  if (provider === 'custom') return typeof model === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,199}$/.test(model) && !model.includes('..') && !model.includes('//');
   if (typeof model !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(model)) return false;
   if (provider === 'deepseek') return /^deepseek-.+/.test(model);
   if (provider === 'glm') return /^glm-.+/.test(model);
@@ -28,6 +32,7 @@ function emptyAiConfig() {
   return { provider: 'deepseek', ...providers.deepseek, providers, usageMode: 'personal', trial: { token: '', gatewayUrl: '' } };
 }
 function clearBackendAiSettings(environment) {
+  delete environment.LUMIOR_CUSTOM_AI_CONFIG;
   delete environment.LUMIOR_AI_PROVIDER;
   delete environment.LUMIOR_AI_USAGE_MODE;
   delete environment.LUMIOR_TRIAL_GATEWAY_URL;
@@ -56,11 +61,14 @@ function applyBackendAiSettings(environment, value) {
     const model = input.model === undefined ? item.model : typeof input.model === 'string' ? input.model.trim() : input.model;
     if (!isProviderModel(item.id, model)) throw new Error(`Enter a valid ${item.name} model name.`);
     const key = input.key === undefined ? '' : validateApiKey(input.key);
-    return [item.id, { key, model }];
+    const custom = item.id === 'custom' && input.custom !== undefined ? validateCustomAiConfig(input.custom) : undefined;
+    if (item.id === 'custom' && key && !custom) throw new Error('Configure the custom API address first.');
+    return [item.id, { key, model, ...(custom ? { custom } : {}) }];
   }));
   // Validate the complete message before changing the environment, and only
   // write known variable names. Message fields cannot become environment names.
   clearBackendAiSettings(environment);
+  if (settings.custom.custom) environment.LUMIOR_CUSTOM_AI_CONFIG = JSON.stringify(settings.custom.custom);
   environment.LUMIOR_AI_PROVIDER = provider;
   environment.LUMIOR_AI_USAGE_MODE = usageMode;
   if (trialGateway) environment.LUMIOR_TRIAL_GATEWAY_URL = trialGateway;

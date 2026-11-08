@@ -310,8 +310,8 @@ export function DataSettings({
                         )
                       : tab === 'ai'
                         ? t(
-                            'Connect DeepSeek, Kimi or OpenAI to use AI in the desktop app.',
-                            '连接 DeepSeek、Kimi 或 OpenAI，在桌面应用中使用 AI。',
+                            'Connect DeepSeek, Kimi, OpenAI or a custom service to use AI in the desktop app.',
+                            '连接 DeepSeek、Kimi、OpenAI 或自定义服务，在桌面应用中使用 AI。',
                           )
                         : tab === 'updates'
                           ? t(
