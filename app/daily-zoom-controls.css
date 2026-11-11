@@ -1,0 +1,6 @@
+.daily-zoom{display:flex;align-items:center;gap:4px;height:40px;padding:4px;border:1px solid var(--ui-line-subtle);border-radius:16px;background:var(--lumior-glass-surface);backdrop-filter:var(--lumior-glass-blur);box-shadow:0 4px 16px var(--ui-shadow-soft);pointer-events:auto;cursor:default}
+.daily-zoom button{display:flex;align-items:center;justify-content:center;gap:4px;width:32px;height:32px;padding:0;border-radius:var(--lumior-control-radius,12px);color:var(--ui-text-secondary);font-size:11px;white-space:nowrap}
+.daily-zoom .daily-zoom-value{width:41px;font-size:14px;font-variant-numeric:tabular-nums}
+.daily-zoom button:hover{background:var(--ui-fill-hover);color:var(--ui-text)}
+.daily-zoom img{display:block;pointer-events:none;filter:brightness(0) invert(1);opacity:.6}
+.daily-zoom-divider{width:1px;height:20px;flex:0 0 1px;background:var(--ui-line);margin:0 4px}

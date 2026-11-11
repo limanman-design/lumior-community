@@ -1,6 +1,9 @@
 import './workspace-menu.css';
 
 export type MaterialIconName =
+  | 'link'
+  | 'cards_star'
+  | 'restart_alt'
   | 'location_searching'
   | 'trip_origin'
   | 'graph_8'
@@ -62,6 +65,9 @@ export type MaterialIconName =
   | 'hub';
 
 const outlinedSymbols = new Set<MaterialIconName>([
+  'link',
+  'cards_star',
+  'restart_alt',
   'location_searching',
   'trip_origin',
   'graph_8',
@@ -122,7 +128,7 @@ export function MaterialIcon({
       style={{
         width: size,
         height: size,
-        maskImage: `url('/assets/material-symbols/${(name === 'hub' || name === 'note_stack' || name === 'graph_8') && filled ? `${name.replaceAll('_', '-')}-filled.svg` : outlinedSymbols.has(name) ? `${name.replaceAll('_', '-')}-outlined.svg` : name === 'search_outlined' ? 'search-outlined.svg' : name === 'flashlight' ? 'flashlight-on-outlined.svg' : name === 'atlas' ? 'auto-awesome-outlined.svg' : name === 'text_fields' ? 'text-fields-outlined.svg' : name === 'title' ? 'title-outlined.svg' : `${name}-rounded.svg`}')`,
+        maskImage: `url('/assets/material-symbols/${(name === 'cards_star' || name === 'hub' || name === 'note_stack' || name === 'graph_8') && filled ? `${name.replaceAll('_', '-')}-filled.svg` : outlinedSymbols.has(name) ? `${name.replaceAll('_', '-')}-outlined.svg` : name === 'search_outlined' ? 'search-outlined.svg' : name === 'flashlight' ? 'flashlight-on-outlined.svg' : name === 'atlas' ? 'auto-awesome-outlined.svg' : name === 'text_fields' ? 'text-fields-outlined.svg' : name === 'title' ? 'title-outlined.svg' : `${name}-rounded.svg`}')`,
       }}
     />
   );

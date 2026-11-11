@@ -75,3 +75,20 @@ void test('one Daily capture can connect to distinct sources without duplicating
   assert.equal(edges.length,2);assert.notEqual(edges[0].id,edges[1].id);
   assert.equal(connectionPreviewImages([{id:'daily',daily:{at:1},card:{title:'photo',image:'image.jpg'}}],edges).length,1);
 });
+
+void test('automatic discovery targets board card identities only and excludes Daily-to-Daily matches',()=>{
+  const captures=[{id:'daily',card:{title:'New paper',body:'A method'}},{id:'other-daily',card:{title:'Another capture',body:'Some evidence'}}];
+  const board={id:'b',title:'Existing work',cards:[
+    {id:'instance',sharedId:'old',kind:'note',title:'Method needed',body:'Existing question'},
+    {id:'duplicate',sharedId:'old',kind:'note',title:'Method needed',body:'Existing question'},
+    {id:'daily-instance',sharedId:'other-daily',kind:'note',title:'Another capture',body:'Some evidence'},
+  ]};
+  const scope=connectionInput(captures,[board],'en');
+  assert.deepEqual(scope.boards[0].sources.map(c=>c.id),['old']);
+  const relation={contentId:'daily',boardId:'b',sourceId:'old',relation:'A reusable method',reason:'A method to inspect',captureQuote:'method',sourceQuote:'question'};
+  assert.equal(readConnections([relation],scope).length,1);
+  assert.throws(()=>readConnections([{...relation,sourceId:'loose-global-card'}],scope));
+  assert.deepEqual(connectionInput(captures,[],'en').boards,[]);
+  const malformed={...scope,boards:[{...scope.boards[0],sources:[...scope.boards[0].sources,{id:'other-daily',title:'Another capture',excerpt:'Some evidence'}]}]};
+  assert.throws(()=>readConnections([{...relation,sourceId:'other-daily',sourceQuote:'evidence'}],malformed));
+});

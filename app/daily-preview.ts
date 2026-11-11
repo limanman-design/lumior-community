@@ -1,4 +1,5 @@
 import type { Board, Card } from './canvas-model';
+import { dailyMaterialExampleBoardId, dailyMaterialExampleCards } from './daily-material-examples.ts';
 import { addWorkspaceContent, contentIdentity, type WorkspaceFiles } from './workspace-files.ts';
 import { dailyContents, markDailyCapture } from './daily-model.ts';
 
@@ -74,10 +75,10 @@ export function dailyConnectionExampleCards(): Card[] {
 
 /** Only exact built-in examples are removable; edits and non-example references are protected. */
 export function removableDailyExamples(files: WorkspaceFiles, boards: readonly Board[], marks: Record<string, readonly unknown[]> = {}): string[] {
-  const examples=dailyConnectionExampleCards();
+  const examples=[...dailyConnectionExampleCards(),...dailyMaterialExampleCards()];
   const originals=[...seedDailyPreview({version:1,contents:[],entries:[],folders:[]},1700000000000).contents,...examples.map(card=>({id:card.id,card}))];
   const exampleIds=new Set(examples.map(card=>card.id));
-  const linked=new Set([...boards.flatMap(board=>board.cards.filter(card=>board.id!==dailyConnectionExampleBoardId||!exampleIds.has(contentIdentity(card))).map(contentIdentity)),...files.contents.flatMap(content=>[content.sourceContentId,content.card.sourceContentId,content.card.pdfExcerpt?.sourceId].filter((id):id is string=>!!id))]);
+  const linked=new Set([...boards.flatMap(board=>board.cards.filter(card=>![dailyConnectionExampleBoardId,dailyMaterialExampleBoardId].includes(board.id)||!exampleIds.has(contentIdentity(card))).map(contentIdentity)),...files.contents.flatMap(content=>[content.sourceContentId,content.card.sourceContentId,content.card.pdfExcerpt?.sourceId].filter((id):id is string=>!!id))]);
   const editable=(card:Card)=>JSON.stringify({title:card.title,body:card.body,blocks:card.blocks||[],image:card.image,video:card.video,pdf:card.pdf,tags:card.tags,detail:card.detail,sourceName:card.sourceName,imageRotation:card.imageRotation,authors:card.authors,year:card.year,citationEdits:card.citationEdits,storedDocument:card.storedDocument,aiNoteChange:card.aiNoteChange});
   const dailyIds=new Set(dailyContents(files).map(content=>content.id));
   return files.contents.filter(content=>dailyIds.has(content.id)||exampleIds.has(content.id)).filter(content=>{

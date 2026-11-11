@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { readConnections, type ConnectionInput, type DailyConnection } from './daily-connections';
 import { desktopAiSettingsChangedEvent } from './desktop-bridge';
 const consentKey='lumior-daily-connections-consent-v1';
-const preference='lumior-daily-connections-enabled-v1',cacheKey='lumior-daily-connections-cache-v1';
+const preference='lumior-daily-connections-enabled-v1',cacheKey='lumior-daily-connections-cache-v2';
 type Cache={scope:string;at:number;connections?:DailyConnection[]};
 export function useDailyConnections(input:ConnectionInput,visible:boolean,paused:boolean) {
   const [enabled,setEnabled]=useState(false);
