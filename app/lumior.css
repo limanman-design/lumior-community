@@ -106,6 +106,7 @@ nav button{gap:8px;color:var(--ui-text-secondary)}nav button:hover{background:va
 .connection-success{pointer-events:none}.connection-glow,.connection-light{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;stroke-dasharray:12 100;stroke-dashoffset:12;animation:connection-travel .58s ease-in-out both}.connection-glow{stroke:var(--ui-text-secondary);stroke-width:5;opacity:.16}.connection-light{stroke:var(--ui-text);stroke-width:2;opacity:.9}.connection-arrival{fill:var(--ui-text);opacity:0;animation:connection-arrival .22s .58s ease-out both}@keyframes connection-travel{0%{stroke-dashoffset:12;opacity:0}15%{opacity:.85}85%{opacity:.85}100%{stroke-dashoffset:-100;opacity:0}}@keyframes connection-arrival{0%{opacity:.8}100%{opacity:0}}@media(prefers-reduced-motion:reduce){.connection-success{display:none}}
 
 textarea.card-title-wrap{display:block;width:100%;resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;min-height:31px;box-sizing:border-box}
+@supports(field-sizing:content){textarea.card-title-wrap{field-sizing:content;height:auto;min-height:var(--note-title-card-line-height)}}
 
 /* Full-page reading shares the card document, without a modal or backdrop. */
 .expanded-card-page{position:fixed;inset:0;z-index:45;background:var(--ui-canvas);color:var(--ui-text);display:flex;flex-direction:column}
