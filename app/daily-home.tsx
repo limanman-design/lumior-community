@@ -268,10 +268,10 @@ export function DailyHome({ files, boards, visible, exampleRecommendations, onNe
   const summary = <section ref={summaryRef} className="daily-center" aria-label={t('Today’s thoughts', '今天的想法')}>
         <p className="daily-date"><time dateTime={new Date(now).toISOString()}>{date}<span>·</span>{weekday}<span>·</span>{time}</time></p>
         <div className="daily-summary">
-          <p className="daily-knowledge-line"><span className="daily-knowledge-lead">{clues.length ? t('Found', '发现') : t('Here are', '这里有')} <span className="daily-image-badge" data-daily-ui><ImagesBadge images={summaryImages.slice(0, 8)} label={clues.length ? t('Explore connected captures', '查看有关联的碎片') : t('Recently added images', '最近加入的图片')} selected={selected} onSelect={id=>{const relation=clues.find(item=>item.contentId===id);if(relation){setClueId(relation.id);onUse([id]);}else toggle(id);}}/></span><strong>{clues.length ? clues.length : pending}</strong></span>{clues.length ? t(clues.length === 1 ? ' clue.' : ' clues.', ' 条线索。') : t(' pieces of knowledge.', ' 条知识。')}</p>
+          <p className="daily-knowledge-line" data-discovered={clues.length > 0}><span className="daily-knowledge-lead">{clues.length ? t('Found', '发现') : t('Here are', '这里有')} <span className="daily-image-badge" data-daily-ui><ImagesBadge images={summaryImages.slice(0, 8)} label={clues.length ? t('Explore connected captures', '查看有关联的碎片') : t('Recently added images', '最近加入的图片')} selected={selected} onSelect={id=>{const relation=clues.find(item=>item.contentId===id);if(relation){setClueId(relation.id);onUse([id]);}else toggle(id);}}/></span><strong>{clues.length ? clues.length : pending}</strong></span>{clues.length ? t(clues.length === 1 ? ' clue.' : ' clues.', ' 条线索。') : t(' pieces of knowledge.', ' 条知识。')}</p>
           <p className="daily-streak-line">{t('You’ve recorded for ', '已经连续记录 ')}<em>{streak}</em>{t(' days.', ' 天。')}</p>
         </div>
-        {!!clues.length && <div className="daily-clues" data-daily-ui aria-label={t('Connections to explore', '可以继续的想法')}>
+        {!!clues.length && <div className="daily-clues" data-daily-ui data-daily-canvas-wheel aria-label={t('Connections to explore', '可以继续的想法')}>
           {clues.map(item => {
             const capture = records.find(content => content.id === item.contentId)?.card;
             const targetBoard = boards.find(board => board.id === item.boardId);

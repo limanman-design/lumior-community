@@ -57,7 +57,8 @@ export function useDailyCanvas(visible: boolean, onPosition: (id: string, point:
     const element = root.current;
     if (!element || !visible) return;
     const wheel = (event: WheelEvent) => {
-      if ((event.target as HTMLElement).closest('[data-daily-ui]')) return;
+      const control = (event.target as HTMLElement).closest('[data-daily-ui]');
+      if (control && !control.hasAttribute('data-daily-canvas-wheel')) return;
       event.preventDefault();
       if (event.ctrlKey || event.metaKey) {
         const rect = element.getBoundingClientRect();

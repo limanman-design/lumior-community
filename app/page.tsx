@@ -1,7 +1,7 @@
 'use client';
 import { DailyHome, type DailyCardEditor } from './daily-home';
 import { downloadCardAttachment } from './card-download';
-import { seedDailyPreview, removableDailyExamples } from './daily-preview';
+import { removableDailyExamples } from './daily-preview';
 import { touchDailyCaptures, positionDailyCapture, positionDailyCaptures, organizeDailyCapture, dismissDailyClue, markDailyCapture } from './daily-model';
 import { cancelConnectionGesture, finishCanvasGesture, type CapturedCanvasGesture } from './canvas-gesture';
 import { boardNoteChangePreview, resolveBoardNoteChange } from './board-note-ai-change';
@@ -165,7 +165,7 @@ export function CardView({card,imageNoteFocusRequest=0,aiChange,onResolveAiChang
  const ref=useRef<HTMLElement>(null);const [imageNoteRequest,setImageNoteRequest]=useState(0);
  useNoteOverflow(ref,card.kind==='note'&&!excerpt&&!previewContent&&!editing);
  const fitNoteContent=()=>{if(!ref.current)return;const measured=measureNoteContentHeight(ref.current);if(measured===null)return;const height=clampNoteContentHeight(measured,noteFitLimits);if(height!==card.height)onChange({height});};
- useEffect(()=>{const title=ref.current?.querySelector<HTMLTextAreaElement>("textarea.card-title-wrap");if(title){title.style.height="0px";title.style.height=`${title.scrollHeight}px`;}},[card.title,card.width]);
+ useEffect(()=>{const title=ref.current?.querySelector<HTMLTextAreaElement>("textarea.card-title-wrap");if(title){if(CSS.supports("field-sizing","content")){title.style.removeProperty("height");return;}title.style.height="0px";title.style.height=`${title.scrollHeight}px`;}},[card.title,card.width]);
  useEffect(()=>{if(editing&&!ref.current?.contains(document.activeElement))ref.current?.querySelector<HTMLInputElement>(".inline-card-title")?.focus();},[editing]);
  useEffect(()=>{const el=ref.current;if(!el)return;const ro=new ResizeObserver(()=>onMeasure(card.id,el.offsetHeight));ro.observe(el);return ()=>ro.disconnect();},[card.id,onMeasure]);
  return <article ref={ref} data-card-id={card.id} data-card-kind={card.kind} aria-label={cardName(card)} tabIndex={0} className={`note ${thesisImportant?'thesis-important':''} ${thesisNeedsReview?'thesis-needs-review':''} ${card.kind==='note'&&card.height!==undefined?'note-content-sized':''} ${card.kind==='text'?'text-card':''} ${card.kind==='image'&&!excerpt?'image-card':''} ${excerpt?'pdf-excerpt-card':''} ${card.kind==='pdf'?'pdf-card':''} ${card.kind==='video'?'video-card':''} ${card.kind==='database'?'database-card':''} ${selected?'selected':''} ${editing?'editing':''} ${linking?'link-target':''} ${readOnly?'explore-readonly':''} ${previewContent?'explore-system-card':''}`} style={{left:card.x,top:card.y,width:card.width,height:card.height??(card.kind==='text'?100:card.image?524:undefined),zIndex:selected?5:2,...(zoom===undefined?{}:{'--canvas-zoom':zoom,'--inverse-zoom':1/zoom})} as CSSProperties} onBlurCapture={e=>{if(card.kind==='note'&&!readOnly&&!(e.relatedTarget instanceof Node&&e.currentTarget.contains(e.relatedTarget)))onLeave?.();}} onPointerDownCapture={e=>{if(!e.currentTarget.contains(e.target as Node))return;if(e.button!==0&&e.button!==1)return;const target=e.target as HTMLElement;if(target.closest('.video-media')){onSelect();return;}if(isNoteEditorControl(target)||target.closest('.card-ai-change-anchor,.card-toolbar,.connector,.resize-handle,.resize-edge,[role=menuitem],[data-slot=dropdown-menu-content],button,summary,.image-note'))return;onSelect();if(!editing||e.button===1||!target.closest('.card-scroll')||(card.kind==='note'||!!card.pdfExcerpt)&&notePointerIntent(e,zoom??(parseFloat(getComputedStyle(e.currentTarget).getPropertyValue('--canvas-zoom'))||CANVAS_ZOOM_BASE))==='select')onGesture(e,'move');}} onPointerDown={e=>{if(isNoteEditorControl(e.target as Element))e.stopPropagation();}}>
@@ -624,16 +624,6 @@ function Workspace(){
  const patchFileContent=(id:string,patch:Partial<Card>)=>{const current=syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current);const result=patchWorkspaceContent(current,savedBoards.current,id,patch);if(patch.bibliography!==undefined){const source=current.contents.find(item=>item.id===id)?.card;if(source){history.current=history.current.map(item=>rebaseBibliographyMetadata(item,source,patch));future.current=future.current.map(item=>rebaseBibliographyMetadata(item,source,patch));}}changeWorkspaceFiles(result.files);installFileBoards(result.boards);};
  usePdfBibliography({contents:workspaceFiles.contents,ready:storageReady,onResult:(id,file,result)=>{const current=workspaceFilesRef.current?.contents.find(item=>item.id===id);if(current?.card.kind!=='pdf'||current.card.pdf?.url!==file.url||current.card.pdf?.size!==file.size||current.card.bibliography?.status!=='pending')return;patchFileContent(id,automaticBibliographyPatch(current.card,result));}});
  const openFileEntry=(id:string)=>{const current=syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current);const entry=current.entries.find(item=>item.id===id);if(!entry)return;changeWorkspaceFiles(markWorkspaceEntryOpened(current,id));if(entry.kind==='board')selectTab(entry.boardId!);else openContent(entry.contentId!,null);};
- const dailyPreviewLoaded=useRef(false);
- useEffect(()=>{
-  if(!storageReady||process.env.NODE_ENV!=='development'||dailyPreviewLoaded.current)return;
-  dailyPreviewLoaded.current=true;
-  try{if(localStorage.getItem('lumior-daily-preview-v4'))return;}catch{/* Preview still works without local storage. */}
-  const current=syncWorkspaceFiles(workspaceFilesRef.current,savedBoards.current);
-  const next=seedDailyPreview(current);
-  if(next!==current)changeWorkspaceFiles(next);
-  try{localStorage.setItem('lumior-daily-preview-v4','loaded');}catch{/* Deterministic sample IDs also prevent duplicates. */}
- },[storageReady]);
  const newDailyNote=(position:Point)=>{
   const id=crypto.randomUUID(),now=Date.now(),timestamp=new Date(now).toISOString();
   const card:Card={id,kind:'note',contentRole:'notePage',title:'Untitled',body:'',x:0,y:0,width:360,createdAt:timestamp,updatedAt:timestamp,creationDateSource:'actual'};

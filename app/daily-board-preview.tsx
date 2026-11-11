@@ -12,7 +12,7 @@ import { DailyZoomControls } from './daily-zoom-controls';
 
 const noop = () => {};
 export type DailyPreviewRenderer = (card: Card, selected: boolean, measure: (id: string, height: number) => void, editor: DailyCardEditor) => ReactNode;
-export function DailyBoardPreview({ board, sourceId, renderCard, onOpenBoard, sourcePanel }: { board: Board; sourceId?: string; renderCard: DailyPreviewRenderer; onOpenBoard?: () => void; sourcePanel?: ReactNode }) {
+export function DailyBoardPreview({ board, sourceId, renderCard, onOpenBoard, openBoardDisabled = false, sourcePanel }: { board: Board; sourceId?: string; renderCard: DailyPreviewRenderer; onOpenBoard?: () => void; openBoardDisabled?: boolean; sourcePanel?: ReactNode }) {
   const { t } = useI18n();
   const [viewport, setViewport] = useState<HTMLDivElement | null>(null);
   const [panel, setPanel] = useState<HTMLDivElement | null>(null);
@@ -75,7 +75,7 @@ export function DailyBoardPreview({ board, sourceId, renderCard, onOpenBoard, so
       })}</svg>
       <div inert className="daily-board-preview-cards">{board.cards.map(card => <div key={card.id}>{renderCard(card, card.id === target?.id, measure, { editing: false, imageNoteRequest: 0, onChange: noop, onEdit: noop })}</div>)}</div>
     </div>
-    {onOpenBoard && <button type="button" className="daily-preview-open-board" onClick={onOpenBoard}>{t('Open board', '打开画板')}<ArrowUpRight size={16} /></button>}
+    {onOpenBoard && <button type="button" className="daily-preview-open-board" disabled={openBoardDisabled} onClick={onOpenBoard}>{t('Open board', '打开画板')}<ArrowUpRight size={16} /></button>}
     {!board.cards.length && <p className="daily-preview-empty">{t('This board is empty', '这个画板暂无内容')}</p>}
     <DailyZoomControls className="daily-relation-zoom" value={view.scale} onZoom={zoom} locateLabel={t('Focus related content', '定位关联内容')} onLocate={() => { interacted.current = false; frame(); }} />
   </div>;

@@ -77,9 +77,7 @@ background-image:radial-gradient(circle,color-mix(in srgb,var(--ui-white) calc(v
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 20% 20%, color-mix(in srgb, var(--ui-control) 85%, transparent), transparent 44%),
-    radial-gradient(ellipse at 88% 83%, color-mix(in srgb, var(--ui-control) 70%, transparent), transparent 46%),
-    radial-gradient(ellipse at 65% 8%, color-mix(in srgb, var(--ui-surface) 60%, transparent), transparent 38%);
+    radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--ui-control) 95%, transparent), color-mix(in srgb, var(--ui-control) 55%, transparent) 30%, transparent 68%);
   filter: blur(70px);
 }
 
@@ -137,3 +135,5 @@ background-image:radial-gradient(circle,color-mix(in srgb,var(--ui-white) calc(v
 .daily-clue .daily-clue-copy>strong{font-size:14px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .daily-clue-copy>small{font-size:12px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .daily-clue>.workspace-symbol{color:var(--ui-text-secondary);flex-shrink:0}
+
+.daily-summary .daily-knowledge-line[data-discovered=true],.daily-summary .daily-knowledge-line[data-discovered=true] strong{color:var(--ui-white)}

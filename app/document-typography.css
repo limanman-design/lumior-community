@@ -93,12 +93,12 @@ body .block-document .bn-editor [data-content-type='heading'] :is(h1,h2,h3,h4,h5
 
 .inline-card-title {
   font: 600 var(--note-title-card-size)/var(--note-title-card-line-height)
-    var(--font-geist-sans), sans-serif;
+    var(--font-geist-sans, Arial), sans-serif;
   margin: 0 0 var(--note-title-card-space-after);
 }
 .expanded-note-title-input,
 .expanded-card-document > h1 {
   font: 600 var(--note-title-reading-size)/var(--note-title-reading-line-height)
-    var(--font-geist-sans), sans-serif;
+    var(--font-geist-sans, Arial), sans-serif;
   margin: 0 0 var(--note-title-reading-space-after);
 }
