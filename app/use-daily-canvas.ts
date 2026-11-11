@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 import type { View } from './canvas-model';
-import { canvasWheelZoom, zoomAt } from './canvas-zoom';
+import { CANVAS_ZOOM_BASE, canvasWheelZoom, zoomAt } from './canvas-zoom';
 
 type Point = { x: number; y: number };
 export function useDailyCanvas(visible: boolean, onPosition: (id: string, point: Point) => void) {
@@ -12,8 +12,8 @@ export function useDailyCanvas(visible: boolean, onPosition: (id: string, point:
   const initialized = useRef(false);
   const moved = useRef(false);
   const gesture = useRef<{ pointer: number; button: number; start: Point; view: View; id?: string; position?: Point; next?: Point } | null>(null);
-  const homeView = (rect: { width: number; height: number }, zoom = Math.min(1, Math.max(.55, Math.min(rect.width / 1500, rect.height / 850)))) => ({
-    x: rect.width / 2 - Math.min(520, rect.width - 32) / 2 + 20 + 330 * zoom, y: rect.height * .56, zoom,
+  const homeView = (rect: { width: number; height: number }, zoom = .75 * CANVAS_ZOOM_BASE) => ({
+    x: rect.width / 2, y: rect.height * .54, zoom,
   });
   const toPoint = (clientX: number, clientY: number) => {
     const rect = root.current?.getBoundingClientRect();

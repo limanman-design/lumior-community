@@ -7,10 +7,12 @@ export type PdfCitationLocation = { rects: SourceRect[]; stops: SourceRect[] };
 
 // Match the saved evidence, never the model's paraphrase. Whitespace and font
 // ligatures may differ between extraction versions; preserve original offsets.
-function normalized(text: string) {
+function normalized(text: string, joinLineBreaks = false) {
   let value = '';
   const offsets: number[] = [];
   for (let i = 0; i < text.length; i++) {
+    // Only repair hyphens at a physical line ending, retaining source offsets.
+    if (joinLineBreaks && text[i] === '-' && /\p{L}/u.test(text[i - 1] || '') && /^-\s*\n\s*\p{L}/u.test(text.slice(i))) continue;
     for (const char of text[i].normalize('NFKC')) {
       if (/\s/u.test(char) || char === '\u00ad') continue;
       value += char;
@@ -21,9 +23,14 @@ function normalized(text: string) {
 }
 
 export function locatePdfCitation(items: TextItem[], viewport: Viewport, quote: string): PdfCitationLocation | undefined {
-  const text = pdfPageText(items), source = normalized(text), wanted = normalized(quote).value;
+  const text = pdfPageText(items);
+  let source = normalized(text), wanted = normalized(quote).value;
   if (wanted.length < 8 || !Number.isFinite(viewport.width) || !Number.isFinite(viewport.height) || viewport.width <= 0 || viewport.height <= 0) return;
-  const match = source.value.indexOf(wanted);
+  let match = source.value.indexOf(wanted);
+  if (match < 0) {
+    source = normalized(text, true); wanted = normalized(quote, true).value;
+    match = source.value.indexOf(wanted);
+  }
   // Repeated text is ambiguous. Showing the saved quote is safer than guessing.
   if (match < 0 || source.value.indexOf(wanted, match + 1) !== -1) return;
   const start = source.offsets[match], end = source.offsets[match + wanted.length - 1] + 1;

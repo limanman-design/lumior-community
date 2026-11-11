@@ -1,5 +1,14 @@
 # 待发布更新
 
+## Unreleased - Daily clues and source comparison (2026-11-11)
+
+- Discovery targets specific content on existing boards. Evidence, counterexamples, limitations and transferable methods qualify; shared topics alone do not. Existing AI access, task accounting and cancellation remain in use.
+- Optional examples pair two CC BY papers with a fictional research plan. Fixed examples work without AI access and do not seed existing workspaces. Cleanup preserves edited, annotated and referenced content.
+- A read-only board forms the comparison background, focused on related content. The floating reader displays PDF, Markdown or images; verified PDF evidence is highlighted temporarily without changing files or annotations. Open board remains available.
+- Removed reader header/footer bands. Actions float within the reading viewport; scrollbars follow the shared style. Daily and comparison share percentage zoom controls and the locate icon.
+- Updated Daily composition, entry motion, relation rows, consistent numerals and active discovery controls using existing colors and reduced-motion support.
+- Source sync and merge only; no installer or hosted Demo deployment. Local browser preview verified. No real model requests; real recommendation quality, native desktop platforms and full light theme remain unverified.
+
 ## 待发布 · 标签栏与示例配套清理（2026-11-08）
 
 - 顶部标签只保留画板和独立内容页；首页、日常、星海和多维表不占标签，浏览历史箭头和侧栏位置保留。

@@ -49,3 +49,10 @@ test('keeps CJK evidence and page rotation coordinates, and declines missing or 
   assert.equal(locatePdfCitation(items, { ...viewport, width: 0 }, items[0].str), undefined);
   assert.equal(locatePdfCitation([], viewport, items[0].str), undefined);
 });
+
+test('joins physical line-end hyphenation without removing real in-line hyphens', () => {
+ const items=[line('The out-',40,700),line('come matters for curiosity.',40,684)];
+ const result=locatePdfCitation(items,viewport,'The outcome matters for curiosity.');
+ assert.equal(result.rects.length,2);
+ assert.equal(locatePdfCitation([line('A well-known method.')],viewport,'A wellknown method.'),undefined);
+});

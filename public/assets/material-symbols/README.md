@@ -152,3 +152,15 @@ Sources:
 - https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/trip_origin/materialsymbolsoutlined/trip_origin_20px.svg
 - https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/graph_8/materialsymbolsoutlined/graph_8_20px.svg
 - https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/graph_8/materialsymbolsoutlined/graph_8_fill1_20px.svg
+
+Daily action group (2026-11-09): Material Symbols Outlined `cards_star` (fill 0/1)
+and `restart_alt`, 20px optical size, weight 400. Official unmodified SVGs,
+local/offline use; Apache-2.0 (existing LICENSE).
+Sources:
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/cards_star/materialsymbolsoutlined/cards_star_20px.svg
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/cards_star/materialsymbolsoutlined/cards_star_fill1_20px.svg
+- https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/restart_alt/materialsymbolsoutlined/restart_alt_20px.svg
+
+Daily connection rows (2026-11-10): Material Symbols Outlined `link`, 20px,
+weight 400, official unmodified SVG, Apache-2.0 (existing LICENSE).
+Source: https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/link/materialsymbolsoutlined/link_20px.svg
