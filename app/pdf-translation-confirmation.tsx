@@ -11,12 +11,14 @@ import {
 import './pdf-translation-confirmation.css';
 
 export function PdfTranslationConfirmation({
+  local = false,
   open,
   remember,
   onRemember,
   onOpenChange,
   onConfirm,
 }: {
+  local?: boolean;
   open: boolean;
   remember: boolean;
   onRemember: (value: boolean) => void;
@@ -40,7 +42,7 @@ export function PdfTranslationConfirmation({
         </button>
         <DialogTitle>{t('Translate PDF?', '翻译 PDF？')}</DialogTitle>
         <DialogDescription>
-          {t(
+          {local ? t('Translation runs on this computer. It does not use cloud credits. Technical terms may be mistranslated; check important passages against the original.', '译文将在本机生成，不消耗云端额度。专业术语可能误译，重要内容请对照原文核实。') : t(
             'PDF translation first uses AI to translate the text, then redraws the layout. A 20-page document takes about 20 minutes. Continue?',
             'PDF 翻译需要先由 AI 翻译，再重新绘制排版。20 页内容大致需要 20 分钟。是否继续？',
           )}

@@ -16,6 +16,8 @@ const { desktopDistribution } = require('./runtime/distribution.cjs');
 const { createWindowPreferences, chooseWindowClose } = require('./runtime/window-preferences.cjs');
 const { mainWindowMaterial } = require('./runtime/window-appearance.cjs');
 const { readClipboardImages } = require('./runtime/clipboard-images.cjs');
+const { createLocalTranslationController } = require('./runtime/local-translation.cjs');
+const localTranslationManifest = require('./runtime/local-translation-manifest.json');
 const { createDesktopPet } = require('./runtime/desktop-pet.cjs');
 const distribution = desktopDistribution(require('./package.json').lumiorDistribution);
 const configuration = desktopConfiguration(app.isPackaged, process.env, distribution);
@@ -28,6 +30,7 @@ app.setPath('userData', process.env.LUMIOR_DESKTOP_DATA_DIR || path.join(app.get
 if (process.platform === 'win32') app.setAppUserModelId(appId);
 const locked = app.requestSingleInstanceLock();
 let window, backend, credentials, updates, wallpaper, pet, quitting = false;
+let localTranslation, localTranslationLease, localTranslationRelease, localTranslationStart;
 let preparingQuit = false;
 let updateAttempt = false, updatePrepared = false, nativeUpdateQuit = false;
 const token = randomBytes(32).toString('hex');
@@ -76,7 +79,7 @@ function saveFailed() {
 function shutdownBackend() {
   if (quitting) return;
   quitting = true;
-  const wallpaperClosed = Promise.all([wallpaper?.dispose(), pet?.dispose()]).catch(() => {});
+  const wallpaperClosed = Promise.all([wallpaper?.dispose(), pet?.dispose(), localTranslation?.dispose()]).catch(() => {});
   if (!backend) { void wallpaperClosed.then(() => app.quit()); return; }
   const child = backend;
   let finished = false;
@@ -157,6 +160,51 @@ async function start() {
   const authorized = event => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || !isAppUrl(event.senderFrame.url)) throw new Error('This action is available only in Lumior.');
   };
+  localTranslation = createLocalTranslationController({
+    directory: path.join(app.getPath('userData'), 'extensions', 'local-translation'),
+    manifest: localTranslationManifest,
+    onState: state => {
+      if (state.status === 'error' && localTranslationLease) void releaseLocalTranslation(localTranslationLease);
+      if (window && !window.isDestroyed()) window.webContents.send('lumior:local-translation:state', state);
+    },
+  });
+  await localTranslation.refresh();
+  const localAction = action => async (event, ...args) => {
+    authorized(event);
+    if (args.length) throw new Error('Local translation options are not accepted.');
+    return action();
+  };
+  ipcMain.handle('lumior:local-translation:get', localAction(() => localTranslation.getState()));
+  ipcMain.handle('lumior:local-translation:install', localAction(() => localTranslation.install()));
+  ipcMain.handle('lumior:local-translation:cancel-download', localAction(() => localTranslation.cancelDownload()));
+  ipcMain.handle('lumior:local-translation:remove', localAction(async () => {
+    if (localTranslationLease) throw new Error('请先停止本地翻译，再卸载扩展。');
+    return localTranslation.remove();
+  }));
+  ipcMain.handle('lumior:local-translation:start', async (event, lease, ...extra) => {
+    authorized(event);
+    if (extra.length || typeof lease !== 'string' || !/^[a-f0-9]{32}$/.test(lease)) throw new Error('Invalid local translation lease.');
+    if (localTranslationLease) throw new Error('已有本地翻译正在运行，请先停止。');
+    localTranslationLease = lease;
+    try {
+      const starting = localTranslation.start();
+      localTranslationStart = starting;
+      let config;
+      try { config = await starting; } finally { if (localTranslationStart === starting) localTranslationStart = undefined; }
+      if (localTranslationLease !== lease || localTranslationRelease) throw new Error('本地翻译已取消。');
+      await applyLocalTranslationSettings(config);
+      if (localTranslationLease !== lease || localTranslationRelease) throw new Error('本地翻译已取消。');
+      return;
+    } catch (error) {
+      if (localTranslationLease === lease) await releaseLocalTranslation(lease);
+      throw error;
+    }
+  });
+  ipcMain.handle('lumior:local-translation:stop', async (event, lease, ...extra) => {
+    authorized(event);
+    if (extra.length || typeof lease !== 'string' || !/^[a-f0-9]{32}$/.test(lease)) throw new Error('Invalid local translation lease.');
+    await releaseLocalTranslation(lease);
+  });
   const windowsAction = event => {
     authorized(event);
     if (process.platform !== 'win32') throw new Error('Windows window action required.');
@@ -352,6 +400,30 @@ async function start() {
   void wallpaper.init().catch(() => { /* Wallpaper failure keeps the original desktop available. */ });
   updates.start();
 }
+async function releaseLocalTranslation(lease) {
+  if (!lease || localTranslationLease !== lease) return;
+  if (localTranslationRelease) return localTranslationRelease;
+  localTranslationRelease = (async () => {
+    try {
+      try { await applyLocalTranslationSettings(undefined); } catch { /* Backend may be stopping. */ }
+      await localTranslation?.stop();
+      await localTranslationStart?.catch(() => {});
+    } finally {
+      if (localTranslationLease === lease) localTranslationLease = undefined;
+      localTranslationRelease = undefined;
+    }
+  })();
+  return localTranslationRelease;
+}
+function applyLocalTranslationSettings(config) {
+  if (!backend?.pid) return Promise.reject(new Error('本机服务不可用，请重启 Lumior。'));
+  const requestId = randomBytes(12).toString('hex');
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => { pendingSettings.delete(requestId); reject(new Error('本地翻译启动超时，请重试。')); }, 5000);
+    pendingSettings.set(requestId, () => { clearTimeout(timeout); resolve(); });
+    backend.postMessage({ type: 'local-translation-settings', requestId, config });
+  });
+}
 function applyAiSettings(config) {
   if (!backend?.pid) return Promise.reject(new Error('The local AI service is unavailable. Restart Lumior.'));
   const requestId = randomBytes(12).toString('hex');
@@ -376,6 +448,10 @@ async function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), partition: SESSION_PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, spellcheck: true },
   });
   const current = window;
+  const releaseReader = () => { if (localTranslationLease) void releaseLocalTranslation(localTranslationLease); };
+  current.webContents.on('render-process-gone', releaseReader);
+  current.webContents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => { if (isMainFrame && !isInPlace) releaseReader(); });
+  current.on('closed', releaseReader);
   // Observe the user's paste shortcut before Chromium/menu handling. File-only
   // OS clipboards may emit no DOM paste event; never consume the native action.
   current.webContents.on('before-input-event', (_event, input) => {

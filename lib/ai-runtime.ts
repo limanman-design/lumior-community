@@ -3,6 +3,7 @@ import { providerResearchCall, type ModelCall } from './ai-provider.ts';
 import { aiProviders, isResearchModel, parseModelSelection, providerConfig, type AiSettings, type AiProvider } from './ai-providers.ts';
 import { defaultAiReasoningEffort, type AiReasoningEffort } from './ai-reasoning.ts';
 import { createTrialTask, defaultTrialModel, loadTrialAccount, requireTrialAccount, TrialError, type TrialAccount, type TrialTask } from './ai-trial.ts';
+import { parseLocalTranslationConfig, createLocalTranslationTask, LOCAL_TRANSLATION_MODEL_ID, type LocalTranslationConfig } from './local-translation.ts';
 
 export type AiEffortPolicy = AiReasoningEffort | ((tools?: unknown[]) => AiReasoningEffort);
 export type AiAccess = {
@@ -11,11 +12,19 @@ export type AiAccess = {
   model: string;
   key?: string;
   account?: TrialAccount;
+  local?: LocalTranslationConfig;
 };
 
 /** One source selection for every product feature. Trial never falls back to a
  * personal key, even when both credentials are present. No feature entitlement. */
-export async function resolveAiAccess(settings: AiSettings, selection?: string, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<AiAccess> {
+export async function resolveAiAccess(settings: AiSettings, selection?: string, fetcher: typeof fetch = fetch, signal?: AbortSignal, options?: { localTranslation?: unknown }): Promise<AiAccess> {
+  signal?.throwIfAborted();
+  if (selection === 'local-translation') {
+    let local: LocalTranslationConfig;
+    try { local = parseLocalTranslationConfig(options?.localTranslation); }
+    catch (error) { throw new TrialError(error instanceof Error ? error.message : '本地翻译尚未就绪。', 503); }
+    return { settings, provider: 'custom', model: LOCAL_TRANSLATION_MODEL_ID, local };
+  }
   const account = settings.usageMode === 'trial' ? await loadTrialAccount(settings, fetcher, signal) : undefined;
   if (account) requireTrialAccount(account);
   const defaultProvider = account?.defaultProvider || settings.provider || 'deepseek';
@@ -47,6 +56,10 @@ export function personalAiCall(provider: AiAccess['provider'], key: string, mode
  * Always finish in finally, including cancellation and failures. */
 export async function createAiTask(access: AiAccess, signal: AbortSignal, fetcher: typeof fetch = fetch, policy: AiEffortPolicy = defaultAiReasoningEffort, kind: 'research' | 'translation' = 'research'): Promise<TrialTask> {
   signal.throwIfAborted();
+  if (access.local) {
+    if (kind !== 'translation') throw new TrialError('本地模型仅用于 PDF 翻译。', 400);
+    return createLocalTranslationTask(access.local, signal, fetcher);
+  }
   if (access.account) return createTrialTask(access.settings, access.account, kind, access.provider, access.model, signal, fetcher, policy);
   return { call: personalAiCall(access.provider, access.key!, access.model, signal, fetcher, policy, providerConfig(access.settings, access.provider).custom), finish: async () => {} };
 }

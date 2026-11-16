@@ -13,6 +13,8 @@ import {
 import { PdfRegionExcerpt } from './pdf-region-excerpt';
 import { PdfAnnotationEditor } from './pdf-annotation-editor';
 import { PDF_TRANSLATION_ENABLED } from './feature-flags';
+import { useTranslationEngine } from './local-translation-settings';
+import { openDesktopAiSettings, useDesktopRuntime } from './desktop-bridge';
 import { usePdfTranslation } from './use-pdf-translation';
 import { PdfTranslationPanel } from './pdf-translation-panel';
 import { PdfTranslationConfirmation } from './pdf-translation-confirmation';
@@ -139,6 +141,9 @@ export default function PdfViewer({
   onTranslationCreated?: (card: ImportedCard) => void | Promise<void>;
 }) {
   const { t } = useI18n();
+  const translationEngine = useTranslationEngine();
+  const desktop = useDesktopRuntime();
+  const translationEnabled = PDF_TRANSLATION_ENABLED || translationEngine === 'local';
   const url = card.pdf!.url;
   const readingSession = useTabReadingSession<PdfReadingSessionSnapshot>(
     card.id, 'pdf-expanded', url,
@@ -169,7 +174,7 @@ export default function PdfViewer({
       captureSession.current();
     });
   }, []);
-  const [translationOpen, setTranslationOpen] = useState(PDF_TRANSLATION_ENABLED && (savedSession?.translationOpen || false)),
+  const [translationOpen, setTranslationOpen] = useState(translationEnabled && (savedSession?.translationOpen || false)),
     [hoveredPart, setHoveredPart] = useState<string | undefined>();
   const [translationControls, setTranslationControls] =
     useState<HTMLDivElement | null>(null);
@@ -188,7 +193,7 @@ export default function PdfViewer({
   );
   translatorStart.current = () => translator.start(translator.requestedMode);
   const openTranslation = () => {
-    if (!PDF_TRANSLATION_ENABLED) return;
+    if (!translationEnabled) return;
     if (layout === 'sidebar' && onExpandTranslate) {
       onExpandTranslate();
       return;
@@ -197,7 +202,7 @@ export default function PdfViewer({
     void translatorStart.current();
   };
   const requestTranslation = () => {
-    if (!PDF_TRANSLATION_ENABLED) return;
+    if (!translationEnabled) return;
     if (needsTranslationConsent(card.pdf!.url)) {
       setRememberTranslationConsent(false);
       setTranslationConfirmation(true);
@@ -463,6 +468,7 @@ export default function PdfViewer({
     const move = (event: PointerEvent) => {
       const node = selectionToolbar.current;
       if (!node) return;
+      if (node.querySelector('[data-local-translation-open="true"]')) return;
       if (
         node.contains(document.activeElement) &&
         document.activeElement?.matches('input,textarea')
@@ -515,7 +521,7 @@ export default function PdfViewer({
     translationScroll.current = snapshot?.translation;
     setRestoringSession(restored.restoreScroll);
     setSessionPageRatios(snapshot?.pageRatios || {});
-    if (snapshot) setTranslationOpen(PDF_TRANSLATION_ENABLED && snapshot.translationOpen);
+    if (snapshot) setTranslationOpen(translationEnabled && snapshot.translationOpen);
     else if (!initialTranslation) setTranslationOpen(false);
     setPdf(null);
     setHoveredPart(undefined);
@@ -911,7 +917,8 @@ export default function PdfViewer({
         setMenu(null);
     };
     const escape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !e.defaultPrevented && !e.isComposing) {
+        if (selectionToolbar.current) e.preventDefault();
         setMenu(null);
         window.getSelection()?.removeAllRanges();
       }
@@ -1035,7 +1042,7 @@ export default function PdfViewer({
       role="toolbar"
       aria-label={t('PDF reading tools', 'PDF 阅读工具')}
     >
-      {PDF_TRANSLATION_ENABLED && <button
+      {translationEnabled && <button
         aria-label={t('Translate PDF with AI', 'AI 翻译 PDF')}
         title={t(
           'AI translation · Translate into Chinese',
@@ -1226,7 +1233,7 @@ export default function PdfViewer({
                 height: root.clientHeight,
               });
             }
-            setMenu(null);
+            if (!selectionToolbar.current?.querySelector('[data-local-translation-open="true"]')) setMenu(null);
             queueSessionSave();
           }}
         >
@@ -1283,7 +1290,7 @@ export default function PdfViewer({
           onRetry={() => void translator.start(translator.requestedMode, true)}
           onStop={translator.stop}
           onReflow={() => void translator.start('reflow')}
-          onOriginal={() => void translator.start('original-layout')}
+          onOriginal={translationEngine === 'local' ? undefined : () => void translator.start('original-layout')}
           onCreated={onTranslationCreated}
         />
       ) : (
@@ -1311,6 +1318,7 @@ export default function PdfViewer({
         ))
       )}
       <PdfTranslationConfirmation
+        local={translationEngine === 'local'}
         open={translationConfirmation}
         remember={rememberTranslationConsent}
         onRemember={setRememberTranslationConsent}
@@ -1334,6 +1342,18 @@ export default function PdfViewer({
             note={menu.mark.note || ''}
             onNoteChange={note => setMenu({ ...menu, mark: { ...menu.mark, note } })}
             copyText={menu.mark.image ? undefined : menu.mark.text}
+            localTranslation={desktop && !menu.mark.image ? {
+              sourceKey: readingKey(card),
+              page: menu.mark.fragments[0]?.page || page,
+              onSettings: () => { setMenu(null); openDesktopAiSettings(); },
+              onSave: text => {
+                const note = [menu.mark.note?.trim(), t('Translation', '译文') + '：\n' + text].filter(Boolean).join('\n\n');
+                annotations.save(url, { ...menu.mark, note });
+                onNoteChange?.(menu.mark.id, note);
+                window.getSelection()?.removeAllRanges();
+                setMenu(null);
+              },
+            } : undefined}
             allowEmpty={!!menu.mark.image}
             color={menu.saved ? menu.mark.color : undefined}
             onColorChange={menu.mark.image ? undefined : color}

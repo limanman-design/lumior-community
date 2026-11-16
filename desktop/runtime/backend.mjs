@@ -12,6 +12,7 @@ if (!token || token.length < 32 || !process.env.LUMIOR_DESKTOP_WEB_ROOT) throw n
 const { authorizeRequest, DESKTOP_PORT } = createSecurity(desktopConfiguration(true, process.env, process.env.LUMIOR_DESKTOP_DISTRIBUTION || 'official').port);
 // The packaged service never reads developer environment files.
 clearBackendAiSettings(process.env);
+delete process.env.LUMIOR_LOCAL_TRANSLATION_CONFIG;
 globalThis.fetch = createDesktopFetch({ nodeFetch: globalThis.fetch.bind(globalThis), chromiumFetch: net.fetch.bind(net) });
 const { startProdServer } = await import('./production-server.mjs');
 const { server } = await startProdServer({ port: DESKTOP_PORT, host: '127.0.0.1', outDir: process.env.LUMIOR_DESKTOP_WEB_ROOT, silent: true });
@@ -34,6 +35,11 @@ function stop() {
 }
 process.parentPort?.on('message', ({ data }) => {
   if (data?.type === 'shutdown') stop();
+  if (data?.type === 'local-translation-settings') {
+    if (data.config) process.env.LUMIOR_LOCAL_TRANSLATION_CONFIG = JSON.stringify(data.config);
+    else delete process.env.LUMIOR_LOCAL_TRANSLATION_CONFIG;
+    process.parentPort.postMessage({ type: 'settings-applied', requestId: data.requestId });
+  }
   if (data?.type === 'ai-settings') {
     applyBackendAiSettings(process.env, data);
     process.parentPort.postMessage({ type: 'settings-applied', requestId: data.requestId });

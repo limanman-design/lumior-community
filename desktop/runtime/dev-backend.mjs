@@ -11,6 +11,7 @@ register('../../scripts/node-worker-env-loader.mjs', import.meta.url);
 const token = process.env.LUMIOR_DESKTOP_TOKEN;
 if (!token || token.length < 32) throw new Error('Desktop preview authorization is missing.');
 clearBackendAiSettings(process.env);
+delete process.env.LUMIOR_LOCAL_TRANSLATION_CONFIG;
 globalThis.fetch = createDesktopFetch({ nodeFetch: globalThis.fetch.bind(globalThis), chromiumFetch: net.fetch.bind(net) });
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const { DESKTOP_PORT, authorizeRequest } = createSecurity(desktopConfiguration(false, process.env, process.env.LUMIOR_DESKTOP_DISTRIBUTION || 'official').port);
@@ -76,6 +77,11 @@ async function stop() {
 }
 process.parentPort?.on('message', ({ data }) => {
   if (data?.type === 'shutdown') void stop();
+  if (data?.type === 'local-translation-settings') {
+    if (data.config) process.env.LUMIOR_LOCAL_TRANSLATION_CONFIG = JSON.stringify(data.config);
+    else delete process.env.LUMIOR_LOCAL_TRANSLATION_CONFIG;
+    process.parentPort.postMessage({ type: 'settings-applied', requestId: data.requestId });
+  }
   if (data?.type === 'ai-settings') {
     applyBackendAiSettings(process.env, data);
     process.parentPort.postMessage({ type: 'settings-applied', requestId: data.requestId });

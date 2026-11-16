@@ -42,7 +42,7 @@ function cleanBackendEnvironment(environment, token, webRoot, development = fals
   if (!['community', 'official'].includes(distribution)) throw new Error('Unknown desktop distribution.');
   const result = {};
   for (const [key, value] of Object.entries(environment)) {
-    if (!/(?:API_KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|ELECTRON_RUN_AS_NODE|NODE_OPTIONS|LUMIOR_DESKTOP_DEV)/i.test(key)) result[key] = value;
+    if (!/(?:API_KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|ELECTRON_RUN_AS_NODE|NODE_OPTIONS|LUMIOR_DESKTOP_DEV|LUMIOR_LOCAL_TRANSLATION_CONFIG)/i.test(key)) result[key] = value;
   }
   return { ...result, NODE_ENV: development ? 'development' : 'production', LUMIOR_DESKTOP_DEV: development ? '1' : '0', LUMIOR_DESKTOP_DISTRIBUTION: distribution, LUMIOR_DESKTOP: '1', LUMIOR_DESKTOP_TOKEN: token, LUMIOR_DESKTOP_WEB_ROOT: webRoot, LUMIOR_PDF_LAYOUT_PORT: '43221' };
 }

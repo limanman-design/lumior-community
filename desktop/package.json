@@ -66,7 +66,9 @@
       "runtime/updates.cjs",
       "assets/icon.png",
       "assets/icon-windows.png",
-      "package.json"
+      "package.json",
+      "runtime/local-translation.cjs",
+      "runtime/local-translation-manifest.json"
     ],
     "extraResources": [
       {

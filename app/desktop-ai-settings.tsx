@@ -18,6 +18,7 @@ import { useI18n } from './i18n';
 import { DesktopTrialTicket } from './desktop-trial-ticket';
 import { TrialNightHighway } from './trial-night-highway';
 import './desktop-ai-settings.css';
+import { LocalTranslationSettings } from './local-translation-settings';
 import { validateCustomAiConfig, type CustomAiConfig } from '../lib/custom-ai-config';
 
 const visibleAiProviders = aiProviders.filter((item) => item.id !== 'glm');
@@ -337,6 +338,7 @@ export function DesktopAiSettingsPanel({
       className="desktop-ai-settings"
       data-operation-busy={saving || undefined}
     >
+      <LocalTranslationSettings />
       <fieldset
         className="desktop-ai-modes"
         aria-label={t('AI settings view', 'AI 服务设置')}

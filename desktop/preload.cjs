@@ -29,6 +29,18 @@ ipcRenderer.on('lumior:prepare-close', async (_event, requestId) => {
 });
 contextBridge.exposeInMainWorld('lumiorDesktop', Object.freeze({
   platform: process.platform,
+  getLocalTranslationState: () => ipcRenderer.invoke('lumior:local-translation:get'),
+  installLocalTranslation: () => ipcRenderer.invoke('lumior:local-translation:install'),
+  cancelLocalTranslationDownload: () => ipcRenderer.invoke('lumior:local-translation:cancel-download'),
+  removeLocalTranslation: () => ipcRenderer.invoke('lumior:local-translation:remove'),
+  startLocalTranslation: lease => ipcRenderer.invoke('lumior:local-translation:start', lease),
+  stopLocalTranslation: lease => ipcRenderer.invoke('lumior:local-translation:stop', lease),
+  onLocalTranslationState: handler => {
+    if (typeof handler !== 'function') throw new Error('A local translation state handler is required.');
+    const listener = (_event, state) => handler(state);
+    ipcRenderer.on('lumior:local-translation:state', listener);
+    return () => ipcRenderer.removeListener('lumior:local-translation:state', listener);
+  },
   getPetState: () => ipcRenderer.invoke('lumior:pet:get'),
   setPetEnabled: enabled => ipcRenderer.invoke('lumior:pet:enable', enabled),
   setPetSize: size => ipcRenderer.invoke('lumior:pet:size', size),

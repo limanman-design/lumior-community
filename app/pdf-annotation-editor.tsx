@@ -1,15 +1,16 @@
 'use client';
 /* oxlint-disable next/no-img-element -- These small bundled Figma SVGs keep their original artwork. */
-import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { useI18n } from './i18n';
 import { selectionToolbarPosition, type CursorPoint } from './pdf-selection-position';
+import { PdfSelectionTranslation } from './pdf-selection-translation';
 import './pdf-annotation-editor.css';
 
 const colors = ['#f5d84a', '#77cd82', '#64bfee', '#ee83af', '#b196ee'];
 
 export function PdfAnnotationEditor({
   anchor, note, onNoteChange, onSave, onDelete, canDelete = true,
-  allowEmpty = false, copyText, color, onColorChange, status = '', opacity = 1, toolbarRef,
+  allowEmpty = false, copyText, color, onColorChange, status = '', opacity = 1, toolbarRef, localTranslation,
 }: {
   anchor: CursorPoint;
   note: string;
@@ -24,6 +25,7 @@ export function PdfAnnotationEditor({
   status?: string;
   opacity?: number;
   toolbarRef?: RefObject<HTMLDivElement | null>;
+  localTranslation?: { sourceKey: string; page: number; onSave: (text: string) => void; onSettings: () => void };
 }) {
   const { t } = useI18n();
   const ownToolbar = useRef<HTMLDivElement>(null);
@@ -38,6 +40,9 @@ export function PdfAnnotationEditor({
     const textarea = input.current, form = field.current;
     if (!textarea || !form) return;
     const sizeInput = () => {
+      // Translation temporarily hides these controls. A hidden textarea reports
+      // zero scrollHeight; measure again when the original controls return.
+      if (!textarea.getClientRects().length) return;
       // Measure compact width before giving multiline text the full width above
       // the bottom-right save button; this also shrinks after text is removed.
       form.dataset.multiline = 'false';
@@ -50,8 +55,18 @@ export function PdfAnnotationEditor({
       textarea.style.overflowY = textarea.scrollHeight > height ? 'auto' : 'hidden';
     };
     sizeInput();
+    let measuredWidth = form.getBoundingClientRect().width;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry || entry.contentRect.width === measuredWidth) return;
+      measuredWidth = entry.contentRect.width;
+      sizeInput();
+    });
+    observer.observe(form);
     window.addEventListener('resize', sizeInput);
-    return () => window.removeEventListener('resize', sizeInput);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', sizeInput);
+    };
   }, [note]);
 
   useLayoutEffect(() => {
@@ -94,18 +109,23 @@ export function PdfAnnotationEditor({
     state.timer = setTimeout(() => setCopyResult(null), 2400);
   };
 
-  return (
-    <div ref={toolbar} className="pdf-selection-toolbar" role="toolbar"
-      aria-label={copyText === undefined ? t('PDF region note tools', 'PDF 区域笔记工具') : t('PDF text highlighting tools', 'PDF 文字高亮工具')}
-      style={{ left: anchor.x - 20, top: anchor.y + 14, opacity }}
+  const renderEditor = (translateButton?: ReactNode, translatePanel?: ReactNode) => (
+    <div ref={toolbar} className={`pdf-selection-toolbar${translatePanel ? ' pdf-selection-translation-popover' : ''}`} role={translatePanel ? undefined : 'toolbar'}
+      aria-label={translatePanel ? undefined : copyText === undefined ? t('PDF region note tools', 'PDF 区域笔记工具') : t('PDF text highlighting tools', 'PDF 文字高亮工具')}
+      style={{ left: anchor.x - 20, top: anchor.y + 14, opacity: translatePanel ? 1 : opacity }}
       onPointerDown={event => {
+        if (event.target === event.currentTarget && event.currentTarget.scrollHeight > event.currentTarget.clientHeight) return;
+        if (event.target instanceof HTMLElement && event.target.closest('.pdf-selection-translation-panel')) return;
         if (!(event.target instanceof HTMLElement) || !event.target.closest('input,textarea')) event.preventDefault();
       }}>
+      {translatePanel}
+      <div hidden={!!translatePanel}>
       <div className="pdf-annotation-actions">
         {copyText !== undefined && <button type="button" className="pdf-annotation-icon"
           aria-label={t('Copy', '复制')} title={t('Copy', '复制')} onClick={() => void copy()}>
           <img src="/assets/pdf-ui/copy.svg" width="16" height="16" alt=""/>
         </button>}
+        {translateButton}
         {copyResult && <output className={`pdf-copy-feedback ${copyResult}`}>
           {copyResult === 'success' ? t('Copied', '已复制') : t('Copy failed. Try again.', '复制失败，请重试')}
         </output>}
@@ -142,6 +162,10 @@ export function PdfAnnotationEditor({
         </button>
       </form>
       {status && <output className="pdf-annotation-status">{status}</output>}
+      </div>
     </div>
   );
+  return localTranslation && copyText
+    ? <PdfSelectionTranslation {...localTranslation} text={copyText} render={renderEditor} />
+    : renderEditor();
 }
