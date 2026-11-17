@@ -13,8 +13,11 @@ import {
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { PdfMark, PdfRect } from './pdf-annotations';
 import { getPdfText, preparePdfPage } from './pdf-page-paint';
+import type { CursorPoint } from './pdf-selection-position';
+import { repairPdfSelectionGap } from './pdf-text-selection';
 export { getPdfText } from './pdf-page-paint';
 export type MarkGesture = (e: React.PointerEvent, mark: PdfMark) => void;
+export type MarkActivation = (point: CursorPoint, mark: PdfMark) => void;
 export type SearchHit = { page: number; start: number; end: number };
 export const PdfPage = memo(
   function PdfPage({
@@ -34,6 +37,7 @@ export const PdfPage = memo(
     onMarkDown,
     onMarkMove,
     onMarkUp,
+    onMarkActivate,
     hoverRects = [],
     hoverId,
     onHover,
@@ -54,6 +58,7 @@ export const PdfPage = memo(
     onMarkDown: MarkGesture;
     onMarkMove: MarkGesture;
     onMarkUp: MarkGesture;
+    onMarkActivate?: MarkActivation;
     hoverRects?: { id: string; rect: PdfRect }[];
     hoverId?: string;
     onHover?: (id?: string) => void;
@@ -62,6 +67,9 @@ export const PdfPage = memo(
     const holder = useRef<HTMLDivElement>(null),
       canvas = useRef<HTMLCanvasElement>(null),
       text = useRef<HTMLDivElement>(null);
+    const highlightClick = useRef<{
+      pointerId: number; x: number; y: number; mark: PdfMark; moved: boolean;
+    } | null>(null);
     const [near, setNear] = useState(false),
       [pageRatio, setRatio] = useState<number | undefined>(),
       [error, setError] = useState('');
@@ -241,7 +249,37 @@ export const PdfPage = memo(
         ref={holder}
         className="pdf-sheet"
         data-pdf-page={number}
+        onPointerDown={(event) => {
+          highlightClick.current = null;
+          if (event.button !== 0 || event.defaultPrevented ||
+            (event.target as HTMLElement).closest('button')) return;
+          const selection = event.currentTarget.ownerDocument.getSelection();
+          // Pressing within a previous native selection otherwise starts a text
+          // drag, not a fresh selection. Release it before the browser chooses
+          // its new anchor; modifier selection and touch handles keep ownership.
+          if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
+            event.pointerType !== 'touch' && event.detail < 2 &&
+            (event.target as HTMLElement).closest('.pdf-selectable-text') &&
+            selection && !selection.isCollapsed && selection.anchorNode &&
+            event.currentTarget.contains(selection.anchorNode)) selection.removeAllRanges();
+          const box = event.currentTarget.getBoundingClientRect(),
+            x = ((event.clientX - box.left) / box.width) * 100,
+            y = ((event.clientY - box.top) / box.height) * 100;
+          const mark = marks.findLast((candidate) => !candidate.image && candidate.fragments.some(
+            (fragment) => fragment.page === number && fragment.rects.some(
+              (rect) => x >= rect.x && x <= rect.x + rect.width &&
+                y >= rect.y && y <= rect.y + rect.height,
+            ),
+          ));
+          if (mark) highlightClick.current = {
+            pointerId: event.pointerId, x: event.clientX, y: event.clientY, mark, moved: false,
+          };
+        }}
         onPointerMove={(event) => {
+          const click = highlightClick.current;
+          if (click?.pointerId === event.pointerId &&
+            Math.hypot(event.clientX - click.x, event.clientY - click.y) > 4)
+            click.moved = true;
           if (!onHover || event.buttons) return;
           const box = event.currentTarget.getBoundingClientRect(),
             x = ((event.clientX - box.left) / box.width) * 100,
@@ -256,7 +294,30 @@ export const PdfPage = memo(
             )?.id,
           );
         }}
-        onPointerLeave={() => onHover?.(undefined)}
+        onPointerLeave={() => {
+          if (highlightClick.current) highlightClick.current.moved = true;
+          onHover?.(undefined);
+        }}
+        onPointerUp={(event) => {
+          if (event.button === 0) repairPdfSelectionGap(text.current, { x: event.clientX, y: event.clientY });
+          const click = highlightClick.current;
+          if (!click || click.pointerId !== event.pointerId) return;
+          highlightClick.current = null;
+          // Text selection always wins over annotation activation. Unlike the
+          // excerpt handle, touching highlighted words never captures a pointer.
+          const selection = event.currentTarget.ownerDocument.getSelection();
+          if (event.button !== 0 || click.moved ||
+            Math.hypot(event.clientX - click.x, event.clientY - click.y) > 4 ||
+            selection && !selection.isCollapsed) return;
+          event.stopPropagation();
+          onMarkActivate?.({ x: event.clientX, y: event.clientY }, click.mark);
+        }}
+        onPointerCancel={() => { highlightClick.current = null; }}
+        onDragStart={(event) => {
+          // Native dragging of an old text selection competes with selecting
+          // another sentence. Explicit excerpt handles use pointer gestures.
+          if ((event.target as HTMLElement).closest('.pdf-selectable-text')) event.preventDefault();
+        }}
         style={{ width: pageWidth, height: pageWidth * ratio }}
       >
         {near && (
@@ -326,18 +387,7 @@ export const PdfPage = memo(
                 if (e.key !== 'Enter' && e.key !== ' ') return;
                 e.preventDefault();
                 const rect = e.currentTarget.getBoundingClientRect();
-                onMarkDown(
-                  {
-                    button: 0,
-                    clientX: rect.left,
-                    clientY: rect.bottom,
-                    stopPropagation: () => {},
-                    preventDefault: () => {},
-                    currentTarget: {},
-                  } as React.PointerEvent,
-                  mark,
-                );
-                onMarkUp({ type: 'keyboard' } as React.PointerEvent, mark);
+                onMarkActivate?.({ x: rect.left, y: rect.bottom }, mark);
               }}
             >
               {label}
@@ -362,11 +412,12 @@ export const PdfPage = memo(
               <button
                 key={mark.id + ':' + i}
                 data-pdf-mark={mark.id}
-                className="pdf-highlight-mark"
-                title={t(
+                className={`pdf-highlight-mark${mark.image ? ' pdf-region-mark' : ''}`}
+                title={mark.image ? t(
                   'Click to change color · Drag to the whiteboard to create an excerpt card',
                   '点击修改颜色 · 拖到画板创建摘录卡',
-                )}
+                ) : t('Click to edit annotation · Select text to translate', '点击编辑标注 · 划选文字翻译')}
+                tabIndex={i === 0 ? 0 : -1}
                 aria-label={t(
                   'Highlighted excerpt: {text}',
                   '高亮摘录：{text}',
@@ -381,26 +432,15 @@ export const PdfPage = memo(
                     '--mark-color': mark.color,
                   } as CSSProperties
                 }
-                onPointerDown={(e) => onMarkDown(e, mark)}
-                onPointerMove={(e) => onMarkMove(e, mark)}
-                onPointerUp={(e) => onMarkUp(e, mark)}
-                onPointerCancel={(e) => onMarkUp(e, mark)}
+                onPointerDown={mark.image ? (e) => onMarkDown(e, mark) : undefined}
+                onPointerMove={mark.image ? (e) => onMarkMove(e, mark) : undefined}
+                onPointerUp={mark.image ? (e) => onMarkUp(e, mark) : undefined}
+                onPointerCancel={mark.image ? (e) => onMarkUp(e, mark) : undefined}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     const r = e.currentTarget.getBoundingClientRect();
-                    onMarkDown(
-                      {
-                        button: 0,
-                        clientX: r.left,
-                        clientY: r.top,
-                        stopPropagation: () => {},
-                        preventDefault: () => {},
-                        currentTarget: {},
-                      } as React.PointerEvent,
-                      mark,
-                    );
-                    onMarkUp({ type: 'keyboard' } as React.PointerEvent, mark);
+                    onMarkActivate?.({ x: r.left, y: r.top }, mark);
                   }
                 }}
               />
@@ -417,6 +457,7 @@ export const PdfPage = memo(
     a.renderWidth === b.renderWidth &&
     a.zoom === b.zoom &&
     a.rasterZoom === b.rasterZoom &&
+    a.defaultRatio === b.defaultRatio &&
     a.marks === b.marks &&
     a.hits === b.hits &&
     a.activeHit === b.activeHit &&

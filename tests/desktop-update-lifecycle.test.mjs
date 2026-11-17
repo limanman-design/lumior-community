@@ -69,15 +69,16 @@ async function launchMain({ platform = 'darwin', packaged = true, development = 
     resume() { this.frozen = false; },
   };
   const localController = {
-    starts: 0, stops: 0, installs: 0, removals: 0, refreshes: 0, disposals: 0, cancelledDownloads: 0,
+    starts: 0, stops: 0, standbys: 0, installs: 0, removals: 0, refreshes: 0, disposals: 0, cancelledDownloads: 0, status: 'ready',
     config: { baseUrl: 'http://127.0.0.1:43275/v1', token: 'synthetic-private-runner-token-123456', model: 'hy-mt2-1.8b' },
-    getState: () => ({ supported: true, installed: true, status: 'ready', model: 'hy-mt2-1.8b' }),
+    getState() { return { supported: true, installed: true, status: this.status, model: 'hy-mt2-1.8b' }; },
     async refresh() { this.refreshes++; return this.getState(); },
     async install() { this.installs++; return this.getState(); },
     async cancelDownload() { this.cancelledDownloads++; return this.getState(); },
     async remove() { this.removals++; return this.getState(); },
-    async start() { this.starts++; return this.config; },
-    async stop() { this.stops++; },
+    async start() { this.starts++; this.status = 'running'; return this.config; },
+    standby() { this.standbys++; this.status = 'standby'; return true; },
+    async stop() { this.stops++; this.status = 'ready'; },
     async dispose() { this.disposals++; },
   };
 
@@ -319,6 +320,56 @@ void test('local translation IPC rejects other frames, arbitrary options, malfor
       await assert.rejects(main.ipcMain.handlers.get(`lumior:local-translation:${name}`)(event, lease), /Invalid local translation lease/);
     }
     assert.equal(main.localController.starts + main.localController.stops + main.localController.installs + main.localController.removals, 0);
+  } finally { main.dispose(); }
+});
+
+void test('completed local tasks clear backend access and release exclusivity while retaining standby on both platforms', async () => {
+  for (const platform of ['darwin', 'win32']) {
+    const main = await launchMain({ platform });
+    try {
+      const bridge = main.current.bridge, first = 'a'.repeat(32), second = 'b'.repeat(32);
+      await bridge.startLocalTranslation(first); await bridge.stopLocalTranslation(first, { keepWarm: true });
+      assert.equal(main.localController.standbys, 1); assert.equal(main.localController.stops, 0);
+      assert.equal(main.backend.messages.at(-1).config, undefined); assert.equal((await bridge.getLocalTranslationState()).status, 'standby');
+      await bridge.startLocalTranslation(second); assert.equal(main.localController.starts, 2);
+      await bridge.stopLocalTranslation(first); assert.equal(main.localController.stops, 0, 'old leases cannot kill the next task');
+      await bridge.stopLocalTranslation(second, { keepWarm: true });
+      await bridge.removeLocalTranslation(); assert.equal(main.localController.removals, 1, 'standby does not retain the active-task lease');
+      main.current.webContents.emit('render-process-gone', {}, {}); await flush(); assert.equal(main.localController.stops, 1, 'reader shutdown also stops a runner with no active lease');
+    } finally { main.dispose(); }
+  }
+});
+
+void test('cancellation or renderer navigation upgrades a pending successful release to a hard stop', async () => {
+  for (const action of ['cancel', 'navigation']) {
+    const main = await launchMain();
+    try {
+      const lease = 'a'.repeat(32), bridge = main.current.bridge;
+      await bridge.startLocalTranslation(lease);
+      const originalPost = main.backend.postMessage.bind(main.backend); let clear;
+      main.backend.postMessage = message => {
+        if (message.type === 'local-translation-settings' && message.config === undefined) clear = message;
+        else originalPost(message);
+      };
+      const warm = bridge.stopLocalTranslation(lease, { keepWarm: true }); await flush(); assert.ok(clear);
+      const hard = action === 'cancel' ? bridge.stopLocalTranslation(lease) : undefined;
+      if (action === 'navigation') main.current.webContents.emit('did-start-navigation', {}, 'about:blank', false, true);
+      main.backend.emit('message', { type: 'settings-applied', requestId: clear.requestId });
+      await Promise.all([warm, hard]); await flush();
+      assert.equal(main.localController.standbys, 0); assert.equal(main.localController.stops, 1);
+    } finally { main.dispose(); }
+  }
+});
+
+void test('failed backend revocation never leaves the private model server on standby', async () => {
+  const main = await launchMain();
+  try {
+    const lease = 'a'.repeat(32), bridge = main.current.bridge;
+    await bridge.startLocalTranslation(lease);
+    const originalPost = main.backend.postMessage.bind(main.backend);
+    main.backend.postMessage = message => { if (message.type !== 'local-translation-settings' || message.config) originalPost(message); };
+    const release = bridge.stopLocalTranslation(lease, { keepWarm: true }); await flush(); main.timeout(5000); await release;
+    assert.equal(main.localController.standbys, 0); assert.equal(main.localController.stops, 1);
   } finally { main.dispose(); }
 });
 

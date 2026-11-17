@@ -8,7 +8,7 @@ const script = ts.transpileModule(readFileSync(new URL('../app/pdf-annotation-ed
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 
-function fixture({ note, contentHeight }) {
+function fixture({ note, contentHeight, onExcerptDrag }) {
   let hidden = false, width = 260;
   const effects = [], observers = [], listeners = new Map();
   const textarea = {
@@ -28,6 +28,7 @@ function fixture({ note, contentHeight }) {
       useLayoutEffect: effect => effects.push(effect),
     },
     'react/jsx-runtime': { jsx, jsxs: jsx },
+    'lucide-react': { GripVertical: 'svg' },
     './i18n': { useI18n: () => ({ t: value => value }) },
     './pdf-selection-position': {}, './pdf-selection-translation': {}, './pdf-annotation-editor.css': {},
   };
@@ -46,7 +47,7 @@ function fixture({ note, contentHeight }) {
       disconnect() { this.disconnected = true; }
     },
   });
-  loaded.exports.PdfAnnotationEditor({ anchor: { x: 100, y: 100 }, note });
+  const tree = loaded.exports.PdfAnnotationEditor({ anchor: { x: 100, y: 100 }, note, onExcerptDrag });
   const cleanups = effects.map(effect => effect());
   const notifySize = () => {
     for (const observer of observers) if (!observer.disconnected) {
@@ -54,7 +55,7 @@ function fixture({ note, contentHeight }) {
     }
   };
   return {
-    textarea, form, observers,
+    textarea, form, observers, tree,
     hide() { hidden = true; notifySize(); },
     resize(next) { width = next; listeners.get('resize')?.(); notifySize(); },
     show() { hidden = false; notifySize(); },
@@ -76,6 +77,18 @@ test('resizing while translation hides the note preserves multiline height and s
   app.close();
   assert.ok(app.observers.every(observer => observer.disconnected));
   assert.equal(app.listeners.size, 0);
+});
+
+test('a saved highlight without a note exposes an explicit excerpt handle without triggering on click', () => {
+  const starts = [], app = fixture({ note: '', contentHeight: () => 44, onExcerptDrag: event => starts.push(event) });
+  const flatten = node => !node ? [] : Array.isArray(node) ? node.flatMap(flatten) : typeof node === 'object' ? [node, ...flatten(node.props?.children)] : [];
+  const handle = flatten(app.tree).find(node => node.props?.className?.includes('pdf-annotation-drag'));
+  assert.ok(handle); assert.equal(handle.props['aria-label'], 'Drag excerpt to whiteboard');
+  assert.equal(handle.props.onClick, undefined);
+  assert.equal(starts.length, 0);
+  const pointer = { button: 0, pointerId: 1 }; handle.props.onPointerDown(pointer);
+  assert.deepEqual(starts, [pointer]);
+  app.close();
 });
 
 test('returning from translation reflows a note when the hidden toolbar became narrower', () => {

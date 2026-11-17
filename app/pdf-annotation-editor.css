@@ -30,6 +30,9 @@
   transition: background .15s ease;
 }
 .pdf-selection-toolbar .pdf-annotation-delete { margin-left: auto; }
+.pdf-selection-toolbar .pdf-annotation-drag { cursor: grab; touch-action: none; }
+.pdf-selection-toolbar .pdf-annotation-drag:active { cursor: grabbing; }
+.pdf-annotation-drag svg { pointer-events: none; }
 .pdf-selection-toolbar .pdf-annotation-icon:disabled { opacity: .35; cursor: default; }
 .pdf-selection-toolbar .pdf-annotation-icon:not(:disabled):hover { background: var(--ui-fill-hover); }
 .pdf-selection-toolbar button:focus-visible,

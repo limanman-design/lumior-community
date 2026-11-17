@@ -34,7 +34,7 @@ contextBridge.exposeInMainWorld('lumiorDesktop', Object.freeze({
   cancelLocalTranslationDownload: () => ipcRenderer.invoke('lumior:local-translation:cancel-download'),
   removeLocalTranslation: () => ipcRenderer.invoke('lumior:local-translation:remove'),
   startLocalTranslation: lease => ipcRenderer.invoke('lumior:local-translation:start', lease),
-  stopLocalTranslation: lease => ipcRenderer.invoke('lumior:local-translation:stop', lease),
+  stopLocalTranslation: (lease, options) => ipcRenderer.invoke('lumior:local-translation:stop', lease, options),
   onLocalTranslationState: handler => {
     if (typeof handler !== 'function') throw new Error('A local translation state handler is required.');
     const listener = (_event, state) => handler(state);

@@ -96,6 +96,32 @@ test('page-aligned reflow keeps every reachable page boundary paired despite dif
   assert.equal(mapPdfScrollTop(100,'source',source,translation,[],true),null);
 });
 
+test('fixed-size reflow pages stay exactly aligned despite differently positioned paragraphs', () => {
+  const source = geometry([
+    page(1,20,1020,[part('a',100),part('b',700)]),
+    page(2,1034,1634,[part('c',1100)]),
+    page(3,1648,2848,[part('d',1800)]),
+  ],2868,500);
+  const translation = geometry([
+    page(1,20,1020,[part('a',350),part('b',850)]),
+    page(2,1034,1634,[part('c',1500)]),
+    page(3,1648,2848,[part('d',2400)]),
+  ],2868,500);
+  const mapping = [1,2,3].map(number=>({page:number,source:number,alignment:'page'}));
+  const anchors = pdfScrollAnchors(source,translation,mapping);
+  assert.ok(anchors.every(anchor=>anchor.source===anchor.translation),'only matching page edges guide fixed-page scrolling');
+  for(let top=0;top<=2368;top+=16){
+    assert.equal(mapPdfScrollTop(top,'source',source,translation,anchors,true),top);
+    assert.equal(mapPdfScrollTop(top,'translation',source,translation,anchors,true),top);
+  }
+  for(const top of [20,100,700,1034,1500,1648,2368]){
+    assert.equal(mapPdfScrollTop(top,'source',source,translation,anchors,true),top);
+    assert.equal(mapPdfScrollTop(top,'translation',source,translation,anchors,true),top);
+  }
+  const originalLayout = pdfScrollAnchors(source,translation,mapping.map(({page,source})=>({page,source})));
+  assert.equal(interpolatePdfScrollPoint(100,'source',originalLayout),350,'original-layout translation still follows matching paragraphs');
+});
+
 test('pages without paragraph rectangles still map smoothly across a target page group', () => {
   const source = geometry([page(1, 20, 1020)], 1040, 200);
   const translation = geometry(
@@ -194,6 +220,30 @@ test('hover only needs positioning when every fragment of the matching paragraph
   assert.equal(pdfPartIsVisible(fragments, 180, 100), false);
   assert.equal(pdfPartIsVisible(fragments, 800, 100), false);
   assert.equal(pdfPartIsVisible([], 0, 100), false);
+});
+
+test('hovering an offscreen translated paragraph cannot move a page-aligned pane', () => {
+  const makeRoot = () => {
+    const root = {
+      scrollTop: 0, scrollHeight: 1000, clientHeight: 200, writes: 0,
+      getBoundingClientRect: () => ({top: 0}),
+      scrollTo({top}) { this.scrollTop=top;this.writes++; },
+      querySelectorAll: () => [{
+        dataset: {pdfPage:'1'},
+        getBoundingClientRect: () => ({top: -root.scrollTop,height:1000}),
+        querySelectorAll: () => [{dataset:{pdfPartId:'paragraph'},getBoundingClientRect:()=>({top:700-root.scrollTop,height:80})}],
+      }],
+    };
+    return root;
+  };
+  for(const alignment of ['page',undefined]){
+    const source=makeRoot(),translation=makeRoot();
+    const sync=createPdfScrollSync({source:()=>source,translation:()=>translation,pages:()=>[{page:1,source:1,alignment}]});
+    assert.equal(sync.hover('source','paragraph'),alignment!=='page');
+    assert.equal(translation.scrollTop,alignment==='page'?0:640);
+    assert.equal(translation.writes,alignment==='page'?0:1);
+    assert.equal(source.writes,0);
+  }
 });
 
 test('the controller coalesces scroll events, handles scrollbar input both ways and removes all listeners', () => {

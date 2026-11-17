@@ -67,10 +67,10 @@ export function createPdfMarkDrag({ onPreview, onDrop }: {
     move,
     end,
     cancel,
-    start(event: DragStart, mark: PdfMark) {
+    start(event: DragStart, mark: PdfMark, captureTarget = event.currentTarget) {
       cancel();
       if (!Number.isFinite(event.pointerId)) return;
-      const target = event.currentTarget;
+      const target = captureTarget;
       const document = target.ownerDocument;
       const view = document.defaultView;
       if (!view) return;

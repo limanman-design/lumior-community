@@ -10,6 +10,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Card } from './canvas-model';
 import { readDocument, readingKey } from './document-reading-store';
 import { sseData } from '../lib/ai-stream';
+import { preparePdfInlineTranslation } from './pdf-translation-formulas';
+import { resumeInlineTranslation, mergeInlineTranslationUnit, type InlineTranslationPlan } from '../lib/pdf-inline-resume';
 import {
   translationUnits,
   translationComplete,
@@ -157,13 +159,13 @@ export function usePdfTranslation(
       setTranslation(selected);
       current.current.onChange?.(selected);
     };
-    let localLease: string | undefined;
+    let localLease: string | undefined, completedSuccessfully = false;
     try {
       await waitForTranslationCancellation();
       await waitForLocalTranslationRelease();
       if (run.signal.aborted) return;
       if (engine === 'local') {
-        setProgress(t('Starting local translation…', '正在启动本地翻译…'));
+        setProgress(t('Preparing local translation…', '正在准备本地翻译…'));
         const bridge = getDesktopBridge();
         if (!bridge?.startLocalTranslation) throw new Error(t('Install the local translation extension in AI settings.', '请在 AI 设置中安装本地翻译扩展。'));
         localLease = id.replace(/-/g, '');
@@ -188,7 +190,8 @@ export function usePdfTranslation(
         emptyPages: number[],
         sourceHash: string | undefined,
         resumeUnits: LayoutResumeUnit[] = [],
-        recoveredUnits: TranslationUnit[] = [];
+        recoveredUnits: TranslationUnit[] = [],
+        inlinePlan: InlineTranslationPlan | undefined;
       const previousDraft = draft;
       // Keep a resumable layout draft distinct from older PDF.js/reflow units.
       if (layout) {
@@ -210,6 +213,12 @@ export function usePdfTranslation(
         sourceHash = plan.sourceHash;
         resumeUnits = plan.resumeUnits;
         recoveredUnits = plan.recoveredUnits;
+      } else if (engine === 'local') {
+        setProgress(t('Reading text and preserving inline formulas…', '正在读取正文并保留行内公式…'));
+        inlinePlan = await preparePdfInlineTranslation(sourceCard.pdf!.url, run.signal);
+        input = inlinePlan.units;
+        totalPages = inlinePlan.totalPages;
+        emptyPages = inlinePlan.emptyPages;
       } else {
         setProgress(t('Reading PDF source text…', '正在读取 PDF 原文…'));
         let document = await readDocument(sourceCard);
@@ -237,7 +246,8 @@ export function usePdfTranslation(
             previousDraft.layoutSourceHash === sourceHash
           : previousDraft.mode !== 'original-layout');
       const inputPages = new Map(input.map((unit) => [unit.id, unit.page]));
-      const previous = layout
+      const inlineResume = inlinePlan ? resumeInlineTranslation(inlinePlan, reusable ? previousDraft : undefined) : undefined;
+      const previous = inlineResume ? inlineResume.previous : layout
           ? resumeLayoutUnits(
               input,
               [...recoveredUnits, ...(reusable ? previousDraft!.units : [])],
@@ -255,6 +265,7 @@ export function usePdfTranslation(
         target: 'zh-CN',
         mode,
         ...(sourceHash ? { layoutSourceHash: sourceHash } : {}),
+        ...(inlinePlan ? { inlineMathVersion: 1 as const } : {}),
         sourceLanguage: reusable ? previousDraft!.sourceLanguage : '自动检测',
         model: reusable ? previousDraft!.model : engine === 'local' ? 'local:hy-mt2-1.8b' : 'Auto',
         glossary: reusable ? previousDraft!.glossary : [],
@@ -265,7 +276,7 @@ export function usePdfTranslation(
         updatedAt: Date.now(),
       };
       save(draft);
-      const remaining = input
+      const remaining = inlineResume?.remaining || input
         .filter(
           (unit) => {
             const result = completed.get(unit.id);
@@ -338,7 +349,10 @@ export function usePdfTranslation(
                   '译文段落无法核对，可继续重试。',
                 ),
               );
-            event.units.forEach((unit) => completed.set(unit.id, unit));
+            const accepted = inlinePlan
+              ? event.units.map(unit => mergeInlineTranslationUnit(input.find(source => source.id === unit.id)!, completed.get(unit.id), unit))
+              : event.units;
+            accepted.forEach((unit) => completed.set(unit.id, unit));
             save({
               ...draft,
               sourceLanguage: event.sourceLanguage,
@@ -389,6 +403,7 @@ export function usePdfTranslation(
           updatedAt: Date.now(),
         });
       } else save({ ...draft, complete: true, updatedAt: Date.now() });
+      completedSuccessfully = !run.signal.aborted;
       setProgress(
         t(
           'Translation complete and saved locally.',
@@ -410,7 +425,7 @@ export function usePdfTranslation(
       void cancelTranslationJob(id, ownerId, ownerGeneration, layout).catch(
         () => {},
       );
-      if (localLease) await releaseLocalLease(localLease).catch(() => {});
+      if (localLease) await releaseLocalLease(localLease, completedSuccessfully && !run.signal.aborted ? { keepWarm: true } : undefined).catch(() => {});
       if (controller.current === run) {
         controller.current = null;
         job.current = null;

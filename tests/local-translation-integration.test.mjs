@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import vm from 'node:vm';
 import ts from 'typescript';
 import * as translations from '../lib/pdf-translation.ts';
+import * as inlineResume from '../lib/pdf-inline-resume.ts';
 import { sseData } from '../lib/ai-stream.ts';
 
 const require = createRequire(import.meta.url);
@@ -55,10 +56,10 @@ test('both desktop backends receive local config only through parent messages an
 });
 
 test('PDF API route passes the desktop environment as a separate trusted config callback', () => {
-  const env = { LUMIOR_LOCAL_TRANSLATION_CONFIG: 'trusted-parent-config' }, module = { exports: {} };
+  const env = { LUMIOR_LOCAL_TRANSLATION_CONFIG: 'trusted-parent-config' }, compiledModule = { exports: {} };
   let callbacks;
   vm.runInNewContext(compile('app/api/translate/route.ts'), {
-    module, exports: module.exports, fetch() {},
+    module: compiledModule, exports: compiledModule.exports, fetch() {},
     require: name => {
       if (name === 'cloudflare:workers') return { env };
       if (name === '@/lib/ai-providers') return { aiSettingsFromEnv: values => ({ source: values }) };
@@ -88,19 +89,25 @@ test('desktop packages optional installer code and licenses without embedding mo
 test('local PDF preference is opt-in, desktop-only and defaults to cloud if storage is unavailable', () => {
   const source = compile('app/local-translation-settings.tsx');
   for (const [saved, desktop, blocked, expected] of [[null, true, false, 'cloud'], ['local', true, false, 'local'], ['cloud', true, false, 'cloud'], ['other', true, false, 'cloud'], ['local', false, false, 'cloud'], ['local', true, true, 'cloud']]) {
-    const module = { exports: {} };
+    const compiledModule = { exports: {} };
     vm.runInNewContext(source, {
-      module, exports: module.exports,
+      module: compiledModule, exports: compiledModule.exports,
       localStorage: { getItem: () => { if (blocked) throw new Error('Storage blocked'); return saved; } },
       require: name => name === './desktop-bridge' ? { getDesktopBridge: () => desktop ? { startLocalTranslation() {} } : undefined } : {},
     });
-    assert.equal(module.exports.selectedTranslationEngine(), expected);
+    assert.equal(compiledModule.exports.selectedTranslationEngine(), expected);
   }
 });
 
+const inlineSourceHash = createHash('sha256').update('Source sentence.').digest('hex');
 function pdfReader({ engine = 'local', saved, failure = false } = {}) {
-  const module = { exports: {} }, sent = [], started = [], stopped = [], changes = [], stateWrites = [];
+  const compiledModule = { exports: {} }, sent = [], started = [], stopped = [], changes = [], stateWrites = [];
   const page = { page: 1, text: 'Source sentence.', paragraphs: [{ start: 0, end: 16, rects: [] }] };
+  const legacyUnits = translations.translationUnits([page]);
+  const inlinePlan = {
+    units: legacyUnits.map(unit => ({ ...unit, inlineMathVersion: 1, parts: unit.parts.map(part => ({ ...part, sourceHash: inlineSourceHash })) })),
+    legacyUnits, legacyPartIds: { '1:0:0': ['1:0:0'] }, totalPages: 1, emptyPages: [],
+  };
   const card = { id: 'current-source', pdf: { url: 'blob:current-source', translation: saved } };
   const bridge = { startLocalTranslation: async lease => { started.push(lease); }, stopLocalTranslation: async lease => { stopped.push(lease); } };
   const dependencies = {
@@ -111,6 +118,8 @@ function pdfReader({ engine = 'local', saved, failure = false } = {}) {
     './pdf-system-messages': { pdfSystemMessage: value => value },
     react: { useEffect() {}, useRef: value => ({ current: value }), useState: value => [typeof value === 'function' ? value() : value, next => stateWrites.push(next)] },
     './document-reading-store': { readingKey: value => value.id, readDocument: async () => ({ pages: [page], total: 1, emptyPages: [] }) },
+    './pdf-translation-formulas': { preparePdfInlineTranslation: async () => inlinePlan },
+    '../lib/pdf-inline-resume': inlineResume,
     '../lib/ai-stream': { sseData }, '../lib/pdf-translation': translations,
     './pdf-translation-session': { cancelTranslationJob: async () => {}, translationOwner: () => 'reader', nextTranslationGeneration: () => 1, waitForTranslationCancellation: async () => {} },
     './pdf-layout-client': { preparePdfLayout: () => assert.fail('Local opt-in must use reflow'), finishPdfLayout: () => assert.fail('Local opt-in must not call layout service') },
@@ -119,19 +128,19 @@ function pdfReader({ engine = 'local', saved, failure = false } = {}) {
   vm.runInNewContext(compile('app/local-translation-session.ts'), { exports: leaseModule.exports, require: name => dependencies[name] });
   dependencies['./local-translation-session'] = leaseModule.exports;
   vm.runInNewContext(compile('app/use-pdf-translation.ts'), {
-    module, exports: module.exports, require: name => { assert.ok(name in dependencies, name); return dependencies[name]; },
+    module: compiledModule, exports: compiledModule.exports, require: name => { assert.ok(name in dependencies, name); return dependencies[name]; },
     AbortController, crypto: { randomUUID }, setInterval: () => 1, clearInterval() {},
     fetch: async (url, options) => {
       sent.push({ url, body: JSON.parse(options.body) });
       if (failure) return Response.json({ error: 'Local runner unavailable' }, { status: 503 });
-      const units = sent.at(-1).body.units.map(unit => ({ ...unit, text: '本地译文。', parts: unit.parts?.map(part => ({ ...part, text: '本地译文。' })) }));
+      const units = sent.at(-1).body.units.map(unit => ({ ...unit, text: '本地译文。', parts: unit.parts?.map(({ reuseText, ...part }) => ({ ...part, text: reuseText || '本地译文。' })) }));
       const events = [{ type: 'start', model: 'local:hy-mt2-1.8b' }, { type: 'translated', units, sourceLanguage: '英语', glossary: [] }, { type: 'done' }];
       return new Response(events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(''), { headers: { 'content-type': 'text/event-stream' } });
     },
   });
-  return { hook: module.exports.usePdfTranslation(card, translation => changes.push(translation)), sent, started, stopped, changes, stateWrites };
+  return { hook: compiledModule.exports.usePdfTranslation(card, translation => changes.push(translation)), sent, started, stopped, changes, stateWrites };
 }
-const snapshot = (model, sourceKey = 'current-source:zh-CN:1') => ({ version: 1, sourceKey, target: 'zh-CN', sourceLanguage: '英语', mode: 'reflow', model, units: [{ id: '1:0', page: 1, text: 'Saved text', parts: [{ id: '1:0:0', text: 'Saved text', rects: [] }] }], glossary: [], totalPages: 1, emptyPages: [], complete: true, updatedAt: 1 });
+const snapshot = (model, sourceKey = 'current-source:zh-CN:1') => ({ version: 1, sourceKey, target: 'zh-CN', sourceLanguage: '英语', mode: 'reflow', model, inlineMathVersion: 1, units: [{ id: '1:0', page: 1, text: 'Saved text', inlineMathVersion: 1, parts: [{ id: '1:0:0', text: 'Saved text', rects: [], sourceHash: inlineSourceHash }] }], glossary: [], totalPages: 1, emptyPages: [], complete: true, updatedAt: 1 });
 
 test('paused cloud translation does not block explicit local reflow and always releases the reader lease', async () => {
   assert.match(read('app/feature-flags.ts'), /PDF_TRANSLATION_ENABLED\s*=\s*false/);
@@ -143,10 +152,13 @@ test('paused cloud translation does not block explicit local reflow and always r
   assert.equal(local.sent.length, 1);
   assert.equal(local.sent[0].url, '/api/translate');
   assert.equal(local.sent[0].body.engine, 'local');
+  assert.equal(local.sent[0].body.units[0].inlineMathVersion, 1);
+  assert.equal(local.sent[0].body.units[0].parts[0].sourceHash, inlineSourceHash);
   assert.match(local.started[0], /^[a-f0-9]{32}$/);
   assert.deepEqual(local.stopped, local.started);
   assert.equal(local.changes.at(-1).complete, true);
   assert.equal(local.changes.at(-1).mode, 'reflow');
+  assert.equal(local.changes.at(-1).inlineMathVersion, 1);
   const failed = pdfReader({ failure: true });
   await failed.hook.start();
   assert.equal(failed.sent.length, 1, 'no retry or cloud fallback');
@@ -161,6 +173,7 @@ test('PDF reuse requires both matching source identity and local engine; cloud c
     assert.equal(reader.sent.length, 1);
     assert.equal(reader.sent[0].body.units[0].text, 'Source sentence.');
     assert.equal(reader.sent[0].body.units[0].referenceText, undefined);
+    assert.equal(reader.sent[0].body.units[0].parts[0].reuseText, undefined, 'foreign engine or source cannot skip local translation');
     assert.equal(reader.changes.at(-1).model, 'local:hy-mt2-1.8b');
     assert.equal(reader.changes.at(-1).sourceKey, 'current-source:zh-CN:1');
   }
@@ -168,4 +181,22 @@ test('PDF reuse requires both matching source identity and local engine; cloud c
   await same.hook.start();
   assert.equal(same.sent.length + same.started.length, 0, 'completed matching local cache needs no runner');
   assert.equal(same.changes.at(-1).units[0].text, 'Saved text');
+});
+
+test('a completed legacy local cache is upgraded through the inline source plan without translating unchanged prose', async () => {
+  const saved = snapshot('local:hy-mt2-1.8b');
+  delete saved.inlineMathVersion;
+  for (const unit of saved.units) { delete unit.inlineMathVersion; for (const part of unit.parts) delete part.sourceHash; }
+  const reader = pdfReader({ saved });
+  await reader.hook.start();
+  assert.equal(reader.started.length, 0, 'opening a completed legacy result does not start inference');
+  await reader.hook.start('reflow', true);
+  assert.equal(reader.started.length, 1, 'explicit inline restoration prepares the source plan');
+  assert.deepEqual(reader.stopped, reader.started);
+  assert.equal(reader.sent.length, 0, 'unchanged legacy prose is reused without a model call');
+  const upgraded = reader.changes.at(-1);
+  assert.equal(upgraded.complete, true);
+  assert.equal(upgraded.inlineMathVersion, 1);
+  assert.equal(upgraded.units[0].parts[0].sourceHash, inlineSourceHash);
+  assert.equal(upgraded.units[0].text, 'Saved text');
 });

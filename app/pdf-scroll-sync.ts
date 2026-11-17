@@ -58,8 +58,9 @@ export function pdfScrollAnchors(
   );
   const result: PdfScrollAnchor[] = [];
   for (const sourcePage of source.pages) {
-    const targets = mapping
-      .filter((page) => page.source === sourcePage.page)
+    const pageMapping = mapping.filter((page) => page.source === sourcePage.page);
+    const pageAligned = pageMapping.length > 0 && pageMapping.every(page => page.alignment === 'page');
+    const targets = pageMapping
       .map((page) => translatedPages.get(page.page))
       .filter((page): page is PdfScrollPageGeometry => !!page)
       .toSorted((a, b) => a.top - b.top);
@@ -72,7 +73,9 @@ export function pdfScrollAnchors(
         parts.set(part.id, Math.min(parts.get(part.id) ?? Infinity, part.top));
       }
     }
-    const candidates = sourcePage.parts.flatMap((part) => {
+    // Reflow changes paragraph positions within the same fixed-size sheet.
+    // Following those positions would slide otherwise aligned page edges apart.
+    const candidates = pageAligned ? [] : sourcePage.parts.flatMap((part) => {
       const top = parts.get(part.id);
       return top !== undefined &&
         part.top > sourcePage.top &&
@@ -161,9 +164,8 @@ export function mapPdfScrollTop(
   const toRange = Math.max(0, to.scrollHeight - to.viewportHeight);
   if (!fromRange || !from.scrollHeight || !to.scrollHeight) return null;
   if (pageAligned) {
-    // One reflow sheet belongs to one source page, but its height may differ.
-    // Map page/paragraph tops directly; whole-document normalization would move
-    // page boundaries into a preceding page when just one sheet grows taller.
+    // Keep corresponding page edges paired, including during viewport changes
+    // and while placeholder sheets obtain their final physical dimensions.
     const sourceRange = Math.max(0, source.scrollHeight - source.viewportHeight);
     const targetRange = Math.max(0, translation.scrollHeight - translation.viewportHeight);
     const scrollAnchors = anchors.filter(anchor => anchor.source > 0 && anchor.translation > 0 && anchor.source < sourceRange && anchor.translation < targetRange);
@@ -484,6 +486,10 @@ export function createPdfScrollSync(options: PdfScrollSyncOptions) {
     pressed.size > 0 || frame !== undefined || now() - lastScroll < 180;
   const hover = (side: PdfScrollSide, id: string) => {
     if (isScrolling()) return false;
+    const mapping = options.pages();
+    // Reflow highlights still follow the pointer, but moving just the other
+    // pane to a paragraph would break the requested one-page-to-one-page lock.
+    if (mapping.length > 0 && mapping.every(page => page.alignment === 'page')) return false;
     const targetSide = otherSide(side),
       root = rootFor(targetSide);
     if (!root) return false;

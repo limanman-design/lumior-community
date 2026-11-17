@@ -5,24 +5,17 @@ import { pdfSystemMessage } from './pdf-system-messages';
 /* oxlint-disable react/react-compiler -- Cancellable PDF resources and source guards synchronize the external reader across document changes. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown, Download, LoaderCircle } from 'lucide-react';
+import { Download, LoaderCircle } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { Card } from './canvas-model';
 import type { ImportedCard } from './file-import';
 import type { PdfTranslation } from '../lib/pdf-translation';
-import type { TranslationPageLayout } from '../lib/pdf-translation-pdf';
+import type { TranslationPageLayout, TranslationPageSize } from '../lib/pdf-translation-pdf';
 import { PdfPage, type MarkGesture } from './pdf-sheet';
 import { acquirePdf } from './pdf-runtime';
 import { readLayoutPdf } from '../lib/pdf-layout-artifact';
@@ -41,8 +34,7 @@ export function PdfTranslationPanel({
   onPage,
   onRetry,
   onStop,
-  onReflow,
-  onOriginal,
+  onLocal,
   onCreated,
   hoverId,
   onHover,
@@ -52,6 +44,7 @@ export function PdfTranslationPanel({
   statusTarget,
   onScrollRoot,
   onScrollPages,
+  onSourcePageSizes,
   onScrollIntent,
 }: {
   card: Card;
@@ -63,8 +56,7 @@ export function PdfTranslationPanel({
   onPage: (page: number) => void;
   onRetry: () => void;
   onStop: () => void;
-  onReflow?: () => void;
-  onOriginal?: () => void;
+  onLocal?: () => void;
   onCreated?: (card: ImportedCard) => void | Promise<void>;
   hoverId?: string;
   onHover: (id?: string) => void;
@@ -74,6 +66,7 @@ export function PdfTranslationPanel({
   statusTarget?: HTMLElement | null;
   onScrollRoot: (node: HTMLDivElement | null) => void;
   onScrollPages: (pages: PdfScrollPageMapping[]) => void;
+  onSourcePageSizes?: (sizes: TranslationPageSize[]) => void;
   onScrollIntent: () => void;
 }) {
   const { t } = useI18n();
@@ -165,6 +158,7 @@ export function PdfTranslationPanel({
       attached = false,
       handle: ReturnType<typeof acquirePdf> | undefined,
       url: string | undefined;
+    const preparation = new AbortController();
     const release = () => {
       handle?.release();
       if (url) URL.revokeObjectURL(url);
@@ -179,16 +173,26 @@ export function PdfTranslationPanel({
             handle = acquirePdf(translation.layout!.url);
             pages = translation.layout!.pages;
           } else {
-            const [{ buildTranslationPdf }, { loadTranslationFont }] =
+            const [{ buildTranslationPdf }, { loadTranslationFont }, { loadTranslationSource }] =
               await Promise.all([
                 import('../lib/pdf-translation-pdf'),
                 import('./pdf-translation-font'),
+                import('./pdf-translation-formulas'),
               ]);
+            if (!live) return;
+            const [font, source] = await Promise.all([
+              loadTranslationFont(),
+              loadTranslationSource(card.pdf!.url, translation, preparation.signal),
+            ]);
+            if (!live) return;
+            onSourcePageSizes?.(source.pageSizes);
             const result = await buildTranslationPdf(
               card.pdf!.name.replace(/\.pdf$/i, ''),
               translation,
-              await loadTranslationFont(),
+              font,
               true,
+              source.formulas,
+              source.pageSizes,
             );
             if (!live) return;
             url = URL.createObjectURL(
@@ -219,6 +223,7 @@ export function PdfTranslationPanel({
           setPreviewError(null);
           previous?.release();
         } catch (failure) {
+          preparation.abort();
           release();
           if (live)
             setPreviewError({
@@ -236,16 +241,19 @@ export function PdfTranslationPanel({
     }, 200);
     return () => {
       live = false;
+      preparation.abort();
       clearTimeout(timer);
       if (!attached) release();
     };
   }, [
     translation,
     card.pdf?.name,
+    card.pdf?.url,
     originalLayout,
     previewIdentity,
     previewAllowed,
     previewRetry,
+    onSourcePageSizes,
   ]);
   useEffect(() => {
     const frame = requestAnimationFrame(() =>
@@ -314,58 +322,6 @@ export function PdfTranslationPanel({
             : t('Preparing translation…', '正在准备翻译…')));
   const controls = (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className="pdf-translation-mode-trigger"
-          aria-label={t('Switch translation layout', '切换翻译版式')}
-          disabled={busy || saving}
-          title={
-            busy
-              ? t('Pause translation to switch layouts', '暂停后可切换翻译版式')
-              : undefined
-          }
-        >
-          <span>
-            {originalLayout
-              ? t('Original layout', '原版式')
-              : t('Reflow translation', '普通翻译')}
-          </span>
-          <ChevronDown size={14} />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="lumior-menu pdf-translation-mode-menu"
-          side="bottom"
-          align="end"
-        >
-          <DropdownMenuItem
-            disabled={!onOriginal}
-            onClick={() => {
-              if (!originalLayout) onOriginal?.();
-            }}
-          >
-            <span>{t('Original layout', '原版式')}</span>
-            {originalLayout && <Check size={14} />}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={!onReflow}
-            onClick={() => {
-              if (originalLayout) onReflow?.();
-            }}
-          >
-            <span>{t('Reflow translation', '普通翻译')}</span>
-            {!originalLayout && <Check size={14} />}
-          </DropdownMenuItem>
-          {originalLayout && complete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onRetry}>
-                {t('Regenerate layout', '重新生成版式')}
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <span className="tool-divider" />
       <Tooltip>
         <TooltipTrigger
           render={
@@ -409,9 +365,13 @@ export function PdfTranslationPanel({
           {t('Pause', '暂停')}
         </button>
       ) : (
-        (error || !complete) && (
-          <button onClick={onRetry}>
+        error || !complete ? (
+          <button disabled={saving} onClick={onRetry}>
             {error && !translation?.units.length ? t('Retry', '重试') : t('Continue', '继续')}
+          </button>
+        ) : !originalLayout && translation?.model === 'local:hy-mt2-1.8b' && translation.inlineMathVersion !== 1 && (
+          <button disabled={saving} onClick={onRetry}>
+            {t('Restore inline formulas', '还原行内公式')}
           </button>
         )
       )}
@@ -442,9 +402,9 @@ export function PdfTranslationPanel({
                 {t('Regenerate translation', '重新生成译文')}
               </button>
             )}
-            {originalLayout && onReflow && (
-              <button disabled={busy || saving} onClick={onReflow}>
-                {t('Use reflow translation', '使用普通翻译')}
+            {originalLayout && onLocal && (
+              <button disabled={busy || saving} onClick={onLocal}>
+                {t('Translate locally', '使用本地翻译')}
               </button>
             )}
           </div>
@@ -472,6 +432,7 @@ export function PdfTranslationPanel({
                 width={width}
                 zoom={zoom}
                 rasterZoom={rasterZoom}
+                defaultRatio={layout.width && layout.height ? layout.height / layout.width : undefined}
                 root={root}
                 hits={noHits}
                 marks={noMarks}
@@ -537,9 +498,9 @@ export function PdfTranslationPanel({
                     )}
                   </p>
                 )}
-              {originalLayout && error && onReflow && (
-                <button disabled={busy || saving} onClick={onReflow}>
-                  {t('Use reflow translation', '使用普通翻译')}
+              {originalLayout && error && onLocal && (
+                <button disabled={busy || saving} onClick={onLocal}>
+                  {t('Translate locally', '使用本地翻译')}
                 </button>
               )}
             </div>

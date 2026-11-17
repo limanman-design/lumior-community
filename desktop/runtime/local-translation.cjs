@@ -128,14 +128,15 @@ async function availablePort() {
   });
 }
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-function createLocalTranslationController({ directory, platform = process.platform, arch = process.arch, manifest, fetcher = fetch, spawnProcess = spawn, onState = () => {}, portAllocator = availablePort, startupTimeout = 120000, pollInterval = 250 }) {
+function createLocalTranslationController({ directory, platform = process.platform, arch = process.arch, manifest, fetcher = fetch, spawnProcess = spawn, onState = () => {}, portAllocator = availablePort, startupTimeout = 120000, pollInterval = 250, standbyTimeout = 5 * 60 * 1000 }) {
   const root = path.resolve(directory), current = path.join(root, 'installed'), staging = path.join(root, 'installing');
   const runtime = manifest.runtimes?.[`${platform}-${arch}`], supported = !!runtime;
   const model = artifact(manifest.model); if (runtime) { artifact(runtime); safePath(runtime.executable); }
   const modelId = model.id || 'hy-mt2-1.8b';
   if (!/^[a-zA-Z0-9._-]+$/.test(modelId)) throw new Error('Invalid local model identifier.');
   const state = { supported, status: 'not-installed', installed: false, downloadedBytes: 0, totalBytes: model.size + (runtime?.size || 0), progress: 0, model: modelId, error: '' };
-  let installPromise, downloadController, child, startPromise, startController, connection, removePromise, disposed = false, lastProgress = 0;
+  let installPromise, downloadController, child, startPromise, startController, connection, removePromise, stopPromise, standbyTimer, disposed = false, lastProgress = 0, stopGeneration = 0;
+  const clearStandby = () => { clearTimeout(standbyTimer); standbyTimer = undefined; };
   const getState = () => ({ ...state });
   const emit = patch => { Object.assign(state, patch); try { onState(getState()); } catch { /* A closing window must not interrupt lifecycle cleanup. */ } return getState(); };
   const requireAvailable = () => { if (disposed) throw new Error('Local translation has closed.'); if (!supported) throw new Error('Local translation is not supported on this computer.'); };
@@ -220,23 +221,47 @@ function createLocalTranslationController({ directory, platform = process.platfo
     return installPromise;
   }
   async function cancelDownload() { downloadController?.abort(); await installPromise; return getState(); }
-  async function stop() {
+  function stop() {
+    clearStandby();
+    stopGeneration++;
+    if (stopPromise) return stopPromise;
     startController?.abort(); connection = undefined;
     const stopping = child; child = undefined;
-    if (stopping) {
-      const exited = new Promise(resolve => stopping.once('exit', resolve));
-      if (platform === 'win32' && stopping.pid) {
-        const killer = spawnProcess(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'taskkill.exe'), ['/PID', String(stopping.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
-        killer.on('error', () => { try { stopping.kill(); } catch {} });
-      } else { try { stopping.kill('SIGTERM'); } catch {} }
-      await Promise.race([exited, pause(1500)]);
-      if (stopping.exitCode === null || stopping.exitCode === undefined) { try { stopping.kill('SIGKILL'); } catch {} }
-    }
-    if (state.installed) emit({ status: 'ready' });
-    return getState();
+    stopPromise = (async () => {
+      if (stopping) {
+        const exited = new Promise(resolve => stopping.once('exit', resolve));
+        if (platform === 'win32' && stopping.pid) {
+          const killer = spawnProcess(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'taskkill.exe'), ['/PID', String(stopping.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+          killer.on('error', () => { try { stopping.kill(); } catch {} });
+        } else { try { stopping.kill('SIGTERM'); } catch {} }
+        await Promise.race([exited, pause(1500)]);
+        if (stopping.exitCode === null || stopping.exitCode === undefined) { try { stopping.kill('SIGKILL'); } catch {} }
+      }
+      if (state.installed) emit({ status: 'ready' });
+      return getState();
+    })().finally(() => { stopPromise = undefined; });
+    return stopPromise;
+  }
+  // Only a completed task may enter standby; cancellation still calls stop().
+  function standby() {
+    clearStandby();
+    if (disposed || stopPromise || startPromise || !connection || !child) return false;
+    emit({ status: 'standby' });
+    standbyTimer = setTimeout(() => { standbyTimer = undefined; void stop(); }, standbyTimeout);
+    standbyTimer.unref?.();
+    return true;
   }
   function start() {
-    requireAvailable(); if (removePromise) return Promise.reject(new Error('Wait for local translation to finish removing.')); if (connection && child) return Promise.resolve({ ...connection }); if (startPromise) return startPromise;
+    requireAvailable(); if (removePromise) return Promise.reject(new Error('Wait for local translation to finish removing.'));
+    if (stopPromise) {
+      const generation = stopGeneration;
+      return stopPromise.then(() => {
+        if (generation !== stopGeneration) throw new Error('Local translation was cancelled.');
+        return start();
+      });
+    }
+    clearStandby();
+    if (connection && child) { emit({ status: 'running', error: '' }); return Promise.resolve({ ...connection }); } if (startPromise) return startPromise;
     if (installPromise) return Promise.reject(new Error('Wait for local translation to finish downloading.'));
     startController = new AbortController(); const signal = startController.signal;
     startPromise = (async () => {
@@ -252,7 +277,7 @@ function createLocalTranslationController({ directory, platform = process.platfo
         let processError;
         processChild.once('error', error => { processError = error; });
         processChild.once('exit', () => {
-          if (child !== processChild) return; child = undefined; connection = undefined;
+          if (child !== processChild) return; clearStandby(); child = undefined; connection = undefined;
           if (!signal.aborted) emit({ status: 'error', error: 'Local translation stopped unexpectedly. Start it again.' });
         });
         const deadline = Date.now() + startupTimeout;
@@ -273,6 +298,6 @@ function createLocalTranslationController({ directory, platform = process.platfo
   }
   function remove() { if (removePromise) return removePromise; removePromise = (async () => { try { await cancelDownload(); await stop(); if (startPromise) await startPromise.catch(() => {}); await Promise.all([current, staging, path.join(root, 'previous')].map(filename => fs.rm(filename, { recursive: true, force: true }))); return emit({ installed: false, status: 'not-installed', downloadedBytes: 0, progress: 0, error: '' }); } finally { removePromise = undefined; } })(); return removePromise; }
   async function dispose() { disposed = true; await cancelDownload().catch(() => {}); await stop(); if (startPromise) await startPromise.catch(() => {}); }
-  return { getState, refresh, install, cancelDownload, remove, start, stop, dispose };
+  return { getState, refresh, install, cancelDownload, remove, start, standby, stop, dispose };
 }
 module.exports = { createLocalTranslationController, extractArchive };
