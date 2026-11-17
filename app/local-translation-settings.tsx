@@ -48,13 +48,13 @@ export function LocalTranslationSettings() {
   return <section className="local-translation-settings" aria-label={t('Local translation extension', '本地翻译扩展')}>
     <strong>{t('Local translation · Optional download', '本地翻译 · 按需下载')}</strong>
     <p>{t('HY-MT2-1.8B · About 1.13 GB plus the runner. After installation, PDF text stays on this computer. No API key or cloud credits required.', 'HY-MT2-1.8B · 模型约 1.13 GB，另含运行组件。安装后 PDF 文字只在本机处理，无需 Key，不消耗云端额度。')}</p>
-    <p>{t('For reading assistance. Select a sentence or paragraph in a text PDF, then choose Translate locally. Whole-document reflow translation is also available. Scanned pages and original-layout translation are not included.', '适合辅助阅读。PDF 中拖选一句或一段，点击“本地翻译”即可查看译文；也支持整篇普通翻译。暂不支持扫描页及原版式翻译。')}</p>
+    <p>{t('For reading assistance. Select a sentence or paragraph in a text PDF, then choose Translate locally. You can also translate the whole PDF locally. Scanned pages are not supported yet.', '适合辅助阅读。PDF 中拖选一句或一段，点击“本地翻译”即可查看译文；也支持整篇 PDF 本地翻译。暂不支持扫描页。')}</p>
     {state && !state.supported ? <output>{t('Available on Mac and Windows x64 supported configurations.', '此电脑配置暂不支持本地翻译。')}</output> : <>
       <div className="local-translation-actions">
         {!state?.installed && !downloading && <button type="button" disabled={!state || pending} onClick={() => void action(bridge.installLocalTranslation)}>{t('Download and install', '下载并安装')}</button>}
         {downloading && <button type="button" onClick={() => void action(bridge.cancelLocalTranslationDownload)}>{t('Cancel download', '取消下载')}</button>}
         {state?.installed && <button type="button" disabled={pending || running} onClick={() => void action(bridge.removeLocalTranslation)}>{t('Uninstall extension', '卸载扩展')}</button>}
-        <output>{downloading ? `${t('Downloading', '正在下载')} ${Math.round((state?.progress || 0) * 100)}%` : running ? t('Translating locally', '本地翻译运行中') : state?.installed ? t('Installed', '已安装') : t('Not installed', '未安装')}</output>
+        <output>{downloading ? `${t('Downloading', '正在下载')} ${Math.round((state?.progress || 0) * 100)}%` : running ? t('Translating locally', '本地翻译运行中') : state?.status === 'standby' ? t('Ready · releases memory after 5 idle minutes', '待命中 · 闲置 5 分钟后释放内存') : state?.installed ? t('Installed', '已安装') : t('Not installed', '未安装')}</output>
       </div>
       {downloading && <progress max={100} value={(state?.progress || 0) * 100} aria-label={t('Download progress', '下载进度')} />}
       <label><input type="checkbox" checked={engine === 'local'} disabled={running || (!state?.installed && engine !== 'local')} onChange={event => { try { selectEngine(event.target.checked ? 'local' : 'cloud'); } catch { setError(t('Could not save this choice.', '无法保存选择。')); } }} />{t('Use local translation for whole PDFs', '整篇 PDF 使用本地翻译')}</label>

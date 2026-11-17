@@ -46,6 +46,25 @@ test('a normal click keeps the annotation action without creating an excerpt', (
   assert.equal(drops.length, 0);
 });
 
+test('a toolbar handle can disappear during a drag while its persistent reader owns release', () => {
+  const { drag, view, target: reader, previews, drops } = setup();
+  const handle = new EventTarget();
+  handle.ownerDocument = reader.ownerDocument;
+  handle.setPointerCapture = () => assert.fail('the disappearing handle must not own capture');
+  drag.start({ ...sample(), currentTarget: handle }, mark, reader);
+  emit(view, 'pointermove', { clientX: 100 });
+  assert.equal(previews.at(-1).mark, mark);
+  emit(handle, 'lostpointercapture'); // Closing the annotation popover removes its handle.
+  assert.equal(drag.pending(), true);
+  assert.equal(reader.hasPointerCapture(1), true);
+  emit(view, 'pointerup', { clientX: 200, clientY: 250, buttons: 0 });
+  emit(view, 'pointerup', { clientX: 200, clientY: 250, buttons: 0 });
+  assert.deepEqual(drops, [{ mark, point: { clientX: 200, clientY: 250 } }]);
+  assert.equal(reader.hasPointerCapture(1), false);
+  assert.equal(previews.at(-1), null);
+  assert.equal(drag.pending(), false);
+});
+
 test('lost capture cancels the ghost and later hovering cannot restart the drag', () => {
   const { drag, view, target, previews, drops } = setup();
   emit(view, 'pointermove', { clientX: 100 });

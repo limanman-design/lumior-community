@@ -137,11 +137,12 @@ export function createPdfTranslationService(settings:()=>AiSettings,fetcher:type
    selection=body.scope==='selection';
    if(selection){
     if(!local)throw new Error('选中文字翻译仅支持本地模型。');
-    if(!Array.isArray(body.units)||body.units.length!==1||!body.units[0]||typeof body.units[0]!=='object'||['parts','protected','referenceText'].some(key=>body.units[0][key]!==undefined))throw new Error('请选择一句或一段文字进行翻译。');
+    if(!Array.isArray(body.units)||body.units.length!==1||!body.units[0]||typeof body.units[0]!=='object'||['parts','protected','referenceText','inlineMathVersion','sourceHash','inlineFormulas','reuseText'].some(key=>body.units[0][key]!==undefined))throw new Error('请选择一句或一段文字进行翻译。');
     if(typeof body.units[0].text==='string'&&body.units[0].text.length>4500)throw new Error('每次最多翻译 4500 个字符，请缩小选择范围。');
    }
    units=parseTranslationInput(body.units);glossary=parseGlossary(body.glossary);
    if(local&&units.some(unit=>unit.protected))throw new Error('本地翻译目前仅支持重排译文，请切换翻译方式。');
+   if(!local&&units.some(unit=>unit.inlineMathVersion===1))throw new Error('行内公式原图保护目前仅支持本地翻译。');
   }catch(error){return json(error instanceof Error?error.message:'翻译请求格式不正确。',400);}
   if(cancelled.has(jobId))return json('翻译已停止，可重新打开后继续。',409);
   const current=settings();let access:AiAccess;

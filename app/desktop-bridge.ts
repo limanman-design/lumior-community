@@ -5,7 +5,7 @@ import type { DesktopQuickNote } from './desktop-quick-note';
 import type { PetAnimationOptions } from './pet-animation-options';
 
 export type LocalTranslationState = {
-  supported: boolean; installed: boolean; status: 'not-installed' | 'downloading' | 'ready' | 'starting' | 'running' | 'error';
+  supported: boolean; installed: boolean; status: 'not-installed' | 'downloading' | 'ready' | 'starting' | 'running' | 'standby' | 'error';
   progress?: number; downloadedBytes?: number; totalBytes?: number; error?: string; model?: string;
 };
 export type DesktopPlatform = 'darwin' | 'win32' | 'linux';
@@ -91,7 +91,7 @@ export type DesktopBridge = {
   cancelLocalTranslationDownload?: () => Promise<LocalTranslationState>;
   removeLocalTranslation?: () => Promise<LocalTranslationState>;
   startLocalTranslation?: (lease: string) => Promise<void>;
-  stopLocalTranslation?: (lease: string) => Promise<void>;
+  stopLocalTranslation?: (lease: string, options?: { keepWarm: true }) => Promise<void>;
   onLocalTranslationState?: (handler: (state: LocalTranslationState) => void) => () => void;
   getPetState?: () => Promise<DesktopPetState>;
   setPetEnabled?: (enabled: boolean) => Promise<DesktopPetState>;

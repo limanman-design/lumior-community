@@ -1,6 +1,7 @@
 import type {SourceParagraph,SourceRect} from './pdf-paragraphs';
-export type TranslationPart={id:string;text:string;rects:SourceRect[]};
-export type TranslationUnit = { id: string; page: number; text: string; parts?:TranslationPart[]; referenceText?:string; protected?:boolean };
+export type TranslationInlineFormula={marker:string;text:string;rect:SourceRect;baseline:number;fontSize:number};
+export type TranslationPart={id:string;text:string;rects:SourceRect[];sourceHash?:string;inlineFormulas?:TranslationInlineFormula[];reuseText?:string};
+export type TranslationUnit = { id: string; page: number; text: string; parts?:TranslationPart[]; referenceText?:string; protected?:boolean;inlineMathVersion?:1 };
 export type TranslationGlossary = { source: string; target: string }[];
 export type PdfLayoutPage={source:number;target:number;sourceRects:{id:string;rect:SourceRect}[];rects:{id:string;rect:SourceRect}[]};
 export type PdfLayoutArtifact={version:1;engine:'BabelDOC';engineVersion:string;url:string;name:string;size:number;sha256:string;pages:PdfLayoutPage[]};
@@ -9,7 +10,7 @@ export type PdfTranslationSnapshot = {
  version: 1; sourceKey: string; target: 'zh-CN'; sourceLanguage: string; model: string;
  units: TranslationUnit[]; glossary: TranslationGlossary; totalPages: number; emptyPages: number[];
  complete: boolean; updatedAt: number;
- mode?:TranslationMode;layout?:PdfLayoutArtifact;layoutSourceHash?:string;
+ mode?:TranslationMode;layout?:PdfLayoutArtifact;layoutSourceHash?:string;inlineMathVersion?:1;
 };
 export type PdfTranslation=PdfTranslationSnapshot&{alternates?:Partial<Record<TranslationMode,PdfTranslationSnapshot>>};
 
@@ -61,6 +62,28 @@ export function validateProtectedTranslation(source:string,target:string){
  for(const field of ['counts','nesting'] as const){const a=before[field],b=after[field];if(a.size!==b.size||[...a].some(([id,count])=>b.get(id)!==count))throw new Error('译文中的公式或文字样式标记发生变化，本批未保存，可重试。');}
 }
 
+/** Formula metadata binds each placeholder to exactly one source crop. */
+export function validateInlineTranslationPart(part:TranslationPart,target:string){
+ validateProtectedTranslation(part.text,target);
+ if(!part.inlineFormulas)return;
+ const markers=[...target.matchAll(/\{v\d+\}/g)].map(match=>match[0]);
+ if(markers.length!==part.inlineFormulas.length||part.inlineFormulas.some(formula=>markers.filter(marker=>marker===formula.marker).length!==1))throw new Error('行内公式标记未完整保留，本段未保存，可继续重试。');
+}
+
+function parseInlineFormulas(value:unknown):TranslationInlineFormula[]{
+ if(!Array.isArray(value)||!value.length||value.length>256)throw new Error('行内公式信息格式不正确。');
+ const markers=new Set<string>();
+ return value.map(item=>{
+  if(!item||typeof item!=='object')throw new Error('行内公式信息格式不正确。');
+  const formula=item as Record<string,unknown>,r=formula.rect&&typeof formula.rect==='object'?formula.rect as Record<string,unknown>:{};
+  if(typeof formula.marker!=='string'||!/^\{v\d{1,9}\}$/.test(formula.marker)||markers.has(formula.marker)||typeof formula.text!=='string'||!formula.text.trim()||formula.text.length>2048||
+    ['x','y','width','height'].some(key=>typeof r[key]!=='number'||!Number.isFinite(r[key]))||Number(r.x)<0||Number(r.y)<0||Number(r.width)<=0||Number(r.height)<=0||Number(r.x)+Number(r.width)>100.001||Number(r.y)+Number(r.height)>100.001||
+    typeof formula.baseline!=='number'||!Number.isFinite(formula.baseline)||formula.baseline<Number(r.y)||formula.baseline>Number(r.y)+Number(r.height)||typeof formula.fontSize!=='number'||!Number.isFinite(formula.fontSize)||formula.fontSize<=0||formula.fontSize>1000)throw new Error('行内公式信息格式不正确。');
+  markers.add(formula.marker);
+  return {marker:formula.marker,text:formula.text,rect:{x:Number(r.x),y:Number(r.y),width:Number(r.width),height:Number(r.height)},baseline:formula.baseline,fontSize:formula.fontSize};
+ });
+}
+
 export function resumeLayoutUnits(input:TranslationUnit[],saved:TranslationUnit[],receipts:{id:string;legacyId:string;page:number;text:string}[]=[]){
  const sources=new Map(input.map(unit=>[unit.id,unit])),completed=new Map<string,TranslationUnit>();
  // Only equivalent marker spelling is canonicalized. The translation text
@@ -103,6 +126,7 @@ export function parseTranslationInput(value:unknown):TranslationUnit[]{
   if(typeof v.id!=='string'||!/^\d+:\d+$/.test(v.id)||ids.has(v.id)||!Number.isInteger(v.page)||Number(v.page)<1||Number(v.page)>500||typeof v.text!=='string'||!v.text.trim()||v.text.length>4500)throw new Error('翻译资料格式不正确。');
   ids.add(v.id);characters+=v.text.length;if(characters>2_000_000)throw new Error('资料超过本轮完整翻译容量，请拆分 PDF。');
   if(v.protected!==undefined&&v.protected!==true)throw new Error('公式与文字样式保护格式不正确。');
+  if(v.inlineMathVersion!==undefined&&(v.inlineMathVersion!==1||v.protected||!v.parts))throw new Error('行内公式保护版本不正确。');
   if(v.protected===true)protectedTokens(v.text);
   let parts:TranslationPart[]|undefined;
   if(v.parts!==undefined){
@@ -116,11 +140,19 @@ export function parseTranslationInput(value:unknown):TranslationUnit[]{
      if(['x','y','width','height'].some(key=>typeof r[key]!=='number'||!Number.isFinite(r[key]))||Number(r.width)<=0||Number(r.height)<=0)throw new Error('段落对照格式不正确。');
      return {x:Number(r.x),y:Number(r.y),width:Number(r.width),height:Number(r.height)};
     });
-    return {id:String(part.id),text:part.text,rects};
+    if(v.inlineMathVersion!==1&&['sourceHash','inlineFormulas','reuseText'].some(key=>part[key]!==undefined))throw new Error('行内公式保护版本不正确。');
+    if(v.inlineMathVersion===1&&(typeof part.sourceHash!=='string'||!/^[a-f0-9]{64}$/.test(part.sourceHash)))throw new Error('原文段落签名格式不正确。');
+    const result:TranslationPart={id:String(part.id),text:part.text,rects,...(v.inlineMathVersion===1?{sourceHash:String(part.sourceHash)}:{}),...(part.inlineFormulas!==undefined?{inlineFormulas:parseInlineFormulas(part.inlineFormulas)}:{})};
+    if(v.inlineMathVersion===1)validateInlineTranslationPart(result,result.text);
+    if(part.reuseText!==undefined){
+     if(typeof part.reuseText!=='string'||!part.reuseText.trim()||part.reuseText.length>20000)throw new Error('已保存译文段落格式不正确。');
+     validateInlineTranslationPart(result,part.reuseText);result.reuseText=part.reuseText;
+    }
+    return result;
    });
    if(parts.map(p=>p.text).join('')!==v.text)throw new Error('段落对照未覆盖完整原文。');
   }
-  return {id:v.id,page:Number(v.page),text:v.text,...(parts?{parts}:{}),...(typeof v.referenceText==='string'&&v.referenceText.length<=20000?{referenceText:v.referenceText}:{}),...(v.protected===true?{protected:true}:{})};
+  return {id:v.id,page:Number(v.page),text:v.text,...(parts?{parts}:{}),...(typeof v.referenceText==='string'&&v.referenceText.length<=20000?{referenceText:v.referenceText}:{}),...(v.protected===true?{protected:true}:{}),...(v.inlineMathVersion===1?{inlineMathVersion:1}:{})};
  });
 }
 export function parseGlossary(value:unknown):TranslationGlossary{
@@ -138,13 +170,22 @@ export function translationResult(content:string,input:TranslationUnit[]){
   const output=outputs.find(unit=>unit?.id===source.id);if(!output)throw new Error('译文缺少原文段落，本批未保存，可重试。');
   if(source.parts){
    if(!Array.isArray(output.parts)||output.parts.length!==source.parts.length||new Set(output.parts.map((p:unknown)=>p&&typeof p==='object'?(p as Record<string,unknown>).id:undefined)).size!==source.parts.length)throw new Error('译文段落对照不完整，本批未保存，可重试。');
-   const parts=source.parts.map(part=>{const value=(output.parts as Record<string,unknown>[]).find(p=>p?.id===part.id);if(!value||typeof value.text!=='string'||!value.text.trim()||value.text.length>20000)throw new Error('译文缺少对应段落，本批未保存，可重试。');if(source.protected)validateProtectedTranslation(part.text,value.text);return {...part,text:value.text.trim()};});
-   return {id:source.id,page:source.page,text:parts.map(p=>p.text).join('\n\n'),parts,...(source.protected?{protected:true}:{})};
+   const parts=source.parts.map(part=>{const value=(output.parts as Record<string,unknown>[]).find(p=>p?.id===part.id);if(!value||typeof value.text!=='string'||!value.text.trim()||value.text.length>20000)throw new Error('译文缺少对应段落，本批未保存，可重试。');if(source.protected)validateProtectedTranslation(part.text,value.text);if(source.inlineMathVersion===1)validateInlineTranslationPart(part,value.text);const {reuseText:_reuse,...saved}=part;return {...saved,text:value.text.trim()};});
+   return {id:source.id,page:source.page,text:parts.map(p=>p.text).join('\n\n'),parts,...(source.protected?{protected:true}:{}),...(source.inlineMathVersion===1?{inlineMathVersion:1 as const}:{})};
   }
   if(typeof output.text!=='string'||!output.text.trim()||output.text.length>20000)throw new Error('译文缺少原文段落，本批未保存，可重试。');if(source.protected)validateProtectedTranslation(source.text,output.text);return {id:source.id,page:source.page,text:output.text.trim(),...(source.protected?{protected:true}:{})};
  });
  return {units,sourceLanguage:value.sourceLanguage.slice(0,60),glossary:parseGlossary(value.glossary)};
 }
 export function translationComplete(input:TranslationUnit[],output:TranslationUnit[]){
- const ids=new Set(output.map(unit=>unit.id));return input.length>0&&ids.size===input.length&&input.every(unit=>{const result=output.find(value=>value.id===unit.id);return ids.has(unit.id)&&(!unit.parts||unit.parts.every(part=>result?.parts?.some(value=>value.id===part.id&&value.text.trim())));});
+ if(input.some(unit=>unit.inlineMathVersion===1)&&output.length!==input.length)return false;
+ const ids=new Set(output.map(unit=>unit.id));return input.length>0&&ids.size===input.length&&input.every(unit=>{
+  const result=output.find(value=>value.id===unit.id);
+  if(!result||!ids.has(unit.id))return false;
+  if(unit.inlineMathVersion===1){
+   if(result.inlineMathVersion!==1||result.page!==unit.page||!unit.parts?.length||result.parts?.length!==unit.parts.length||new Set(result.parts.map(part=>part.id)).size!==unit.parts.length)return false;
+   return unit.parts.every(part=>{const value=result.parts!.find(item=>item.id===part.id);if(!value?.text.trim()||value.reuseText!==undefined||!part.sourceHash||value.sourceHash!==part.sourceHash||JSON.stringify(value.inlineFormulas)!==JSON.stringify(part.inlineFormulas))return false;try{validateInlineTranslationPart(part,value.text);return true;}catch{return false;}});
+  }
+  return !unit.parts||unit.parts.every(part=>result.parts?.some(value=>value.id===part.id&&value.text.trim()));
+ });
 }

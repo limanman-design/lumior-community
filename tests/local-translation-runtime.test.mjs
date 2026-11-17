@@ -63,6 +63,47 @@ void test('digest mismatch rejects the install and does not expose unverified fi
   await assert.rejects(fs.access(path.join(f.directory, 'installed'))); await assert.rejects(fs.access(path.join(f.directory, 'installing')));
 });
 
+void test('completed-task standby reuses one private process and releases memory after idle timeout', async t => {
+  const f = await fixture(t, { standbyTimeout: 25 }); await f.controller.install();
+  const first = await f.controller.start(); assert.equal(f.controller.standby(), true);
+  assert.equal(f.controller.getState().status, 'standby'); assert.equal(f.spawns[0].child.signal, undefined);
+  assert.deepEqual(await f.controller.start(), first); assert.equal(f.spawns.length, 1);
+  assert.equal(f.controller.getState().status, 'running');
+  await new Promise(resolve => setTimeout(resolve, 35)); assert.equal(f.controller.getState().status, 'running', 'reuse cancelled the old idle deadline');
+  assert.equal(f.controller.standby(), true);
+  await new Promise(resolve => setTimeout(resolve, 35));
+  assert.equal(f.controller.getState().status, 'ready'); assert.equal(f.spawns[0].child.signal, 'SIGTERM');
+  const next = await f.controller.start(); assert.equal(f.spawns.length, 2); assert.notEqual(next.token, first.token);
+});
+
+void test('a new request waits for an expiring standby process to exit before starting another', async t => {
+  const f = await fixture(t, { standbyTimeout: 5 }); await f.controller.install(); await f.controller.start();
+  const old = f.spawns[0].child; old.kill = signal => { old.signal = signal; };
+  f.controller.standby(); await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(old.signal, 'SIGTERM');
+  const restarting = f.controller.start(); await new Promise(resolve => setImmediate(resolve)); assert.equal(f.spawns.length, 1);
+  old.exitCode = 0; old.emit('exit', 0); await restarting;
+  assert.equal(f.spawns.length, 2); assert.equal(f.controller.getState().status, 'running');
+});
+
+void test('uninstall, explicit stop and app disposal immediately terminate a standby process', async t => {
+  for (const action of ['stop', 'remove', 'dispose']) {
+    const f = await fixture(t); await f.controller.install(); await f.controller.start(); f.controller.standby();
+    await f.controller[action](); assert.equal(f.spawns[0].child.signal, 'SIGTERM');
+    assert.notEqual(f.controller.getState().status, 'standby');
+    if (action === 'remove') assert.equal(f.controller.getState().installed, false);
+  }
+});
+
+void test('cancelling a request queued behind idle shutdown never launches a replacement process', async t => {
+  const f = await fixture(t, { standbyTimeout: 5 }); await f.controller.install(); await f.controller.start();
+  const old = f.spawns[0].child; old.kill = signal => { old.signal = signal; };
+  f.controller.standby(); await new Promise(resolve => setTimeout(resolve, 10));
+  const restarting = f.controller.start(), cancelled = assert.rejects(restarting, /cancelled/);
+  const stopping = f.controller.stop(); old.exitCode = 0; old.emit('exit', 0);
+  await Promise.all([cancelled, stopping]); assert.equal(f.spawns.length, 1); assert.equal(f.controller.getState().status, 'ready');
+});
+
 void test('cancel interrupts a download, removes partial files and allows explicit retry', async t => {
   let begun; const waiting = new Promise(resolve => { begun = resolve; });
   const f = await fixture(t, { fetcher: (_url, { signal }) => new Promise((_resolve, reject) => { begun(); signal.addEventListener('abort', () => reject(signal.reason), { once: true }); }) });

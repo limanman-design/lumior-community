@@ -17,7 +17,7 @@ export type PdfSelectionTranslationResult = {
 };
 type SelectionRun = {
   id: string; ownerId: string; ownerGeneration: number; sourceKey: string;
-  controller: AbortController; lease?: string; apiStarted: boolean;
+  controller: AbortController; lease?: string; apiStarted: boolean; completed?: boolean;
 };
 
 export function usePdfSelectionTranslation(sourceKey: string) {
@@ -27,7 +27,7 @@ export function usePdfSelectionTranslation(sourceKey: string) {
   const active = useRef<SelectionRun | null>(null), mounted = useRef(true), currentKey = useRef(sourceKey);
   currentKey.current = sourceKey;
   const retire = (run: SelectionRun | null) => {
-    if (!run) return;
+    if (!run || run.completed) return;
     run.controller.abort();
     if (run.apiStarted) void cancelTranslationJob(run.id, run.ownerId, run.ownerGeneration).catch(() => {});
     if (run.lease) void releaseLocalLease(run.lease).catch(() => {});
@@ -100,6 +100,7 @@ export function usePdfSelectionTranslation(sourceKey: string) {
         update({ status: 'error', source, text: '', error: t('Another local translation is running. Pause it before translating this selection.', '本地模型正在翻译其他内容，请先暂停该任务。') }); return;
       }
       run.lease = run.id.replace(/-/g, '');
+      if (state.status === 'standby') update({ status: 'translating', source, text: '' });
       await bridge.startLocalTranslation(run.lease);
       if (!current()) return;
       update({ status: 'translating', source, text: '' });
@@ -136,6 +137,7 @@ export function usePdfSelectionTranslation(sourceKey: string) {
         if (event.type === 'done') { finished = true; break; }
       }
       if (!finished || !translated) throw new Error(t('The selected translation is incomplete. Try again.', '本次选段翻译未完成，请重试。'));
+      run.completed = current();
       update({ status: 'done', source, text: translated });
     } catch (error) {
       let message = error instanceof Error ? error.message : t('Local translation failed. Try again.', '本地翻译失败，请重试。');
@@ -146,7 +148,7 @@ export function usePdfSelectionTranslation(sourceKey: string) {
     } finally {
       clearInterval(heartbeat);
       if (run.apiStarted) void cancelTranslationJob(run.id, run.ownerId, run.ownerGeneration).catch(() => {});
-      if (run.lease) await releaseLocalLease(run.lease).catch(() => {});
+      if (run.lease) await releaseLocalLease(run.lease, run.completed ? { keepWarm: true } : undefined).catch(() => {});
       if (active.current === run) { active.current = null; if (mounted.current) setBusy(false); }
     }
   };

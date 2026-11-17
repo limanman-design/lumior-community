@@ -200,10 +200,11 @@ async function start() {
       throw error;
     }
   });
-  ipcMain.handle('lumior:local-translation:stop', async (event, lease, ...extra) => {
+  ipcMain.handle('lumior:local-translation:stop', async (event, lease, options, ...extra) => {
     authorized(event);
     if (extra.length || typeof lease !== 'string' || !/^[a-f0-9]{32}$/.test(lease)) throw new Error('Invalid local translation lease.');
-    await releaseLocalTranslation(lease);
+    if (options !== undefined && (!options || typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length !== 1 || options.keepWarm !== true)) throw new Error('Invalid local translation release options.');
+    await releaseLocalTranslation(lease, options?.keepWarm === true);
   });
   const windowsAction = event => {
     authorized(event);
@@ -400,20 +401,28 @@ async function start() {
   void wallpaper.init().catch(() => { /* Wallpaper failure keeps the original desktop available. */ });
   updates.start();
 }
-async function releaseLocalTranslation(lease) {
+async function releaseLocalTranslation(lease, keepWarm = false) {
   if (!lease || localTranslationLease !== lease) return;
-  if (localTranslationRelease) return localTranslationRelease;
-  localTranslationRelease = (async () => {
+  if (localTranslationRelease) {
+    if (!keepWarm) localTranslationRelease.keepWarm = false;
+    return localTranslationRelease.promise;
+  }
+  const release = { keepWarm, promise: undefined };
+  localTranslationRelease = release;
+  release.promise = (async () => {
     try {
-      try { await applyLocalTranslationSettings(undefined); } catch { /* Backend may be stopping. */ }
-      await localTranslation?.stop();
-      await localTranslationStart?.catch(() => {});
+      let cleared = false;
+      try { await applyLocalTranslationSettings(undefined); cleared = true; } catch { /* Failed revocation must stop the authenticated runner. */ }
+      if (!cleared || !release.keepWarm || localTranslationStart || !localTranslation?.standby()) {
+        await localTranslation?.stop();
+        await localTranslationStart?.catch(() => {});
+      }
     } finally {
       if (localTranslationLease === lease) localTranslationLease = undefined;
       localTranslationRelease = undefined;
     }
   })();
-  return localTranslationRelease;
+  return release.promise;
 }
 function applyLocalTranslationSettings(config) {
   if (!backend?.pid) return Promise.reject(new Error('本机服务不可用，请重启 Lumior。'));
@@ -448,7 +457,7 @@ async function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), partition: SESSION_PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, spellcheck: true },
   });
   const current = window;
-  const releaseReader = () => { if (localTranslationLease) void releaseLocalTranslation(localTranslationLease); };
+  const releaseReader = () => { if (localTranslationLease) void releaseLocalTranslation(localTranslationLease); else void localTranslation?.stop(); };
   current.webContents.on('render-process-gone', releaseReader);
   current.webContents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => { if (isMainFrame && !isInPlace) releaseReader(); });
   current.on('closed', releaseReader);

@@ -28,6 +28,7 @@ import {
   type PdfScrollSide,
 } from './pdf-scroll-sync';
 import type { ImportedCard } from './file-import';
+import type { TranslationPageSize } from '../lib/pdf-translation-pdf';
 import {
   useCallback,
   useEffect,
@@ -42,6 +43,7 @@ import {
   PdfPage,
   getPdfText as getText,
   type MarkGesture,
+  type MarkActivation,
   type SearchHit,
 } from './pdf-sheet';
 import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -163,6 +165,17 @@ export default function PdfViewer({
   const [sessionPageRatios, setSessionPageRatios] = useState<Record<number, number>>(
     savedSession?.pageRatios || {},
   );
+  const registerSourcePageSizes = useCallback((sizes: TranslationPageSize[]) => {
+    setSessionPageRatios(previous => {
+      const ratios: Record<number, number> = {};
+      sizes.forEach((size, index) => {
+        if (Number.isFinite(size.width) && Number.isFinite(size.height) && size.width > 0 && size.height > 0)
+          ratios[index + 1] = size.height / size.width;
+      });
+      return Object.entries(ratios).some(([page, ratio]) => previous[Number(page)] !== ratio)
+        ? { ...previous, ...ratios } : previous;
+    });
+  }, []);
   const readerRoot = useRef<HTMLDivElement>(null);
   const measuredWidth = useRef(false);
   const saveFrame = useRef<number | undefined>(undefined);
@@ -991,16 +1004,8 @@ export default function PdfViewer({
       saved: false,
     });
   };
-  const down: MarkGesture = (e, mark) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (e.button !== 0) return;
-    markDrag.current ??= createPdfMarkDrag({
-      onPreview: preview => dragCallbacks.current.preview(preview),
-      onDrop: (mark, point) => dragCallbacks.current.drop(mark, point),
-    });
-    markDrag.current.start(e, mark);
-    selectionEnd.current = { x: e.clientX, y: e.clientY };
+  const activateMark: MarkActivation = (point, mark) => {
+    selectionEnd.current = point;
     setMenu({
       mark,
       ...selectionToolbarPosition(selectionEnd.current, {
@@ -1010,13 +1015,26 @@ export default function PdfViewer({
       saved: true,
     });
   };
+  const down: MarkGesture = (e, mark) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    markDrag.current ??= createPdfMarkDrag({
+      onPreview: preview => dragCallbacks.current.preview(preview),
+      onDrop: (mark, point) => dragCallbacks.current.drop(mark, point),
+    });
+    // The toolbar closes as soon as the excerpt starts moving. Capture on the
+    // persistent reader so unmounting its handle cannot cancel an active drag.
+    markDrag.current.start(e, mark, readerRoot.current || e.currentTarget);
+    activateMark({ x: e.clientX, y: e.clientY }, mark);
+  };
   const move: MarkGesture = e => markDrag.current?.move(e);
   const up: MarkGesture = e => {
     e.stopPropagation?.();
     markDrag.current?.end(e);
   };
-  const gestures = useRef({ down, move, up });
-  gestures.current = { down, move, up };
+  const gestures = useRef({ down, move, up, activateMark });
+  gestures.current = { down, move, up, activateMark };
   const handleDown = useCallback<MarkGesture>(
     (e, m) => gestures.current.down(e, m),
     [],
@@ -1027,6 +1045,10 @@ export default function PdfViewer({
   );
   const handleUp = useCallback<MarkGesture>(
     (e, m) => gestures.current.up(e, m),
+    [],
+  );
+  const handleActivate = useCallback<MarkActivation>(
+    (point, mark) => gestures.current.activateMark(point, mark),
     [],
   );
   const color = (value: string) => {
@@ -1257,6 +1279,7 @@ export default function PdfViewer({
                 evidenceRects={i + 1 === evidencePage ? evidence?.location?.rects : undefined}
                 marks={displayed}
                 onMarkDown={handleDown}
+                onMarkActivate={handleActivate}
                 onMarkMove={handleMove}
                 onMarkUp={handleUp}
                 hoverRects={
@@ -1281,6 +1304,7 @@ export default function PdfViewer({
           statusTarget={translationStatusTarget}
           onScrollRoot={registerTranslationRoot}
           onScrollPages={registerTranslationPages}
+          onSourcePageSizes={registerSourcePageSizes}
           onScrollIntent={clearRequestedPage}
           hoverId={hoveredPart}
           onHover={(id) => hoverPart('translation', id)}
@@ -1289,8 +1313,7 @@ export default function PdfViewer({
           onPage={jumpPage}
           onRetry={() => void translator.start(translator.requestedMode, true)}
           onStop={translator.stop}
-          onReflow={() => void translator.start('reflow')}
-          onOriginal={translationEngine === 'local' ? undefined : () => void translator.start('original-layout')}
+          onLocal={() => void translator.start('reflow')}
           onCreated={onTranslationCreated}
         />
       ) : (
@@ -1342,6 +1365,7 @@ export default function PdfViewer({
             note={menu.mark.note || ''}
             onNoteChange={note => setMenu({ ...menu, mark: { ...menu.mark, note } })}
             copyText={menu.mark.image ? undefined : menu.mark.text}
+            onExcerptDrag={menu.saved ? event => down(event, menu.mark) : undefined}
             localTranslation={desktop && !menu.mark.image ? {
               sourceKey: readingKey(card),
               page: menu.mark.fragments[0]?.page || page,

@@ -5,12 +5,16 @@ import { createLayoutTranslationFile } from '../lib/pdf-layout-artifact';
 import { importFile } from './file-import';
 
 import { loadTranslationFont } from './pdf-translation-font';
+import { loadTranslationSource } from './pdf-translation-formulas';
 import { translate as t } from './i18n-core.ts';
 export async function exportTranslatedPdf(
   card: Card,
   translation: PdfTranslation,
 ) {
   const title = card.pdf!.name.replace(/\.pdf$/i, '');
+  const source = translation.mode === 'original-layout'
+    ? undefined
+    : await loadTranslationSource(card.pdf!.url, translation);
   const sourceFile =
     translation.mode === 'original-layout'
       ? await createLayoutTranslationFile(title, translation)
@@ -21,6 +25,8 @@ export async function exportTranslatedPdf(
                 title,
                 translation,
                 await loadTranslationFont(),
+                source!.formulas,
+                source!.pageSizes,
               ),
             ),
           ],

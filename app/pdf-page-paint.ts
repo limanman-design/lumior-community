@@ -106,7 +106,9 @@ export async function preparePdfPage(
       scale: (Math.max(80, width - 24) * zoom) / base.width,
     }),
     size = pdfPaintDimensions(width, ratio, zoom),
-    key = `${number}:${size.width}:${size.height}`,
+    // The raster budget can give different viewports identical bitmap sizes.
+    // Text spans still depend on the viewport scale, even when pixels match.
+    key = `${number}:${size.width}:${size.height}:${viewport.scale}`,
     cache = cacheFor(pdf);
   const reuse = () => {
     const paint = cache.get(key);

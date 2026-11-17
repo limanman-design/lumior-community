@@ -54,11 +54,15 @@
   border: 0;
   border-radius: 1px;
   padding: 0;
+  pointer-events: none;
+}
+.pdf-highlight-mark.pdf-region-mark {
+  pointer-events: auto;
   cursor: grab;
   touch-action: none;
 }
 .pdf-highlight-mark:hover { outline: none;background:color-mix(in srgb,var(--mark-color) 45%,transparent); }
-.pdf-highlight-mark:active {
+.pdf-highlight-mark.pdf-region-mark:active {
   cursor: grabbing;
 }
 .pdf-excerpt-ghost {

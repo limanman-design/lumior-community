@@ -1,6 +1,7 @@
 'use client';
 /* oxlint-disable next/no-img-element -- These small bundled Figma SVGs keep their original artwork. */
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject, type PointerEvent } from 'react';
+import { GripVertical } from 'lucide-react';
 import { useI18n } from './i18n';
 import { selectionToolbarPosition, type CursorPoint } from './pdf-selection-position';
 import { PdfSelectionTranslation } from './pdf-selection-translation';
@@ -11,6 +12,7 @@ const colors = ['#f5d84a', '#77cd82', '#64bfee', '#ee83af', '#b196ee'];
 export function PdfAnnotationEditor({
   anchor, note, onNoteChange, onSave, onDelete, canDelete = true,
   allowEmpty = false, copyText, color, onColorChange, status = '', opacity = 1, toolbarRef, localTranslation,
+  onExcerptDrag,
 }: {
   anchor: CursorPoint;
   note: string;
@@ -26,6 +28,7 @@ export function PdfAnnotationEditor({
   opacity?: number;
   toolbarRef?: RefObject<HTMLDivElement | null>;
   localTranslation?: { sourceKey: string; page: number; onSave: (text: string) => void; onSettings: () => void };
+  onExcerptDrag?: (event: PointerEvent<HTMLButtonElement>) => void;
 }) {
   const { t } = useI18n();
   const ownToolbar = useRef<HTMLDivElement>(null);
@@ -126,6 +129,12 @@ export function PdfAnnotationEditor({
           <img src="/assets/pdf-ui/copy.svg" width="16" height="16" alt=""/>
         </button>}
         {translateButton}
+        {onExcerptDrag && <button type="button" className="pdf-annotation-icon pdf-annotation-drag"
+          aria-label={t('Drag excerpt to whiteboard', '拖到画板创建摘录卡')}
+          title={t('Drag excerpt to whiteboard', '拖到画板创建摘录卡')}
+          onPointerDown={onExcerptDrag}>
+          <GripVertical size={16} aria-hidden="true" />
+        </button>}
         {copyResult && <output className={`pdf-copy-feedback ${copyResult}`}>
           {copyResult === 'success' ? t('Copied', '已复制') : t('Copy failed. Try again.', '复制失败，请重试')}
         </output>}

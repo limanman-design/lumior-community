@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { sseData } from '../lib/ai-stream.ts';
 import * as translations from '../lib/pdf-translation.ts';
+import * as inlineResume from '../lib/pdf-inline-resume.ts';
 
 const compile = name => ts.transpileModule(readFileSync(new URL(`../app/${name}.ts`, import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -19,7 +20,7 @@ const translationEvent = (units, text = '译文内容。') => ({ type: 'translat
 const done = (units, text) => response([translationEvent(units, text), { type: 'done' }]);
 
 function fixture({ state = { supported: true, installed: true, status: 'ready' }, getState, startRunner = async () => {}, stopRunner = async () => {}, respond = (_url, body) => done(body.units) } = {}) {
-  const starts = [], stops = [], calls = [], cancelled = [], listeners = new Map(), cancellations = new Set();
+  const starts = [], stops = [], releases = [], calls = [], cancelled = [], listeners = new Map(), cancellations = new Set();
   let activeReader, generation = 0, currentLease;
   const cell = initial => { const index = activeReader.cursor++; return activeReader.cells[index] ??= initial(); };
   const react = {
@@ -33,12 +34,18 @@ function fixture({ state = { supported: true, installed: true, status: 'ready' }
   const bridge = {
     getLocalTranslationState: async () => getState ? getState() : { ...state },
     startLocalTranslation: async lease => { starts.push(lease); if (currentLease) throw new Error('Already busy'); currentLease = lease; state.status = 'starting'; await startRunner(lease); if (currentLease === lease) state.status = 'running'; },
-    stopLocalTranslation: async lease => { stops.push(lease); await stopRunner(lease); if (currentLease === lease) { currentLease = undefined; state.status = 'ready'; } },
+    stopLocalTranslation: async (lease, options) => { stops.push(lease); releases.push({ lease, keepWarm: options?.keepWarm === true }); await stopRunner(lease, options); if (currentLease === lease) { currentLease = undefined; state.status = options?.keepWarm ? 'standby' : 'ready'; } },
   };
   const dependencies = {
     react, './desktop-bridge': { getDesktopBridge: () => bridge },
     './i18n': { useI18n: () => ({ t: english => english }) }, './pdf-system-messages': { pdfSystemMessage: value => value },
     '../lib/ai-stream': { sseData }, '../lib/pdf-translation': translations,
+    '../lib/pdf-inline-resume': inlineResume,
+    './pdf-translation-formulas': { preparePdfInlineTranslation: async () => {
+      const legacyUnits = translations.translationUnits([{ page: 1, text: 'The full source PDF.', paragraphs: [{ start: 0, end: 20, rects: [] }] }]);
+      return { units: legacyUnits.map(unit => ({ ...unit, inlineMathVersion: 1, parts: unit.parts.map(part => ({ ...part, sourceHash: createHash('sha256').update(part.text).digest('hex') })) })), legacyUnits,
+        legacyPartIds: Object.fromEntries(legacyUnits.flatMap(unit => unit.parts.map(part => [part.id, [part.id]]))), totalPages: 1, emptyPages: [] };
+    } },
     './pdf-translation-session': {
       translationOwner: () => 'same-tab-reader', nextTranslationGeneration: () => ++generation,
       cancelTranslationJob: (...args) => { cancelled.push(args); const operation = Promise.resolve(); cancellations.add(operation); void operation.finally(() => cancellations.delete(operation)); return operation; },
@@ -62,7 +69,7 @@ function fixture({ state = { supported: true, installed: true, status: 'ready' }
   const selectionHook = load('use-pdf-selection-translation').usePdfSelectionTranslation;
   const fullHook = load('use-pdf-translation').usePdfTranslation;
   return {
-    calls, starts, stops, cancelled, state,
+    calls, starts, stops, releases, cancelled, state, leaseSession: dependencies['./local-translation-session'],
     reader(key = 'source-pdf', full = false) {
       const reader = { cells: [], cursor: 0, effects: [], writes: 0, key };
       reader.render = (nextKey = reader.key) => { reader.key = nextKey; reader.cursor = 0; activeReader = reader; reader.hook = full ? fullHook({ id: nextKey, pdf: { url: 'blob:test' } }) : selectionHook(nextKey); for (const effect of reader.effects.splice(0)) effect(); return reader.hook; };
@@ -73,7 +80,7 @@ function fixture({ state = { supported: true, installed: true, status: 'ready' }
   };
 }
 
-void test('selected sentence uses only the local scoped request, preserves full text, and closes its runner', async () => {
+void test('selected sentence preserves full text and releases its task while leaving the runner on standby', async () => {
   const app = fixture(), reader = app.reader(), source = '  This is a complete sentence.\n中文 😀  ';
   await reader.hook.start(source, 7);
   assert.equal(app.calls.length, 1); assert.equal(app.calls[0].url, '/api/translate');
@@ -82,8 +89,46 @@ void test('selected sentence uses only the local scoped request, preserves full 
   assert.deepEqual(body.units, [{ id: '7:0', page: 7, text: source }]);
   assert.equal(body.ownerId, 'same-tab-reader-selection');
   assert.match(app.starts[0], /^[a-f0-9]{32}$/); assert.deepEqual(app.stops, app.starts);
+  assert.equal(app.releases[0].keepWarm, true); assert.equal(app.state.status, 'standby');
   assert.equal(reader.render().result.status, 'done'); assert.equal(reader.hook.result.source, source); assert.equal(reader.hook.result.text, '译文内容。');
   assert.equal(reader.hook.busy, false); assert.equal(app.cancelled[0][1], body.ownerId);
+});
+
+void test('the next selection reuses standby and closing a completed result does not cancel its warm release', async () => {
+  const released = deferred(), app = fixture({ stopRunner: (_lease, options) => options?.keepWarm ? released.promise : Promise.resolve() }), reader = app.reader();
+  const first = reader.hook.start('First sentence.', 1);
+  await until(() => app.releases.length === 1);
+  assert.equal(reader.render().result.status, 'done'); reader.hook.clear();
+  assert.equal(app.releases.length, 1); assert.equal(app.releases[0].keepWarm, true);
+  const second = reader.hook.start('Second sentence.', 1); await flush(); assert.equal(app.starts.length, 1);
+  released.resolve(); await Promise.all([first, second]);
+  assert.equal(reader.render().result.status, 'done'); assert.equal(reader.hook.result.source, 'Second sentence.');
+  assert.equal(app.starts.length, 2); assert.ok(app.releases.every(release => release.keepWarm)); assert.equal(app.state.status, 'standby');
+});
+
+void test('hard cancellation upgrades a pending warm lease release and later readers wait for both acknowledgements', async () => {
+  const warm = deferred(), hard = deferred();
+  const app = fixture({ stopRunner: (_lease, options) => options?.keepWarm ? warm.promise : hard.promise });
+  const lease = 'a'.repeat(32), session = app.leaseSession;
+  const normal = session.releaseLocalLease(lease, { keepWarm: true }); await flush();
+  const cancelled = session.releaseLocalLease(lease); await flush();
+  assert.deepEqual(app.releases.map(release => release.keepWarm), [true, false]);
+  warm.resolve(); await normal;
+  let settled = false; const waiting = session.waitForLocalTranslationRelease().then(() => { settled = true; });
+  await flush(); assert.equal(settled, false);
+  hard.resolve(); await Promise.all([cancelled, waiting]); assert.equal(settled, true);
+});
+
+void test('a failed warm acknowledgement still waits for the upgraded hard stop before releasing the reader barrier', async () => {
+  const warm = deferred(), hard = deferred();
+  const app = fixture({ stopRunner: (_lease, options) => options?.keepWarm ? warm.promise : hard.promise });
+  const lease = 'a'.repeat(32), session = app.leaseSession;
+  const normal = session.releaseLocalLease(lease, { keepWarm: true }); const failed = assert.rejects(normal, /acknowledgement/); await flush();
+  const cancelled = session.releaseLocalLease(lease); const rejected = assert.rejects(cancelled, /acknowledgement/);
+  warm.reject(new Error('acknowledgement failed')); await failed;
+  let settled = false; const waiting = session.waitForLocalTranslationRelease().then(() => { settled = true; });
+  await flush(); assert.equal(settled, false);
+  hard.resolve(); await Promise.all([rejected, waiting]); assert.equal(settled, true);
 });
 
 void test('missing download, unsupported computer and another running job do not start, cancel or fetch', async () => {
@@ -120,6 +165,7 @@ void test('cancelled text never becomes a completed result and a retry waits for
   });
   const reader = app.reader(), first = reader.hook.start('First sentence.', 1);
   await until(() => app.calls.length === 1); reader.hook.cancel();
+  await flush(); assert.ok(app.releases.every(release => !release.keepWarm));
   assert.equal(reader.render().result.status, 'cancelled'); assert.ok(app.calls[0].signal.aborted);
   const second = reader.hook.start('Second sentence.', 1); await flush(); assert.equal(app.starts.length, 1);
   released.resolve(); await second;
@@ -158,6 +204,7 @@ void test('incomplete, mismatched and malformed responses never expose unverifie
     const app = fixture({ respond: (_url, body) => reply(body.units) }), reader = app.reader(); await reader.hook.start('Source text.', 1);
     assert.equal(reader.render().result.status, 'error'); assert.equal(reader.hook.result.text, ''); assert.equal(app.calls.length, 1);
     assert.deepEqual(app.stops, app.starts); assert.equal(reader.hook.busy, false);
+    assert.ok(app.releases.every(release => !release.keepWarm));
   }
 });
 
