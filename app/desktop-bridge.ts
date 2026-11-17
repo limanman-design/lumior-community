@@ -4,6 +4,10 @@ import type { AiProvider } from '@/lib/ai-providers';
 import type { DesktopQuickNote } from './desktop-quick-note';
 import type { PetAnimationOptions } from './pet-animation-options';
 
+export type LocalTranslationState = {
+  supported: boolean; installed: boolean; status: 'not-installed' | 'downloading' | 'ready' | 'starting' | 'running' | 'error';
+  progress?: number; downloadedBytes?: number; totalBytes?: number; error?: string; model?: string;
+};
 export type DesktopPlatform = 'darwin' | 'win32' | 'linux';
 export type DesktopClipboardImage = { name: string; type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'; bytes: Uint8Array };
 export type DesktopPetState = { supported: boolean; enabled: boolean; size?: number; animation?: PetAnimationOptions; error?: string };
@@ -82,6 +86,13 @@ export type DesktopWallpaperState = {
 
 export type DesktopBridge = {
   readonly platform?: DesktopPlatform;
+  getLocalTranslationState?: () => Promise<LocalTranslationState>;
+  installLocalTranslation?: () => Promise<LocalTranslationState>;
+  cancelLocalTranslationDownload?: () => Promise<LocalTranslationState>;
+  removeLocalTranslation?: () => Promise<LocalTranslationState>;
+  startLocalTranslation?: (lease: string) => Promise<void>;
+  stopLocalTranslation?: (lease: string) => Promise<void>;
+  onLocalTranslationState?: (handler: (state: LocalTranslationState) => void) => () => void;
   getPetState?: () => Promise<DesktopPetState>;
   setPetEnabled?: (enabled: boolean) => Promise<DesktopPetState>;
   setPetSize?: (size: number) => Promise<DesktopPetState>;

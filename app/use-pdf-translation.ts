@@ -1,5 +1,8 @@
 'use client';
 import { PDF_TRANSLATION_ENABLED } from './feature-flags';
+import { selectedTranslationEngine } from './local-translation-settings';
+import { getDesktopBridge } from './desktop-bridge';
+import { releaseLocalLease, waitForLocalTranslationRelease } from './local-translation-session';
 import { useI18n } from './i18n';
 import { pdfSystemMessage } from './pdf-system-messages';
 /* oxlint-disable react/react-compiler -- Latest card callbacks are held for an asynchronous, cancellable translation run. */
@@ -56,6 +59,7 @@ export function usePdfTranslation(
     ownerId: string;
     ownerGeneration: number;
     layout: boolean;
+    localLease?: string;
   } | null>(null);
   const controller = useRef<AbortController | null>(null),
     current = useRef({ card, onChange, translation });
@@ -69,9 +73,8 @@ export function usePdfTranslation(
         active.ownerGeneration,
         active.layout,
       ).catch(() => {});
-    job.current = null;
     controller.current?.abort();
-    controller.current = null;
+    if (active?.localLease) void releaseLocalLease(active.localLease).catch(() => {});
   };
   useEffect(() => {
     window.addEventListener('pagehide', cancelRun);
@@ -95,7 +98,6 @@ export function usePdfTranslation(
   const stop = () => {
     if (!controller.current) return;
     cancelRun();
-    setBusy(false);
     setProgress(
       t(
         'Paused. Completed translation has been kept.',
@@ -107,10 +109,13 @@ export function usePdfTranslation(
     mode: TranslationMode = 'original-layout',
     regenerate = false,
   ) => {
-    if (!PDF_TRANSLATION_ENABLED || controller.current) return;
+    const engine = selectedTranslationEngine();
+    if ((!PDF_TRANSLATION_ENABLED && engine !== 'local') || controller.current) return;
+    if (engine === 'local') mode = 'reflow';
     setRequestedMode(mode);
     setError('');
-    const saved = translationForMode(current.current.translation, mode, key);
+    const cached = translationForMode(current.current.translation, mode, key);
+    const saved = cached && ((cached.model === 'local:hy-mt2-1.8b') === (engine === 'local')) ? cached : undefined;
     if (saved) {
       const selected = saveTranslationMode(current.current.translation, saved);
       current.current.translation = selected;
@@ -152,9 +157,20 @@ export function usePdfTranslation(
       setTranslation(selected);
       current.current.onChange?.(selected);
     };
+    let localLease: string | undefined;
     try {
       await waitForTranslationCancellation();
+      await waitForLocalTranslationRelease();
       if (run.signal.aborted) return;
+      if (engine === 'local') {
+        setProgress(t('Starting local translation…', '正在启动本地翻译…'));
+        const bridge = getDesktopBridge();
+        if (!bridge?.startLocalTranslation) throw new Error(t('Install the local translation extension in AI settings.', '请在 AI 设置中安装本地翻译扩展。'));
+        localLease = id.replace(/-/g, '');
+        if (job.current?.id === id) job.current.localLease = localLease;
+        await bridge.startLocalTranslation(localLease);
+        if (run.signal.aborted) return;
+      }
       heartbeat = setInterval(() => {
         if (run.signal.aborted) return;
         for (const path of layout
@@ -240,7 +256,7 @@ export function usePdfTranslation(
         mode,
         ...(sourceHash ? { layoutSourceHash: sourceHash } : {}),
         sourceLanguage: reusable ? previousDraft!.sourceLanguage : '自动检测',
-        model: reusable ? previousDraft!.model : 'Auto',
+        model: reusable ? previousDraft!.model : engine === 'local' ? 'local:hy-mt2-1.8b' : 'Auto',
         glossary: reusable ? previousDraft!.glossary : [],
         units: previous,
         totalPages,
@@ -251,9 +267,10 @@ export function usePdfTranslation(
       save(draft);
       const remaining = input
         .filter(
-          (unit) =>
-            !completed.has(unit.id) ||
-            (unit.parts && !completed.get(unit.id)?.parts?.length),
+          (unit) => {
+            const result = completed.get(unit.id);
+            return !result?.text.trim() || !translationComplete([unit], [result]);
+          },
         )
         .map((unit) => ({
           ...unit,
@@ -266,6 +283,7 @@ export function usePdfTranslation(
           signal: run.signal,
           body: JSON.stringify({
             ...identity,
+            engine,
             units: remaining,
             glossary: draft.glossary,
           }),
@@ -389,10 +407,11 @@ export function usePdfTranslation(
         );
     } finally {
       clearInterval(heartbeat);
+      void cancelTranslationJob(id, ownerId, ownerGeneration, layout).catch(
+        () => {},
+      );
+      if (localLease) await releaseLocalLease(localLease).catch(() => {});
       if (controller.current === run) {
-        void cancelTranslationJob(id, ownerId, ownerGeneration, layout).catch(
-          () => {},
-        );
         controller.current = null;
         job.current = null;
         setBusy(false);

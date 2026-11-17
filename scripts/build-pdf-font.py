@@ -1,11 +1,12 @@
 """Convert OFL Source Han Sans outlines to TrueType for reliable PDF glyph subsets.
-Usage: python build-pdf-font.py input.otf output.ttf (fonttools required).
+Usage: python build-pdf-font.py input.otf output.ttf NotoSansMath-Regular.ttf (fonttools required).
 """
 import sys
 from fontTools.ttLib import TTFont
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.cu2quPen import Cu2QuPen
+from pdf_font_math import add_math_glyphs
 
 source = TTFont(sys.argv[1])
 cmap = source.getBestCmap()
@@ -36,5 +37,6 @@ font.setupOS2(sTypoAscender=os2.sTypoAscender, sTypoDescender=os2.sTypoDescender
     usWinAscent=os2.usWinAscent, usWinDescent=os2.usWinDescent)
 font.setupPost(keepGlyphNames=False)
 font.setupMaxp()
+add_math_glyphs(font.font, sys.argv[3])
 font.save(sys.argv[2])
 print(f'Saved {len(order)} glyphs', flush=True)

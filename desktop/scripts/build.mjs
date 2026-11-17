@@ -40,6 +40,7 @@ for (const name of ['backend.mjs', 'security.cjs', 'ai-settings.cjs', 'custom-ai
 if (distribution === 'official') await writeTrialServiceBuild(generated, trialGatewayUrl);
 await writeDistributionBuild(generated, distribution);
 await cp(path.join(root, 'scripts/node-worker-env-loader.mjs'), path.join(generated, 'node-worker-env-loader.mjs'));
+await cp(path.join(root, 'licenses/local-translation'), path.join(generated, 'licenses/local-translation'), { recursive: true });
 await writeFile(path.join(generated, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
 await build({ entryPoints: [path.join(root, 'node_modules/vinext/dist/server/prod-server.js')], outfile: path.join(generated, 'production-server.mjs'), platform: 'node', format: 'esm', bundle: true, target: 'node22', logLevel: 'warning' });
 let count = 0, bytes = 0;

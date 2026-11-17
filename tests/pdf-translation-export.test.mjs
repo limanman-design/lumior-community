@@ -52,6 +52,30 @@ test('export keeps every character when wrapping and refuses unfinished translat
  await assert.rejects(createTranslationPdf('unfinished',{...translation,complete:false},new Uint8Array()),/完成翻译/);
 });
 
+test('math symbols retain distinct Unicode and valid outlines in preview and exported PDFs',async()=>{
+ const fontBytes=new Uint8Array(await readFile(new URL('../public/assets/pdf-fonts/LumiorDocumentSans-Regular.ttf',import.meta.url)));
+ const font=fontkit.create(fontBytes),text='量子态 ⟨ψ|H|ψ⟩；CJK 原字符 〈标题〉；⟨n⟩ = 1；ˆ ϵ ∗ ε ^ * 𝜓 ⟦a⟧。';
+ for(const character of 'ˆϵ∗𝜓⟦⟧'){
+  const glyph=font.glyphForCodePoint(character.codePointAt(0));
+  assert.notEqual(glyph.id,0);assert.ok(glyph.path.commands.length>0);
+ }
+ const mathematical=[0x27E8,0x27E9].map(code=>font.glyphForCodePoint(code));
+ for(const [index,glyph] of mathematical.entries()){
+  assert.notEqual(glyph.id,0);assert.ok(glyph.path.commands.length>0);
+  assert.notEqual(glyph.id,font.glyphForCodePoint([0x3008,0x3009][index]).id,'math and CJK brackets must not share a PDF Unicode glyph ID');
+ }
+ const saved={...translation,units:[{id:'1:0',page:1,text}]},before=structuredClone(saved);
+ for(const preview of [true,false]){
+  const result=await buildTranslationPdf('数学 ⟨ψ⟩',saved,fontBytes,preview);
+  assert.deepEqual(await exportedBodyText(result.bytes),[text]);
+  const pdf=await PDFDocument.load(result.bytes),fonts=pdf.getPage(0).node.Resources().lookup(PDFName.of('Font'));
+  const outer=fonts.lookup(fonts.keys()[0]),descendant=outer.lookup(PDFName.of('DescendantFonts')).lookup(0);
+  const subset=fontkit.create(decodePDFRawStream(descendant.lookup(PDFName.of('FontDescriptor')).lookup(PDFName.of('FontFile2'))).decode());
+  for(let id=1;id<subset.numGlyphs;id++)assert.doesNotThrow(()=>subset.getGlyph(id).path.commands);
+ }
+ assert.deepEqual(saved,before,'font support never rewrites the saved translation');
+});
+
 test('long translations retain one sheet per source page, all text, paragraph IDs and pending pages',async()=>{
  const fontBytes=new Uint8Array(await readFile(new URL('../public/assets/pdf-fonts/LumiorDocumentSans-Regular.ttf',import.meta.url)));
  const longText='研究结果。'.repeat(1400)+'最终尾段：完整保留。';

@@ -4,4 +4,4 @@ import {aiSettingsFromEnv} from '@/lib/ai-providers';
 export const POST=createPdfTranslationService(()=>{
  const values=env as unknown as Record<string,string|undefined>;
  return aiSettingsFromEnv(values);
-},fetch,sharedTranslationRegistry());
+},fetch,sharedTranslationRegistry(),()=> (env as unknown as Record<string,string|undefined>).LUMIOR_LOCAL_TRANSLATION_CONFIG);

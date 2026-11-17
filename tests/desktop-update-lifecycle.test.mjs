@@ -68,6 +68,18 @@ async function launchMain({ platform = 'darwin', packaged = true, development = 
     async prepareQuit() { this.frozen = true; await this.prepare(); },
     resume() { this.frozen = false; },
   };
+  const localController = {
+    starts: 0, stops: 0, installs: 0, removals: 0, refreshes: 0, disposals: 0, cancelledDownloads: 0,
+    config: { baseUrl: 'http://127.0.0.1:43275/v1', token: 'synthetic-private-runner-token-123456', model: 'hy-mt2-1.8b' },
+    getState: () => ({ supported: true, installed: true, status: 'ready', model: 'hy-mt2-1.8b' }),
+    async refresh() { this.refreshes++; return this.getState(); },
+    async install() { this.installs++; return this.getState(); },
+    async cancelDownload() { this.cancelledDownloads++; return this.getState(); },
+    async remove() { this.removals++; return this.getState(); },
+    async start() { this.starts++; return this.config; },
+    async stop() { this.stops++; },
+    async dispose() { this.disposals++; },
+  };
 
   class FakeApp extends EventEmitter {
     constructor() { super(); this.isPackaged = packaged; this.paths = {}; this.quitAttempts = 0; this.exited = false; this.dock = { setIcon() {} }; }
@@ -100,7 +112,7 @@ async function launchMain({ platform = 'darwin', packaged = true, development = 
     constructor() { super(); this.pid = 42; this.live = true; this.messages = []; this.killCount = 0; }
     postMessage(message) {
       this.messages.push(message);
-      if (message.type === 'ai-settings') queueMicrotask(() => this.emit('message', { type: 'settings-applied', requestId: message.requestId }));
+      if (['ai-settings', 'local-translation-settings'].includes(message.type)) queueMicrotask(() => this.emit('message', { type: 'settings-applied', requestId: message.requestId }));
     }
     kill() { this.killCount += 1; this.finish(); }
     finish() { if (this.live) { this.live = false; this.emit('exit', 0); } }
@@ -183,6 +195,8 @@ async function launchMain({ platform = 'darwin', packaged = true, development = 
     if (name === './runtime/clipboard-images.cjs') return require('../desktop/runtime/clipboard-images.cjs');
     if (name === 'node:os') return { release: () => platform === 'win32' ? '10.0.22621' : '25.0.0' };
     if (name === './runtime/desktop-pet.cjs') return { createDesktopPet: () => petController };
+    if (name === './runtime/local-translation-manifest.json') return require('../desktop/runtime/local-translation-manifest.json');
+    if (name === './runtime/local-translation.cjs') return { createLocalTranslationController: options => { localController.options = options; return localController; } };
     if (name === 'node:fs/promises') return { access: async () => {}, mkdir: async () => {}, rename: async (from, to) => { stored.set(to, stored.get(from)); stored.delete(from); }, readFile: async file => { if (stored.has(file)) return stored.get(file); throw new Error('No synthetic state'); }, writeFile: async (...args) => { writes.push(args); stored.set(args[0], args[1]); } };
     if (name === './runtime/security.cjs') return { ...security, desktopConfiguration: (isPackaged, _environment, selectedDistribution) => security.desktopConfiguration(isPackaged, environment, selectedDistribution) };
     if (name === './runtime/credentials.cjs') return { createCredentialStore: () => ({ get: async () => ({ configured: false }), config: async () => ({ key: '', model: 'synthetic-model' }), save: async () => ({ configured: false }) }) };
@@ -209,7 +223,7 @@ async function launchMain({ platform = 'darwin', packaged = true, development = 
   assert.equal(windows.length, 1, 'synthetic main starts one window');
   assert.equal(backend.live, true);
   return {
-    app, sdk, nativeUpdater, ipcMain, windows, backend, controller, petController, dialogs, writes, serviceReads,
+    app, sdk, nativeUpdater, ipcMain, windows, backend, controller, petController, localController, dialogs, writes, serviceReads,
     get current() { return windows.at(-1); },
     get saveCalls() { return saveCalls; },
     setSaveHandler(handler) { saveHandler = handler; },
@@ -241,6 +255,125 @@ void test('community main ignores official services and update feeds even when t
       assert.equal(main.backend.live, true);
     } finally { main.dispose(); }
   }
+});
+
+void test('local translation IPC starts one lease and sends runner credentials only to the backend on both platforms', async () => {
+  for (const platform of ['darwin', 'win32']) {
+    const main = await launchMain({ platform });
+    try {
+      const lease = 'a'.repeat(32), other = 'b'.repeat(32), bridge = main.current.bridge;
+      assert.equal(main.localController.refreshes, 1);
+      assert.equal(main.localController.installs, 0, 'startup never downloads the optional extension');
+      assert.equal(main.localController.starts, 0, 'startup never starts local inference');
+      assert.equal(main.localController.options.directory, path.join(main.app.getPath('userData'), 'extensions', 'local-translation'));
+      const states = [], unsubscribe = bridge.onLocalTranslationState(state => states.push(state));
+      main.localController.options.onState(main.localController.getState());
+      assert.equal(states.length, 1);
+      const state = await bridge.getLocalTranslationState();
+      const started = await bridge.startLocalTranslation(lease);
+      assert.equal(started, undefined, 'renderer receives no runner configuration');
+      assert.equal(main.localController.starts, 1);
+      const configured = main.backend.messages.filter(message => message.type === 'local-translation-settings');
+      assert.equal(configured.length, 1);
+      assert.equal(configured[0].config, main.localController.config);
+      assert.ok(!JSON.stringify([state, states, main.current.webContents.messages]).includes(main.localController.config.token));
+      assert.ok(!JSON.stringify([state, states, main.current.webContents.messages]).includes(main.localController.config.baseUrl));
+      await assert.rejects(bridge.startLocalTranslation(other), /已有本地翻译/);
+      await assert.rejects(bridge.removeLocalTranslation(), /先停止/);
+      await bridge.stopLocalTranslation(other);
+      assert.equal(main.localController.stops, 0, 'a stale reader cannot stop a different lease');
+      await bridge.stopLocalTranslation(lease);
+      assert.equal(main.localController.stops, 1);
+      assert.equal(main.backend.messages.at(-1).type, 'local-translation-settings');
+      assert.equal(main.backend.messages.at(-1).config, undefined);
+      await bridge.stopLocalTranslation(lease);
+      assert.equal(main.localController.stops, 1, 'repeated stop is harmless');
+      await bridge.startLocalTranslation(other);
+      assert.equal(main.localController.starts, 2);
+      await bridge.stopLocalTranslation(other);
+      unsubscribe();
+      main.localController.options.onState(main.localController.getState());
+      assert.equal(states.length, 1);
+    } finally { main.dispose(); }
+  }
+});
+
+void test('local translation IPC rejects other frames, arbitrary options, malformed leases and extra arguments', async () => {
+  const main = await launchMain();
+  try {
+    const event = main.current.authorizedEvent(), lease = 'a'.repeat(32);
+    const names = ['get', 'install', 'cancel-download', 'remove', 'start', 'stop'];
+    for (const name of names) {
+      const handler = main.ipcMain.handlers.get(`lumior:local-translation:${name}`);
+      const args = ['start', 'stop'].includes(name) ? [lease] : [];
+      for (const bad of [{ ...event, sender: {} }, { ...event, senderFrame: { url: event.senderFrame.url } }, { ...event, senderFrame: null }]) {
+        await assert.rejects(handler(bad, ...args), /only in Lumior/);
+      }
+      await assert.rejects(handler(event, ...args, { url: 'https://untrusted.example/runtime', command: 'arbitrary' }));
+      const original = event.senderFrame.url;
+      event.senderFrame.url = 'https://untrusted.example';
+      await assert.rejects(handler(event, ...args), /only in Lumior/);
+      event.senderFrame.url = original;
+    }
+    for (const name of ['start', 'stop']) for (const lease of [undefined, null, 123, {}, '', 'a'.repeat(31), 'a'.repeat(33), 'A'.repeat(32), 'z'.repeat(32), 'a'.repeat(31) + '\n']) {
+      await assert.rejects(main.ipcMain.handlers.get(`lumior:local-translation:${name}`)(event, lease), /Invalid local translation lease/);
+    }
+    assert.equal(main.localController.starts + main.localController.stops + main.localController.installs + main.localController.removals, 0);
+  } finally { main.dispose(); }
+});
+
+void test('cancelling a pending local runner startup never publishes its late configuration', async () => {
+  const main = await launchMain();
+  try {
+    const start = deferred(), lease = 'c'.repeat(32);
+    main.localController.start = async () => { main.localController.starts++; return start.promise; };
+    const pending = main.current.bridge.startLocalTranslation(lease);
+    const rejected = assert.rejects(pending, /已取消/);
+    await flush();
+    const stopped = main.current.bridge.stopLocalTranslation(lease);
+    await flush();
+    await assert.rejects(main.current.bridge.startLocalTranslation('d'.repeat(32)), /已有本地翻译/);
+    start.resolve(main.localController.config);
+    await Promise.all([rejected, stopped]);
+    assert.equal(main.localController.stops, 1);
+    assert.ok(main.backend.messages.filter(message => message.type === 'local-translation-settings').every(message => message.config === undefined));
+  } finally { main.dispose(); }
+});
+
+void test('local runner failure and main-frame reload release the lease and clear backend config', async () => {
+  for (const cause of ['error', 'navigation', 'renderer-gone']) {
+    const main = await launchMain();
+    try {
+      const lease = 'd'.repeat(32);
+      await main.current.bridge.startLocalTranslation(lease);
+      main.current.webContents.emit('did-start-navigation', {}, 'about:blank', false, false);
+      await flush();
+      assert.equal(main.localController.stops, 0, 'subframe navigation does not interrupt the reader');
+      if (cause === 'error') main.localController.options.onState({ ...main.localController.getState(), status: 'error', error: '本地模型已退出。' });
+      else if (cause === 'navigation') main.current.webContents.emit('did-start-navigation', {}, 'about:blank', false, true);
+      else main.current.webContents.emit('render-process-gone', {}, {});
+      await flush();
+      assert.equal(main.localController.stops, 1);
+      assert.equal(main.backend.messages.at(-1).config, undefined);
+      await main.current.bridge.startLocalTranslation('e'.repeat(32));
+      await main.current.bridge.stopLocalTranslation('e'.repeat(32));
+    } finally { main.dispose(); }
+  }
+});
+
+void test('normal quit disposes the optional local runner without changing save-before-exit behavior', async () => {
+  const main = await launchMain({ configured: false });
+  try {
+    await main.current.bridge.startLocalTranslation('f'.repeat(32));
+    main.app.quit();
+    await flush();
+    assert.equal(main.saveCalls, 1);
+    assert.equal(main.localController.disposals, 1);
+    assert.equal(main.app.exited, false);
+    main.backend.finish();
+    await flush();
+    assert.equal(main.app.exited, true);
+  } finally { main.dispose(); }
 });
 
 void test('fixed dark application palette sets native appearance before creating resizable windows', async () => {

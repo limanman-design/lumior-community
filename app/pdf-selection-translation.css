@@ -1,0 +1,23 @@
+.pdf-selection-toolbar.pdf-selection-translation-popover { width: min(400px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: 12px; overflow-y: auto; overscroll-behavior: contain; }
+.pdf-selection-toolbar .pdf-selection-translate-button { color: var(--ui-text-muted); }
+.pdf-selection-toolbar .pdf-selection-translate-button:hover { color: var(--ui-text); }
+.pdf-selection-toolbar .pdf-selection-translate-button[aria-expanded='true'] { background: var(--ui-fill-selected); color: var(--ui-text); }
+.pdf-selection-translate-glyph { display: block; width: 16px; height: 16px; background: currentColor; mask: url('/assets/pdf-toolbar/translate.svg') center/contain no-repeat; pointer-events: none; }
+.pdf-selection-translation-panel { position: static; width: auto; max-width: none; margin: 0; padding: 0; border: 0; background: none; color: inherit; }
+.pdf-selection-translation-panel header { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.pdf-selection-translation-panel header strong { font-size: 13px; }
+.pdf-selection-translation-panel header button { display: grid; place-items: center; margin-left: auto; width: 24px; height: 24px; border-radius: 8px; }
+.pdf-selection-translation-panel header button:hover { background: var(--ui-fill-hover); color: var(--ui-text); }
+.pdf-selection-translation-result { max-height: min(280px, 36vh); overflow-y: auto; margin: 10px 0; user-select: text; }
+.pdf-selection-translation-result p { margin: 0; font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pdf-selection-translation-status { display: flex; align-items: center; gap: 7px; color: var(--ui-text-muted); }
+.pdf-selection-translation-result [role='alert'] { color: var(--ui-danger); }
+.pdf-selection-translation-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.pdf-selection-translation-actions button { min-height: 32px; padding: 6px 10px; border: 1px solid var(--ui-line); border-radius: 12px; font-size: 12px; color: var(--ui-text); }
+.pdf-selection-translation-actions button:hover { background: var(--ui-fill-hover); color: var(--ui-text); }
+.pdf-selection-translation-actions .pdf-selection-save-translation { background: var(--action-primary); color: var(--action-primary-foreground); border-color: var(--action-primary); }
+.pdf-selection-translation-actions .pdf-selection-save-translation:hover { background: var(--action-primary); color: var(--action-primary-foreground); opacity: .9; }
+.pdf-selection-translation-actions output { font-size: 11px; color: var(--ui-text-muted); }
+.pdf-selection-translation-spinner { animation: pdf-selection-translation-spin 1s linear infinite; }
+@keyframes pdf-selection-translation-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pdf-selection-translation-spinner { animation: none; } }
