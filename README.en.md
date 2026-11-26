@@ -1,21 +1,25 @@
 # Lumior
 
-[中文](README.md) · [Website and downloads](https://lumior.work/) · [Demo](https://demo.lumior.work/) · [Report an issue](https://github.com/limanman-design/lumior-community/issues)
+[中文](README.md) · [Download the desktop app](https://lumior.work/) · [Try the web demo](https://demo.lumior.work/) · [Report an issue](https://github.com/limanman-design/lumior-community/issues)
 
-**An intelligent canvas for building understanding.**
+**Read papers, organize evidence, and take research notes on one whiteboard.**
 
-Lumior is a local-first knowledge workspace that connects sources, thinking and expression. Bring original material, excerpts and ideas onto one canvas. Use cards, connections and sections to explore relationships, then work with AI to find evidence, explain concepts, compare perspectives and prepare editable notes.
+Lumior is a local-first research workspace. Put PDFs, excerpts, and notes on the same whiteboard, then arrange them with cards, links, and sections. Translate a difficult passage in place or ask AI about selected sources, check the citations, and save useful answers as notes.
 
-The canvas gives your questions context. What you learn changes how you organize the canvas. Sources and thinking stay together as your understanding develops.
+## New on desktop: Offline PDF translation
 
-The project uses [Apache-2.0](LICENSE); third-party components retain their own licenses. See [project status](docs/OPEN-SOURCE-STATUS.md) for source scope and known limitations. Source code and official installers are released separately; use the website for current downloads.
+- **Translate a selection.** Select a sentence or passage in a PDF, then copy the translation or save it as an annotation.
+- **Translate a whole PDF side by side.** Read the original and translation with matching page sizes and synchronized scrolling. Pause and resume, export a separate PDF, and preserve formulas that can be located reliably as images from the source.
+- **Download once, then translate offline.** Get the model and runtime (about 1.15 GB total) under Settings → AI Services → Local Translation. Local translation requires neither an API key nor cloud credits.
 
-## From sources to understanding, and back to the canvas
+The official desktop releases are `0.1.43` for Apple silicon Macs and `0.1.43-win.1` for the Windows x64 preview. Local translation has been tested on an Apple silicon Mac. Testing on Windows hardware is pending. The web demo lets you explore whiteboards and sample material. [Download the desktop app](https://lumior.work/) · [Local translation guide (Chinese)](docs/LOCAL-TRANSLATION.md)
 
-1. **Bring sources together.** Import documents, PDFs, images or videos and place them beside your notes.
-2. **Make relationships visible.** Extract, connect and group ideas to compare perspectives and identify missing evidence.
-3. **Work with AI in context.** Ask about selected cards or the board, follow citations and check the original material.
-4. **Keep developing your understanding.** Turn results into editable cards, connect and revise them, and track reading and follow-up work in databases.
+## From reading to research notes
+
+1. **Read and annotate.** Highlight a PDF and bring key excerpts onto the whiteboard alongside the source.
+2. **Organize and compare.** Lay out documents, images, videos, and excerpts. Connect related ideas and group evidence into sections.
+3. **Ask about your sources.** Select cards, ask AI a question, and follow citations back to the original material.
+4. **Keep the results.** Save useful answers or excerpts as editable notes. Track topics, reading progress, and next steps in databases.
 
 ## A look inside
 
@@ -33,14 +37,11 @@ These screenshots use the current interface and purpose-written sample material.
 
 *Organize reading status, topics and next actions in a database.*
 
-## Features
+## Community source
 
-- Canvases, rich notes, PDF annotations, images, videos and databases.
-- Obsidian folder imports with per-note storage, on-demand reading, wiki-link navigation, resumable imports and directory backups.
-- AI chat, translation and research using your own provider API key. MBA assistant skills and templates are included as source.
-- Local workspace storage without an official account.
+Workspaces are stored locally. Local features work without an official account. Obsidian folder imports support per-note storage, on-demand reading, wiki-link navigation, resumable imports, and directory backups. MBA assistant skills and templates are included in the source.
 
-Source access does not include model credits. Official hosted AI is a separately operated paid service. Community builds default to personal API keys. See [AI and data](docs/AI-DATA.md).
+Community builds use your own API key for cloud AI by default. When you start a cloud request, the app sends the context it needs to the selected provider. Lumior's official hosted AI is operated separately, and community builds come without official model credits. Community source and official installers are released separately. [AI and data](docs/AI-DATA.md) · [Source scope and known limitations](docs/OPEN-SOURCE-STATUS.md)
 
 ## Development
 
